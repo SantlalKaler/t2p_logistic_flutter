@@ -1,4 +1,4 @@
-package tastes2plate.app.logistic.t2p_logistic
+package taste2plates.app.logistic
 
 import io.flutter.embedding.android.FlutterActivity
 

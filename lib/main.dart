@@ -17,7 +17,9 @@ import 'package:t2p_logistic/presentation/theme/theme_light.dart';
 
 import 'presentation/theme/resource/strings_constants.dart';
 
-void main() {
+void main() async{
+  WidgetsFlutterBinding.ensureInitialized();
+  //await Firebase.initializeApp();
   runApp(const MyApp());
 }
 

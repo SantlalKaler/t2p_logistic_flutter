@@ -1,7 +1,17 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:math';
+import 'dart:typed_data';
+
+import 'package:crypto/crypto.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:t2p_logistic/data/api_services.dart';
 import 'package:t2p_logistic/data/status.dart';
-import 'package:t2p_logistic/domain/Model/AF2APOrderResponse.dart';
+import 'package:t2p_logistic/domain/Model/AF2APOrderResponse.dart'
+    as aF2APOrderResponse;
+import 'package:t2p_logistic/domain/Model/AllDeliveryStatusResponse.dart';
 import 'package:t2p_logistic/domain/Model/T2POrderResponse.dart';
 import 'package:t2p_logistic/domain/enums/user_type.dart';
 import 'package:t2p_logistic/domain/mapper/order_mapper.dart';
@@ -10,7 +20,9 @@ import 'package:t2p_logistic/presentation/theme/resource/strings_constants.dart'
 import 'package:t2p_logistic/presentation/theme/resource/uri_constants.dart';
 import 'package:t2p_logistic/presentation/widgets/custom_snackbar.dart';
 
+import '../../constants/view_constants.dart';
 import '../../theme/resource/custom_constants.dart';
+import '../address/map_location_controller.dart';
 
 ApiService _apiService = ApiService();
 
@@ -18,30 +30,68 @@ class OrderController extends GetxController {
   RxBool pickupLoading = false.obs;
   RxBool deliveryLoading = false.obs;
   RxBool buttonLoading = false.obs;
+  RxBool dialogLoading = false.obs;
+  RxBool phonePePaymentSuccess = false.obs;
+  RxString qrAvailable = "".obs;
+  String txnId = "";
   RxBool updateButtonLoading = false.obs;
   RxBool selectAllOrders = false.obs;
 
   UserController userController = Get.find();
+
   RxBool gharKaKhanaCheck = false.obs;
   RxList<CommonOrder> t2pPickupOrders = RxList<CommonOrder>();
   RxList<CommonOrder> t2pDeliveryOrders = RxList<CommonOrder>();
   RxList<CommonOrder> aF2APPickupOrders = RxList<CommonOrder>();
   RxList<CommonOrder> aF2APDeliveryOrders = RxList<CommonOrder>();
   RxList<String> orderIds = RxList<String>();
+  RxList<String> pickupOrderStatus = RxList<String>();
+  RxList<String> deliveryOrderStatus = RxList<String>();
   RxList<String> t2pPickupSelectedOrderIds = RxList<String>();
   RxList<String> t2pDeliverSelectedOrderIds = RxList<String>();
   RxList<String> aF2APDeliverSelectedOrderIds = RxList<String>();
   RxList<String> aF2APPickupSelectedOrderIds = RxList<String>();
 
+  Rxn<AllDeliveryStatusResponse> allDeliveryStatusResponse = Rxn<AllDeliveryStatusResponse>();
+
+  RxString pickupSelectedOrderStatus = "".obs;
+  RxString deliverySelectedOrderStatus = "".obs;
+
   T2POrderType t2pOrderType = T2POrderType.T2P;
   OrderType orderType = OrderType.pickup;
+  PaymentType paymentType = PaymentType.COD;
 
   setPickupLoading() => pickupLoading.value = !pickupLoading.value;
 
   setDeliveryLoading() => deliveryLoading.value = !deliveryLoading.value;
 
   setButtonLoading() => buttonLoading.value = !buttonLoading.value;
-  setUpdateButtonLoading() => updateButtonLoading.value = !updateButtonLoading.value;
+
+  setDialogLoading() => dialogLoading.value = !dialogLoading.value;
+
+  setUpdateButtonLoading() =>
+      updateButtonLoading.value = !updateButtonLoading.value;
+
+  @override
+  void onInit() {
+    super.onInit();
+    // if any order is already started from boy then send location simultaneously
+    /*if (userController.orderAlreadyStarted) {
+      Timer.periodic(const Duration(seconds: 3), (timer) {
+        mapLocationController.sendLocationToFirebase();
+      });
+    }*/
+  }
+
+  changePaymentType(PaymentType type) async {
+    qrAvailable.value = "";
+    paymentType = type;
+    update();
+    // if payment type is QR then we need to get the payment QR code
+    if (type == PaymentType.QR) {
+      await generateQRCode();
+    }
+  }
 
   // --------------------- Select Order Id --------------------
   bool orderSelected(String orderId) {
@@ -72,18 +122,22 @@ class OrderController extends GetxController {
 
     if (t2pOrderType == T2POrderType.T2P) {
       if (orderType == OrderType.pickup &&
-          t2pPickupOrders.length == t2pPickupSelectedOrderIds.length) {
+          t2pPickupOrders.length == t2pPickupSelectedOrderIds.length &&
+          t2pPickupOrders.isNotEmpty) {
         selected = true;
       } else if (orderType == OrderType.deliver &&
-          t2pDeliveryOrders.length == t2pDeliverSelectedOrderIds.length) {
+          t2pDeliveryOrders.length == t2pDeliverSelectedOrderIds.length &&
+          t2pDeliveryOrders.isNotEmpty) {
         selected = true;
       }
     } else {
       if (orderType == OrderType.pickup &&
-          aF2APPickupOrders.length == aF2APPickupSelectedOrderIds.length) {
+          aF2APPickupOrders.length == aF2APPickupSelectedOrderIds.length &&
+          aF2APPickupOrders.isNotEmpty) {
         selected = true;
       } else if (orderType == OrderType.deliver &&
-          aF2APDeliveryOrders.length == aF2APDeliverSelectedOrderIds.length) {
+          aF2APDeliveryOrders.length == aF2APDeliverSelectedOrderIds.length &&
+          aF2APDeliveryOrders.isNotEmpty) {
         selected = true;
       }
     }
@@ -147,14 +201,14 @@ class OrderController extends GetxController {
         t2pPickupSelectedOrderIds.clear();
         if (selectAll) {
           for (var order in t2pPickupOrders) {
-            t2pPickupSelectedOrderIds.add(order.id);
+            t2pPickupSelectedOrderIds.add(order.id!);
           }
         }
       } else {
         t2pDeliverSelectedOrderIds.clear();
         if (selectAll) {
           for (var order in t2pDeliveryOrders) {
-            selectOrder(order.id);
+            t2pDeliverSelectedOrderIds.add(order.id!);
           }
         }
       }
@@ -163,14 +217,14 @@ class OrderController extends GetxController {
         aF2APPickupSelectedOrderIds.clear();
         if (selectAll) {
           for (var order in aF2APPickupOrders) {
-            aF2APPickupSelectedOrderIds.add(order.id);
+            aF2APPickupSelectedOrderIds.add(order.id!);
           }
         }
       } else {
         aF2APDeliverSelectedOrderIds.clear();
         if (selectAll) {
           for (var order in aF2APDeliveryOrders) {
-            selectOrder(order.id);
+            selectOrder(order.id!);
           }
         }
       }
@@ -249,7 +303,25 @@ class OrderController extends GetxController {
           path = URIConstants.partnerDeliveryOrderAF2AP;
         }
       }
-    } else {}
+    }
+    // if user type is delivery boy
+    else {
+      if (t2pOrderType == T2POrderType.T2P) {
+        if (orderType == OrderType.pickup) {
+          path = URIConstants.boyPickupOrderT2P;
+        } else {
+          path = URIConstants.boyDeliveryOrderT2P;
+        }
+      }
+      // if t2p order type is af2ap(ghar ka khana)
+      else {
+        if (orderType == OrderType.pickup) {
+          path = URIConstants.boyPickupOrderAF2AP;
+        } else {
+          path = URIConstants.boyDeliveryOrderAF2AP;
+        }
+      }
+    }
 
     return path;
   }
@@ -266,14 +338,7 @@ class OrderController extends GetxController {
       //set path according to user and order type
       var path = getOrderPath(orderType: orderType);
 
-      //dummy changes
-      // var data = {"id": userController.userId};
       var userId = userController.userId;
-      if (orderType == OrderType.pickup) {
-        userId = "65bdd1f3c919f5489792bdea";
-      } else {
-        userId = "626e856c90a1f86b6a92d4f6";
-      }
       var data = {"id": userId};
 
       var response = await _apiService.post(path, data);
@@ -284,7 +349,13 @@ class OrderController extends GetxController {
 
         T2pOrderResponse t2pOrderResponse =
             T2pOrderResponse.fromJson(response.data);
+
         if (t2pOrderResponse.order!.isNotEmpty) {
+          // for partner we need to get status so partner can change order status
+          if (userController.userType == UserType.delivery_partner.name) {
+            await allDeliveryStatus();
+          }
+
           for (var order in t2pOrderResponse.order!) {
             var orderAfterConvert = order.toCommonOrder();
             if (orderAfterConvert != null) {
@@ -312,18 +383,23 @@ class OrderController extends GetxController {
   }
 
   clearList(T2POrderType t2pOrderType, OrderType orderType) {
+   // orderToBeAssign.clear();
     if (t2pOrderType == T2POrderType.T2P) {
       if (orderType == OrderType.pickup) {
         t2pPickupOrders.clear();
+        pickupOrderStatus.clear();
       } else {
+        deliveryOrderStatus.clear();
         t2pDeliveryOrders.clear();
       }
     }
     // AF2AP
     else {
       if (orderType == OrderType.pickup) {
+        pickupOrderStatus.clear();
         aF2APPickupOrders.clear();
       } else {
+        deliveryOrderStatus.clear();
         aF2APDeliveryOrders.clear();
       }
     }
@@ -340,15 +416,25 @@ class OrderController extends GetxController {
     try {
       var path =
           getOrderPath(t2pOrderType: T2POrderType.AF2AP, orderType: orderType);
-      var userId = userController.userId;
-      var data = {
-        "id": userId /*, "limit": 50, "page": 1*/
-      };
 
-      var response = await _apiService.post(path, {}, hasQueryParam: true, queryParam: data);
+      // parameter name change according to user
+      var userId = userController.userId;
+      var data = userController.userType == UserType.delivery_partner.name &&
+              orderType == OrderType.deliver
+          ? {"delivery_partner": userId}
+          : userController.userType == UserType.delivery_partner.name &&
+                  orderType == OrderType.pickup
+              ? {"pickup_partner": userId}
+              : userController.userType == UserType.delivery_boy.name &&
+                      orderType == OrderType.deliver
+                  ? {"delivery_boy": userId}
+                  : {"pickup_boy": userId};
+
+      var response = await _apiService.post(path, {},
+          hasQueryParam: true, queryParam: data);
       if (response != null) {
-        Af2apOrderResponse af2apOrderResponse =
-            Af2apOrderResponse.fromJson(response.data);
+        aF2APOrderResponse.Af2apOrderResponse af2apOrderResponse =
+            aF2APOrderResponse.Af2apOrderResponse.fromJson(response.data);
 
         printValue(
             "Ghar ka khana total count is ${af2apOrderResponse.totalCount}");
@@ -383,10 +469,96 @@ class OrderController extends GetxController {
     }
   }
 
+  Future allDeliveryStatus() async {
+    try {
+      var response = await _apiService.get(URIConstants.allDeliveryStatus);
+
+      if (response != null) {
+        allDeliveryStatusResponse.value =
+            AllDeliveryStatusResponse.fromJson(response.data);
+        if (allDeliveryStatusResponse.value?.result != null) {
+          var result = allDeliveryStatusResponse.value!.result!;
+          if (orderType == OrderType.pickup) {
+            pickupOrderStatus.clear();
+            pickupOrderStatus.add(result.pickupBoyAssigned!);
+            pickupOrderStatus.add(result.pickupBoyStarted!);
+            pickupOrderStatus.add(result.deliveredToCargoPartner!);
+            pickupOrderStatus.add(result.cargoDeliveryStarted!);
+          } else {
+            deliveryOrderStatus.clear();
+            deliveryOrderStatus.add(result.receivedDestinationAirport!);
+            deliveryOrderStatus.add(result.deliveredToDeliveryPartner!);
+            deliveryOrderStatus.add(result.deliveryBoyAssigned!);
+          }
+        }
+      }
+    } finally {}
+  }
+
+  getExactStatusKey(String status){
+    for(var entry in allDeliveryStatusResponse.value!.result!.toJson().entries){
+     if(entry.value == status){
+       partnerStatusChange(entry.key);
+     }
+    }
+  }
+
+  Future partnerStatusChange(String status) async {
+    setButtonLoading();
+    try {
+      var data = {
+        "by": getUserType(),
+        "id": getOrderIds(),
+        "status": getStatus(status)
+      };
+      var response =
+          await _apiService.post(URIConstants.partnerStatusChange, data);
+
+      CustomSnackBar.showSnackBar(CustomSnackBar.error,
+          response?.data[StringConstants.message], CustomSnackBar.error);
+      if (response != null &&
+          response.data[StringConstants.status] == Status.success.name) {
+        clearList(t2pOrderType, orderType);
+        getOrders();
+      }
+    } finally {
+      setButtonLoading();
+    }
+  }
+
   // ------------------------------- Assign Order -------------------------------
+
+  Future printOrder(PrintInvoiceType invoiceType)async{
+    setButtonLoading();
+    try{
+      var url = "${URIConstants.pdfBaseURI}${invoiceType.name}";
+      var userId = userController.userId;
+      if(userController.userType == UserType.delivery_partner.name){
+            url += "?pickup_partner=$userId";
+        if(t2pOrderType == T2POrderType.T2P){
+          if(orderType == OrderType.pickup){
+          }
+        }
+      }else{
+            url += "?pickup_boy=$userId";
+        if(t2pOrderType == T2POrderType.T2P){
+          if(orderType == OrderType.pickup){
+          }
+        }
+      }
+
+      await openUrl(url);
+    }finally{
+      setButtonLoading();
+    }
+  }
+
+
+  // ------------------------------- Assign Order -------------------------------
+
   RxList<String> orderToBeAssign = RxList<String>();
 
-  bool partnerCanAssign() {
+  bool canAssignOrStart() {
     //orderToBeAssign.clear();
     if (t2pOrderType == T2POrderType.T2P) {
       if (orderType == OrderType.pickup) {
@@ -413,16 +585,31 @@ class OrderController extends GetxController {
     return orderToBeAssign.isNotEmpty;
   }
 
+  String getOrderIds() {
+    return orderToBeAssign.length > 1
+        ? orderToBeAssign.join(",")
+        : orderToBeAssign.first;
+  }
+
+  String getStatus(String status) {
+    List<String> statusList = List.filled(orderToBeAssign.length, status);
+    return statusList.length > 1
+        ? statusList.join(",")
+        : statusList.first;
+  }
+
+  String getUserType() {
+    List<String> userTypeList = List.filled(orderToBeAssign.length, userController.userType);
+    return userTypeList.length > 1
+        ? userTypeList.join(",")
+        : userTypeList.first;
+  }
+
   Future assignOrder(String boy) async {
     setButtonLoading();
     try {
-      // list to string
-      var orderIds = orderToBeAssign.length > 1
-          ? orderToBeAssign.join(",")
-          : orderToBeAssign.first;
-
       // parameters
-      Map<String, String> data = {"id": orderIds};
+      Map<String, String> data = {"id": getOrderIds()};
       var path = "";
       if (t2pOrderType == T2POrderType.T2P) {
         if (orderType == OrderType.pickup) {
@@ -481,13 +668,19 @@ class OrderController extends GetxController {
     }
   }
 
-  Future updatePickupOrderWeight(String orderId, String weight) async {
+  // --------------------------- Update Order Info ------------------------
+
+  Future updateT2POrderWeight(String orderId, String weight) async {
     try {
       setUpdateButtonLoading();
       update();
       var data = {"id": orderId, "weight": weight};
 
-      var response = await _apiService.post(URIConstants.updatePickupOrderWeight, data);
+      var response = await _apiService.post(
+          userController.userType == UserType.delivery_partner.name
+              ? URIConstants.updatePickupOrderWeight
+              : URIConstants.updateDeliveryOrderWeight,
+          data);
 
       CustomSnackBar.showSnackBar(CustomSnackBar.error,
           response?.data[StringConstants.message], CustomSnackBar.error);
@@ -502,4 +695,516 @@ class OrderController extends GetxController {
       update();
     }
   }
+
+  Future updateAF2APOrderWeight(
+    String updatedProduct,
+    String orderId,
+  ) async {
+    try {
+      setDialogLoading();
+      update();
+
+      //var data = dio.FormData.fromMap({"orderId": orderId, "products": productList});
+
+      var response =
+          await _apiService.post(URIConstants.updateAF2APOrder, updatedProduct);
+
+      CustomSnackBar.showSnackBar(CustomSnackBar.error,
+          response?.data[StringConstants.message], CustomSnackBar.error);
+
+      if (response != null &&
+          response.data[StringConstants.status] == Status.success.name) {
+        Get.back();
+      }
+      update();
+    } finally {
+      setDialogLoading();
+      update();
+    }
+  }
+
+  // ------------------------------ Boy Orders -------------------------------
+
+  // before start order we need to check location permission and gps
+  // so we continuously
+  MapLocationController mapLocationController =
+      Get.put(MapLocationController());
+
+  Future checkAndAssign() async {
+    if (canAssignOrStart()) {
+      // to start t2p order
+      if (t2pOrderType == T2POrderType.T2P) {
+        if (orderType == OrderType.pickup) {
+          await startOrder();
+        }
+        // in case of delivery we need location of delivery boy
+        else {
+          if (await mapLocationController.locationAndGpsEnabled()) {
+            await startOrder();
+          } else {
+            CustomSnackBar.showSnackBar(
+                CustomSnackBar.error,
+                "Make sure location permission is granted and GPS is enabled.",
+                CustomSnackBar.error);
+          }
+        }
+      }
+
+      // to start af2ap orders
+      else {
+        await startOrderAF2AP();
+        /*if (orderType == OrderType.deliver) {
+        }*/
+      }
+    } else {
+      CustomSnackBar.showSnackBar(
+          CustomSnackBar.error, "Select order.", CustomSnackBar.error);
+    }
+  }
+
+  TextEditingController otpController = TextEditingController();
+
+  Future startOrder() async {
+    setButtonLoading();
+    try {
+      var data = {"id": orderToBeAssign[0].toString()};
+      var path = URIConstants.pickupOrderStart;
+
+      // need to send user id of boy in t2p delivery orders
+      if (orderType == OrderType.deliver) {
+        data["user_id"] = userController.userId;
+        path = URIConstants.deliveryOrderStart;
+      }
+
+      var response = await _apiService.post(path, data);
+      CustomSnackBar.showSnackBar(CustomSnackBar.error,
+          response?.data[StringConstants.message], CustomSnackBar.error);
+
+      if (response != null &&
+          response.data[StringConstants.status] == Status.success.name) {
+        // check if any t2p delivery order is already started or not,
+        // if not then start this order and save it
+        if (orderType == OrderType.deliver) {
+          if (!userController.orderAlreadyStarted) {
+            var order = getExactOrderByOrderId(orderToBeAssign[0]);
+
+            // get boy current location after he start his t2p delivery order
+            var currentPosition =
+                await mapLocationController.getCurrentLocation();
+            userController.saveStartedOrderInfo(
+                order, currentPosition, t2pOrderType, orderType);
+
+            await sendOTPToCustomer(order.id!);
+          }
+        }
+      }
+    } finally {
+      setButtonLoading();
+    }
+  }
+
+  Future startOrderAF2AP() async {
+    setButtonLoading();
+    try {
+      var data = {"id": orderToBeAssign[0].toString()};
+      var path = URIConstants.pickupOrderStartAF2AP;
+
+      if (orderType == OrderType.deliver) {
+        path = URIConstants.deliveryOrderStartAF2AP;
+      }
+
+      var response = await _apiService.post(path, data);
+      CustomSnackBar.showSnackBar(CustomSnackBar.error,
+          response?.data[StringConstants.message], CustomSnackBar.error);
+
+      if (response != null &&
+          response.data[StringConstants.status] == Status.success.name) {
+        var order = getExactOrderByOrderId(orderToBeAssign[0]);
+        if (orderType == OrderType.pickup) {
+          // if (!userController.orderAlreadyStarted) {
+          // get boy current location after he start his order
+          var currentPosition =
+              await mapLocationController.getCurrentLocation();
+          userController.saveStartedOrderInfo(
+              order, currentPosition, t2pOrderType, orderType);
+          // }
+        }
+        await sendOTPToCustomerAF2AP();
+      }
+    } finally {
+      setButtonLoading();
+    }
+  }
+
+  // --------------------------- order delivered ----------------------------
+
+  Future orderDelivered() async {
+    setButtonLoading();
+
+    try {
+      var path = URIConstants.deliveredToCargo;
+      var data = {
+        "id": orderType == OrderType.pickup
+            ? orderToBeAssign[0].toString()
+            : userController.orderId!,
+        "otp": otpController.text.toString(),
+        "gateway": getPaymentType(),
+      };
+
+      if (orderType == OrderType.deliver) {
+        // after order delivered we need to send total distance that delivery boy
+        var distance = await mapLocationController.getDistanceByRoad(
+            userController.pickupLat ?? 0.0,
+            userController.pickupLng ?? 0.0,
+            userController.deliveryLat ?? 0.0,
+            userController.deliveryLng ?? 0.0);
+        data["distance"] = distance;
+        path = URIConstants.deliveredToCustomer;
+      }
+
+      var response = await _apiService.post(path, data);
+
+      CustomSnackBar.showSnackBar(CustomSnackBar.error,
+          response?.data[StringConstants.message], CustomSnackBar.error);
+
+      if (response != null &&
+          response.data[StringConstants.status] == Status.success.name) {
+        // update delivery boy distance of delivery order only
+        if (orderType == OrderType.deliver) {
+          await updateDeliveryDistance();
+          userController.clearOrderInfo();
+        }
+        clearList(t2pOrderType, orderType);
+        getOrders();
+      }
+    } finally {
+      setButtonLoading();
+    }
+  }
+
+  Future orderDeliveredAF2AP() async {
+    setButtonLoading();
+
+    try {
+      var path = URIConstants.deliveredToCustomerAF2AP;
+      var data = {
+        "id": orderType == OrderType.deliver
+            ? orderToBeAssign[0].toString()
+            : userController.orderId!,
+        /* "otp": otpController.text.toString(),
+        "gateway": getPaymentType(),*/
+      };
+
+      var response = await _apiService.post(path, data);
+
+      CustomSnackBar.showSnackBar(CustomSnackBar.error,
+          response?.data[StringConstants.message], CustomSnackBar.error);
+
+      if (response != null &&
+          response.data[StringConstants.status] == Status.success.name) {
+        if (orderType == OrderType.pickup) {
+          userController.clearOrderInfo();
+        }
+        clearList(t2pOrderType, orderType);
+        getOrders();
+      }
+    } finally {
+      setButtonLoading();
+    }
+  }
+
+  Future updateDeliveryDistance() async {
+    try {
+      var distance = await mapLocationController.getDistanceByRoad(
+          userController.pickupLat ?? 0.0,
+          userController.pickupLng ?? 0.0,
+          userController.deliveryLat ?? 0.0,
+          userController.deliveryLng ?? 0.0);
+      var data = {
+        "id": orderToBeAssign[0].toString(),
+        "delivery_distance": distance
+      };
+
+      var response =
+          await _apiService.post(URIConstants.updateDeliveryDistance, data);
+    } finally {}
+  }
+
+  // ----------------------- Get Info --------------------------
+
+  String getPaymentType() {
+    var userPaymentInfo = "";
+    if (t2pOrderType == T2POrderType.T2P) {
+      if (orderType == OrderType.pickup) {
+        userPaymentInfo =
+            getExactOrderByOrderId(orderToBeAssign[0]).paymentMode ?? "";
+      } else {
+        // when user pay cash on delivery
+        if (userController.paymentMode == PaymentType.COD.name) {
+          if (paymentType == PaymentType.COD) {
+            userPaymentInfo = "cod";
+          } else if (paymentType == PaymentType.Link) {
+            userPaymentInfo = "online";
+          } else {
+            userPaymentInfo = "PhonePe";
+          }
+        } else {
+          userPaymentInfo = userController.paymentMode ?? "";
+        }
+      }
+    }
+    return userPaymentInfo;
+  }
+
+  CommonOrder getExactOrderByOrderId(String orderId) {
+    CommonOrder? order;
+    if (t2pOrderType == T2POrderType.T2P) {
+      //t2p pickup orders
+      if (orderType == OrderType.pickup) {
+        for (var order in t2pPickupOrders) {
+          if (order.id == orderId) {
+            return order;
+          } else {
+            return t2pPickupOrders[0];
+          }
+        }
+      }
+
+      //t2p delivery orders
+      else {
+        for (var order in t2pDeliveryOrders) {
+          if (order.id == orderId) {
+            //paymentGateway = order.paymentMode;
+            return order;
+          } else {
+            return t2pDeliveryOrders[0];
+          }
+        }
+      }
+    } else {
+      // af2ap pickup order
+      if (orderType == OrderType.pickup) {
+        for (var order in aF2APPickupOrders) {
+          if (order.id == orderId) {
+            //paymentGateway = order.paymentMode;
+            return order;
+          } else {
+            return aF2APPickupOrders[0];
+          }
+        }
+      }
+      //af2ap delivery orders
+      else {
+        for (var order in aF2APDeliveryOrders) {
+          if (order.id == orderId) {
+            //paymentGateway = order.paymentMode;
+            return order;
+          } else {
+            return aF2APDeliveryOrders[0];
+          }
+        }
+      }
+    }
+    return order!;
+  }
+
+  // ------------------- OTP Send ------------------------------------------
+  Future sendOTPToCargo() async {
+    setDialogLoading();
+    try {
+      var data = {
+        "id": orderToBeAssign[0].toString(),
+      };
+
+      var response = await _apiService.post(URIConstants.sendOTPToCargo, data);
+      CustomSnackBar.showSnackBar(CustomSnackBar.error,
+          response?.data[StringConstants.message], CustomSnackBar.error);
+    } finally {
+      setDialogLoading();
+    }
+  }
+
+  Future sendOTPToCustomer(String mobile) async {
+    setDialogLoading();
+    try {
+      var data = {
+        "id": mobile,
+      };
+
+      var response =
+          await _apiService.post(URIConstants.sendOTPToCustomer, data);
+      CustomSnackBar.showSnackBar(CustomSnackBar.error,
+          response?.data[StringConstants.message], CustomSnackBar.error);
+    } finally {
+      setDialogLoading();
+    }
+  }
+
+  Future sendOTPToCustomerAF2AP() async {
+    setDialogLoading();
+    try {
+      var orderId = "";
+      if (orderType == OrderType.deliver) {
+        orderId = orderToBeAssign[0];
+      } else {
+        orderId = userController.orderId!;
+      }
+      var data = {
+        "id": orderId,
+      };
+
+      var response =
+          await _apiService.post(URIConstants.sendOTPToCustomerAF2AP, data);
+      CustomSnackBar.showSnackBar(CustomSnackBar.error,
+          response?.data[StringConstants.message], CustomSnackBar.error);
+    } finally {
+      setDialogLoading();
+    }
+  }
+
+  // ---------------------- generate qr code --------------------------------
+  generateQRCode() async {
+    setDialogLoading();
+    String rawdata = getBase64(payloadData());
+    String xVerifyHeader = getHeaderXverify(rawdata);
+    await getQR(xVerifyHeader, rawdata);
+    update();
+  }
+
+  String getBase64(String payload) {
+    return base64.encode(utf8.encode(payload));
+  }
+
+  String getHeaderXverify(String dataString64) {
+    String xVerifyContent =
+        '$dataString64/v3/qr/init${StringConstants.saltkey}';
+    Digest digest = sha256.convert(utf8.encode(xVerifyContent));
+    String checksum = '$digest###${StringConstants.saltIndex}';
+    return checksum;
+  }
+
+  String getHeaderXverifyForStatus() {
+    // todo : getting error in header and the error is : Invalid x-verify header
+    String xVerifyContent =
+        '/v3/transaction/${StringConstants.merchantId}/$txnId/status${StringConstants.saltkey}';
+
+    Digest digest = sha256.convert(utf8.encode(xVerifyContent));
+
+    StringBuffer hexString = StringBuffer();
+    for (int i = 0; i < digest.bytes.length; i++) {
+      String hex = digest.bytes[i].toRadixString(16);
+      if (hex.length == 1) hexString.write('0');
+      hexString.write(hex);
+    }
+
+    String checksum = '${hexString.toString()}###${StringConstants.saltIndex}';
+    return checksum;
+  }
+
+  String payloadData() {
+    var price = userController.orderPrice;
+    double priceFloat = double.parse(price!);
+    int priceLong = (priceFloat.toInt()) * 100;
+
+    // Creating Transaction Id
+    Random rand = Random();
+    String randomString =
+        "${rand.nextInt(1)}${DateTime.now().millisecondsSinceEpoch ~/ 1000}";
+    txnId = "TXNT2P${randomString.substring(1, 10)}";
+
+    Map<String, dynamic> params = {
+      'merchantId': StringConstants.merchantId,
+      'transactionId': txnId,
+      'merchantOrderId': 'ORD${randomString.substring(1, 10)}',
+      'amount': priceLong,
+      'expiresIn': 360,
+      'storeId': 'storeIdt2p',
+      'terminalId': 'terminalidt2p',
+    };
+
+    String payload = jsonEncode(params);
+    return payload;
+  }
+
+  Future<void> getQR(String xVerifyHeader, String rawdata) async {
+    String baseUrl = "${URIConstants.phonePeBaseURI}${URIConstants.getQr}";
+
+    try {
+      var response = await _apiService.post(baseUrl, {"request": rawdata},
+          additionalHeaders: {'X-VERIFY': xVerifyHeader}, customBaseURI: true);
+
+      if (response?.statusCode == 200) {
+        var qrResponse = response?.data;
+        qrAvailable.value = qrResponse['data']['qrString'];
+        printValue("Qr response : $qrResponse");
+      } else {
+        // Handle error cases
+        printValue('Server Error: ${response?.statusCode}');
+      }
+    } catch (e) {
+      printValue('Exception: $e');
+    } finally {
+      setDialogLoading();
+    }
+  }
+
+  Future checkPaymentStatus() async {
+    setDialogLoading();
+    try {
+      var path =
+          "${URIConstants.phonePeBaseURI}v3/transaction/${StringConstants.merchantId}/$txnId/status";
+      var xVerify = getHeaderXverifyForStatus();
+      var headers = {"X-VERIFY": xVerify};
+      var response = await _apiService.get(path,
+          additionalHeaders: headers, customBaseURI: true);
+
+      CustomSnackBar.showSnackBar(CustomSnackBar.error,
+          response?.data?['message'], CustomSnackBar.error);
+
+      if (response != null &&
+          response.data!['code'] == PhonePePaymentStatus.PAYMENT_SUCCESS.name) {
+        Get.back();
+        phonePePaymentSuccess.value = true;
+      }
+    } finally {
+      setDialogLoading();
+    }
+  }
+
+  Future cancelPayment() async {
+    setDialogLoading();
+    try {
+      var path =
+          "${URIConstants.phonePeBaseURI}v3/charge/${StringConstants.merchantId}/$txnId/cancel";
+      var xVerify = getHeaderXverifyForCancel();
+      var headers = {"Content-Type": "application/json", "X-VERIFY": xVerify};
+
+      var response = await _apiService.post(path, {},
+          additionalHeaders: headers, customBaseURI: true);
+
+      CustomSnackBar.showSnackBar(CustomSnackBar.error,
+          response?.data?['message'], CustomSnackBar.error);
+
+      if (response != null &&
+          response.data!['code'] == Status.success.name.toUpperCase()) {
+        // close cod dialog
+        Get.back();
+      }
+    } finally {
+      setDialogLoading();
+    }
+  }
+
+  String getHeaderXverifyForCancel() {
+    String xVerifyContent =
+        '/v3/charge/${StringConstants.merchantId}/$txnId/cancel${StringConstants.saltkey}';
+
+    Digest digest =
+        sha256.convert(Uint8List.fromList(utf8.encode(xVerifyContent)));
+
+    String checksum = '${digest.toString()}###${StringConstants.saltIndex}';
+    return checksum;
+  }
+
+// ----------------------- Ghar ka khana boy-----------------------
 }

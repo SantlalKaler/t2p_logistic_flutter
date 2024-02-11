@@ -8,8 +8,10 @@ import 'package:t2p_logistic/presentation/widgets/app_scaffold.dart';
 
 import '../../../domain/enums/add_edit_delivery_boy.dart';
 import '../../widgets/app_bar.dart';
+import '../../widgets/circular_loadings.dart';
 import '../../widgets/custom_snackbar.dart';
 import 'address_controller.dart';
+import 'location_from_map.dart';
 import 'map_location_controller.dart';
 
 class AddEditAddress extends StatefulWidget {
@@ -65,10 +67,10 @@ class AddEditAddressState extends State<AddEditAddress> {
 
       _stateController.text = widget.address!.state!.name ?? "";
 
-      // addressController.getAllCityByStatess(widget.address!.state!.id);
+       addressController.getAllCityByStatess(widget.address!.state!.id);
       _cityController.text = widget.address!.city!.name ?? "";
 
-      // addressController.getZipCodeByCity(widget.address!.city!.id);
+       addressController.getZipCodeByCity(widget.address!.city!.id);
       _postalCodeController.text = widget.address!.pincode ?? '';
 
       addressController.lat.value =
@@ -87,11 +89,10 @@ class AddEditAddressState extends State<AddEditAddress> {
     addressController.isLocationOnMapSelected.value = false;
     MapLocationController mapLocationController = Get.find();
 
-    return AppScaffold(
+    return Obx(() => AppScaffold(
         appBar: appBar(
           title: "Add Address",
-        ),
-        body: SingleChildScrollView(
+        ), body: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           child: Padding(
             padding: EdgeInsets.all(DimensConstants.screePadding),
@@ -189,7 +190,7 @@ class AddEditAddressState extends State<AddEditAddress> {
                         controller: _countryController,
                         hintText: 'Select Country',
                         inputDecorationTheme:
-                            Theme.of(context).inputDecorationTheme,
+                        Theme.of(context).inputDecorationTheme,
                         dropdownMenuEntries: const [
                           DropdownMenuEntry(
                             value: 'India',
@@ -212,7 +213,7 @@ class AddEditAddressState extends State<AddEditAddress> {
                         addressController.getAllCityByStatess(stateId);
                       },
                       inputDecorationTheme:
-                          Theme.of(context).inputDecorationTheme,
+                      Theme.of(context).inputDecorationTheme,
                       dropdownMenuEntries: [
                         for (var item in addressController.stateList)
                           DropdownMenuEntry(value: item.id, label: item.name!)
@@ -233,7 +234,7 @@ class AddEditAddressState extends State<AddEditAddress> {
                             .getCordinatesFromAddress(_cityController.text);
                       },
                       inputDecorationTheme:
-                          Theme.of(context).inputDecorationTheme,
+                      Theme.of(context).inputDecorationTheme,
                       dropdownMenuEntries: [
                         for (var item in addressController.cityList)
                           DropdownMenuEntry(value: item.id, label: item.name!)
@@ -249,7 +250,7 @@ class AddEditAddressState extends State<AddEditAddress> {
                           : 'Select postal code',
                       onSelected: (postalCodeId) {},
                       inputDecorationTheme:
-                          Theme.of(context).inputDecorationTheme,
+                      Theme.of(context).inputDecorationTheme,
                       dropdownMenuEntries: [
                         for (var item in addressController.zipList)
                           DropdownMenuEntry(value: item.id, label: item.name!)
@@ -257,11 +258,11 @@ class AddEditAddressState extends State<AddEditAddress> {
                     ),
                     const SizedBox(height: 16),
                     Obx(
-                      () => Wrap(
+                          () => Wrap(
                         spacing: 5.0,
                         children: List<Widget>.generate(
                           addressController.addressTypes.length,
-                          (int index) {
+                              (int index) {
                             bool isSelected =
                                 addressController.selectedAddressType.value ==
                                     addressController.addressTypes[index];
@@ -276,7 +277,7 @@ class AddEditAddressState extends State<AddEditAddress> {
                               selected: isSelected,
                               onSelected: (bool selected) {
                                 addressController.selectedAddressType.value =
-                                    addressController.addressTypes[index];
+                                addressController.addressTypes[index];
                               },
                             );
                           },
@@ -286,15 +287,14 @@ class AddEditAddressState extends State<AddEditAddress> {
                     const SizedBox(height: 20),
                     Center(
                       child: Obx(
-                        () => ElevatedButton(
-                            onPressed: /*addressController
+                            () => ElevatedButton(
+                            onPressed: addressController
                                   .isAddingEdittingAddress
                                   .isTrue ||
                                   mapLocationController
                                       .isLoading.isTrue
                                   ? null
-                                  : */
-                                () {
+                                  : () {
                               if (_formKey.currentState!.validate()) {
                                 if (addressController
                                     .isLocationOnMapSelected.isTrue) {
@@ -304,12 +304,11 @@ class AddEditAddressState extends State<AddEditAddress> {
                                 }
                               }
                             },
-                            child: /* addressController
+                            child:  addressController
                                   .isAddingEdittingAddress
                                   .isTrue
                                   ? circularloadingWhiteSmall()
-                                  : */
-                                Text(
+                                  : Text(
                               addressController.isLocationOnMapSelected.isTrue
                                   ? 'Save address'
                                   : 'Select location',
@@ -320,15 +319,15 @@ class AddEditAddressState extends State<AddEditAddress> {
                   ]),
             ),
           ),
-        ));
+        )));
   }
 
   void _selectLocation() async {
     AddressController addressController = Get.find();
-    //bool result = await Get.to(const LocationFromMap());
-    /*if (result) {
+    bool result = await Get.to(const LocationFromMap());
+    if (result) {
       addressController.isLocationOnMapSelected.value = true;
-    }*/
+    }
   }
 
   _saveAddress() async {
@@ -340,12 +339,12 @@ class AddEditAddressState extends State<AddEditAddress> {
       CustomSnackBar.showSnackBar(
           CustomSnackBar.error, 'All fields required', CustomSnackBar.error);
     } else {
-      /*String cityId = addressController.allCityByStateList
-          .firstWhere((p0) => p0.name == _cityController.text)
-          .id;
-      String stateId = addressController.allStatesList
-          .firstWhere((p0) => p0.name == _stateController.text)
-          .id;
+      String cityId = addressController.cityList
+          .firstWhere((p0) => p0.name! == _cityController.text)
+          .id!;
+      String stateId = addressController.stateList
+          .firstWhere((p0) => p0.name! == _stateController.text)
+          .id!;
       if (widget.isEdit == false) {
         await addressController.addAddress(
             title: addressController.selectedAddressType.value.name,
@@ -382,7 +381,7 @@ class AddEditAddressState extends State<AddEditAddress> {
             lng: addressController.lng.value.toString(),
             landmark: _landmarkController.text,
             redirectToHome: widget.redirectToHome);
-      }*/
+      }
     }
   }
 }

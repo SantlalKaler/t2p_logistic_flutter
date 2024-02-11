@@ -1,8 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:t2p_logistic/domain/enums/user_type.dart';
 import 'package:t2p_logistic/domain/mapper/order_mapper.dart';
+import 'package:t2p_logistic/presentation/constants/extension.dart';
 import 'package:t2p_logistic/presentation/controllers/user_controller.dart';
 import 'package:t2p_logistic/presentation/dialogs/default_dialog.dart';
 import 'package:t2p_logistic/presentation/screens/order_list/order_bottom_sheet.dart';
@@ -10,8 +12,11 @@ import 'package:t2p_logistic/presentation/theme/resource/color_constant.dart';
 import 'package:t2p_logistic/presentation/widgets/app_container.dart';
 import 'package:t2p_logistic/presentation/widgets/app_empty_view.dart';
 import 'package:t2p_logistic/presentation/widgets/circular_loadings.dart';
+import 'package:t2p_logistic/presentation/widgets/custom_snackbar.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../domain/Model/single_filter_item.dart';
+import '../../dialogs/af2ap_product_dialog.dart';
 import '../../theme/resource/dimens.dart';
 import 'order_controller.dart';
 
@@ -83,7 +88,12 @@ class _OrderListState extends State<OrderList>
                         },
                         icon: const Icon(Icons.arrow_back_ios)),
                     bottom: PreferredSize(
-                      preferredSize: const Size(double.infinity, 160),
+                      preferredSize: Size(
+                          double.infinity,
+                          userController.userType ==
+                                  UserType.delivery_partner.name
+                              ? 160
+                              : 100),
                       child: Column(
                         children: [
                           TabBar(
@@ -192,19 +202,14 @@ class _OrderListState extends State<OrderList>
           title: controller.t2pOrderType.name,
           id: FilterItemId.orderType,
           icon: Icons.shop),
-      /* FilterItem(
-          title: "Date Range",
-          id: FilterItemId.dateRange,
-          icon: Icons.calendar_month),
-      FilterItem(
-          title: "Pickup Boy", id: FilterItemId.pickupBoy, icon: Icons.person),
-      FilterItem(
-          title: "City", id: FilterItemId.city, icon: Icons.location_city),
-      FilterItem(
-          title: "Status",
-          id: FilterItemId.status,
-          icon: Icons.signal_wifi_statusbar_4_bar),*/
+      FilterItem(title: "Print", id: FilterItemId.print, icon: Icons.shop),
     ];
+
+    // add item according to user
+    if (userController.userType == UserType.delivery_partner.name) {
+      chipList.add(FilterItem(
+          title: "Change Status", id: FilterItemId.status, icon: Icons.shop));
+    }
 
     return Container(
       width: double.infinity,
@@ -222,45 +227,28 @@ class _OrderListState extends State<OrderList>
                   color: Colors.red,
                 ),
                 onDeleted: () {
-                  showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: false,
-                    builder: (context) {
-                      return SizedBox(
-                        height: 120,
-                        child: Column(
-                          children: [
-                            RadioListTile(
-                                value: T2POrderType.T2P.name,
-                                title: Text(
-                                  T2POrderType.T2P.name,
-                                ),
-                                groupValue: controller.t2pOrderType.name,
-                                onChanged: (v) {
-                                  if (v != null) {
-                                    controller
-                                        .changeT2POrderType(T2POrderType.T2P);
-                                  }
-                                  Get.back();
-                                }),
-                            RadioListTile(
-                                value: T2POrderType.AF2AP.name,
-                                title: Text(
-                                  T2POrderType.AF2AP.name,
-                                ),
-                                groupValue: controller.t2pOrderType.name,
-                                onChanged: (v) {
-                                  if (v != null) {
-                                    controller
-                                        .changeT2POrderType(T2POrderType.AF2AP);
-                                  }
-                                  Get.back();
-                                })
-                          ],
-                        ),
-                      );
-                    },
-                  );
+                  switch (item.id) {
+                    case FilterItemId.orderType:
+                      showT2POrderTypes();
+                      break;
+                    case FilterItemId.dateRange:
+                    // TODO: Handle this case.
+                    case FilterItemId.pickupBoy:
+                    // TODO: Handle this case.
+                    case FilterItemId.print:
+                      showPrintView();
+                      break;
+                    case FilterItemId.city:
+                    // TODO: Handle this case.
+                    case FilterItemId.status:
+                      if (controller.canAssignOrStart()) {
+                        showStatus();
+                      } else {
+                        CustomSnackBar.showSnackBar(CustomSnackBar.error,
+                            "Select Order", CustomSnackBar.error);
+                      }
+                      break;
+                  }
                 },
                 //avatar: Icon(item.icon),
                 label: Text(item.title));
@@ -271,6 +259,114 @@ class _OrderListState extends State<OrderList>
             );
           },
           itemCount: chipList.length),
+    );
+  }
+
+  showT2POrderTypes() {
+    return showModalBottomSheet(
+      context: context,
+      isScrollControlled: false,
+      builder: (context) {
+        return SizedBox(
+          height: 120,
+          child: Column(
+            children: [
+              RadioListTile(
+                  value: T2POrderType.T2P.name,
+                  title: Text(
+                    T2POrderType.T2P.name,
+                  ),
+                  groupValue: controller.t2pOrderType.name,
+                  onChanged: (v) {
+                    if (v != null) {
+                      controller.changeT2POrderType(T2POrderType.T2P);
+                    }
+                    Get.back();
+                  }),
+              RadioListTile(
+                  value: T2POrderType.AF2AP.name,
+                  title: Text(
+                    T2POrderType.AF2AP.name,
+                  ),
+                  groupValue: controller.t2pOrderType.name,
+                  onChanged: (v) {
+                    if (v != null) {
+                      controller.changeT2POrderType(T2POrderType.AF2AP);
+                    }
+                    Get.back();
+                  })
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  showStatus() {
+    return showModalBottomSheet(
+      context: context,
+      isScrollControlled: false,
+      builder: (context) {
+        var items = controller.orderType == OrderType.pickup
+            ? controller.pickupOrderStatus
+            : controller.deliveryOrderStatus;
+        return SizedBox(
+            //  height: 120,
+            child: ListView.builder(
+          itemCount: items.length,
+          itemBuilder: (context, index) {
+            var item = items[index];
+            return ListTile(
+              title: Text(item),
+              onTap: () {
+                controller.getExactStatusKey(item);
+                Get.back();
+              },
+            );
+          },
+        ));
+      },
+    );
+  }
+
+  showPrintView() {
+    return showModalBottomSheet(
+      context: context,
+      isScrollControlled: false,
+      builder: (context) {
+        var items = [
+          "Print Today Order",
+          "Print Today Product",
+          "Print Tomorrow Order",
+          "Print Tomorrow Product",
+        ];
+        return SizedBox(
+            height: 240,
+            child: ListView.builder(
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                var item = items[index];
+                return ListTile(
+                  title: Text(item),
+                  onTap: () {
+                    var orderInvoiceFile = index == 0
+                        ? PrintInvoiceType.partner_today_order_invoice
+                        : index == 1
+                            ? PrintInvoiceType
+                                .partner_today_order_by_product_invoice
+                            : index == 2
+                                ? PrintInvoiceType
+                                    .partner_tomorrow_order_invoice
+                                : PrintInvoiceType
+                                    .partner_tomorrow_order_by_product_invoice;
+
+                    controller.printOrder(orderInvoiceFile);
+                    Get.back();
+                  },
+                );
+              },
+            ));
+      },
     );
   }
 
@@ -292,7 +388,7 @@ class _OrderListState extends State<OrderList>
               decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(100), color: Colors.red),
               child: Text(
-                order.paymentMode,
+                order.paymentMode!,
                 style: const TextStyle(color: Colors.white),
               ),
             ),
@@ -311,14 +407,14 @@ class _OrderListState extends State<OrderList>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 singleAddressItem(
-                  title: order.pickupAddress,
+                  title: order.pickupCity!,
                 ),
                 Padding(
                   padding: const EdgeInsets.only(left: 7),
                   child: verticalDivider(),
                 ),
                 singleAddressItem(
-                  title: order.deliveryAddress,
+                  title: order.deliveryCity!,
                 ),
               ],
             ),
@@ -336,8 +432,8 @@ class _OrderListState extends State<OrderList>
                       color: Colors.green.shade50),
                   child: Text(
                     controller.orderType == OrderType.pickup
-                        ? order.pickupBoy
-                        : order.deliveryBoy,
+                        ? order.pickupBoy!
+                        : order.deliveryBoy!,
                     style: const TextStyle(color: Colors.green),
                   ),
                 ),
@@ -350,21 +446,22 @@ class _OrderListState extends State<OrderList>
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             singleAddressItem(
-                title: "Pickup Weight : ${order.pickupWeight} KG",
+                title: "Pickup Weight : ${order.pickupWeight.toFixString()} KG",
                 height: 5,
                 width: 5,
                 color: Colors.red),
-            singleAddressItem(
-                title: "Delivery Weight : ${order.deliveryWeight} KG",
-                height: 5,
-                width: 5,
-                color: Colors.red)
           ],
         ),
         Gap(DimensConstants.spaceBetweenViews),
         singleAddressItem(
+            title: "Delivery Weight : ${order.deliveryWeight.toFixString()} KG",
+            height: 5,
+            width: 5,
+            color: Colors.red),
+        Gap(DimensConstants.spaceBetweenViews),
+        singleAddressItem(
             title: "Product : ", height: 5, width: 5, color: Colors.red),
-        Text(order.productNames),
+        Text(order.productNames!),
         Gap(DimensConstants.spaceBetweenViews),
         singleAddressItem(
             title: "Express : ${order.express}",
@@ -372,14 +469,19 @@ class _OrderListState extends State<OrderList>
             width: 5,
             color: Colors.red),
         Gap(DimensConstants.spaceBetweenViews),
-        singleAddressItem(
-            title: "Custom Mobile : ${order.customerNumber}",
-            height: 5,
-            width: 5,
-            color: Colors.red),
+        InkWell(
+          onTap: () async {
+            launchDialer(order.customerNumber!);
+          },
+          child: singleAddressItem(
+              title: "Customer Mobile : ${order.customerNumber}",
+              height: 5,
+              width: 5,
+              color: Colors.red),
+        ),
         Gap(DimensConstants.spaceBetweenViews),
         singleAddressItem(
-            title: "Custom Address : ${order.customerAddress}",
+            title: "Customer Address : \n${order.customerAddress}",
             height: 5,
             width: 5,
             color: Colors.red),
@@ -395,17 +497,17 @@ class _OrderListState extends State<OrderList>
                 height: 5,
                 width: 5,
                 color: Colors.red),
-            singleAddressItem(
-                title: "Delivery Time : ${order.deliveryTime}",
-                height: 5,
-                width: 5,
-                color: Colors.red)
           ],
         ),
         Gap(DimensConstants.spaceBetweenViews),
         singleAddressItem(
-            title:
-                "Assign to : ${controller.orderType == OrderType.pickup ? order.pickupBoy : order.deliveryBoy}",
+            title: "Delivery Time : ${order.deliveryTime}",
+            height: 5,
+            width: 5,
+            color: Colors.red),
+        Gap(DimensConstants.spaceBetweenViews),
+        singleAddressItem(
+            title: "Status : ${order.orderStatus}",
             height: 5,
             width: 5,
             color: Colors.red),
@@ -416,10 +518,10 @@ class _OrderListState extends State<OrderList>
               child: CheckboxListTile(
                 tileColor: Theme.of(context).primaryColor,
                 checkColor: Colors.green,
-                value: controller.orderSelected(order.id),
+                value: controller.orderSelected(order.id!),
                 onChanged: (value) {
                   if (value != null) {
-                    controller.selectOrder(order.id);
+                    controller.selectOrder(order.id!);
                   }
                 },
                 title: const Text(
@@ -428,7 +530,16 @@ class _OrderListState extends State<OrderList>
                 controlAffinity: ListTileControlAffinity.leading,
               ),
             ),
-            if (controller.orderType == OrderType.pickup && userController.userType == UserType.delivery_boy.name)
+
+            /** who can update t2p order weight
+                1. partner, of pickup orders
+                2. boy, of delivery orders
+                <----------------------------->
+                who can update af2ap order weight, height, width, length
+                1. only pickup boy **/
+
+            if (userController.userType == UserType.delivery_boy.name &&
+                controller.orderType == OrderType.pickup)
               Expanded(
                   child: controller.updateButtonLoading.isTrue
                       ? Row(
@@ -440,30 +551,12 @@ class _OrderListState extends State<OrderList>
                             showDialog(
                               context: context,
                               builder: (context) {
-                                return DefaultDialog(
-                                  message: "Enter product weight",
-                                  btn1Txt: "Update",
-                                  btn1Click: () {
-                                    Get.back();
-                                    controller.updatePickupOrderWeight(order.id, weightController.text);
-                                  },
-                                  btn2Txt: "Cancel",
-                                  btn2Click: () {
-                                    Get.back();
-                                  },
-                                  icon: TextFormField(
-                                    controller: weightController,
-                                    keyboardType: TextInputType.phone,
-                                    decoration: const InputDecoration(
-                                        label: Text("Enter Weight")),
-                                    validator: (value) {
-                                      if (value!.isEmpty || value.length < 10) {
-                                        return "Enter Weight";
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                );
+                                return controller.t2pOrderType ==
+                                        T2POrderType.T2P
+                                    ? t2pWeightUpdateDialog(order.id!)
+                                    : AF2APProductDialog(
+                                        order: order,
+                                      );
                               },
                             );
                           },
@@ -498,6 +591,47 @@ class _OrderListState extends State<OrderList>
     ));
   }
 
+  void launchDialer(String phoneNumer) async {
+    String url = "tel:$phoneNumer";
+    if (await canLaunchUrl(Uri.parse(url))) {
+      await launchUrl(Uri.parse(url));
+    } else {
+      throw 'Could not launch $url';
+    }
+  }
+
+  t2pWeightUpdateDialog(String orderId) {
+    final formKey = GlobalKey<FormState>();
+    return Form(
+      key: formKey,
+      child: DefaultDialog(
+        message: "Enter product weight",
+        btn1Txt: "Update",
+        btn1Click: () {
+          if (formKey.currentState!.validate()) {
+            Get.back();
+            controller.updateT2POrderWeight(orderId, weightController.text);
+          }
+        },
+        btn2Txt: "Cancel",
+        btn2Click: () {
+          Get.back();
+        },
+        icon: TextFormField(
+          controller: weightController,
+          keyboardType: TextInputType.phone,
+          decoration: const InputDecoration(label: Text("Enter Weight")),
+          validator: (value) {
+            if (value!.isEmpty) {
+              return "Enter Weight";
+            }
+            return null;
+          },
+        ),
+      ),
+    );
+  }
+
   verticalDivider() {
     return Container(
       height: 30,
@@ -527,7 +661,7 @@ singleAddressItem({
           title,
           maxLines: 20,
           softWrap: true,
-          overflow: TextOverflow.visible,
+          overflow: TextOverflow.ellipsis,
         ),
       )
     ],

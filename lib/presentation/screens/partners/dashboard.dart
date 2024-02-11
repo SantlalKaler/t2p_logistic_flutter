@@ -3,6 +3,7 @@ import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:t2p_logistic/domain/dashboard_item.dart';
 import 'package:t2p_logistic/domain/enums/add_edit_delivery_boy.dart';
+import 'package:t2p_logistic/domain/enums/user_type.dart';
 import 'package:t2p_logistic/presentation/controllers/user_controller.dart';
 import 'package:t2p_logistic/presentation/screens/order_list/order_list.dart';
 import 'package:t2p_logistic/presentation/screens/partners/boy/manage_delivery_boy.dart';
@@ -28,37 +29,41 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   DashboardController controller = Get.find();
+  UserController userController = Get.find();
 
   @override
   Widget build(BuildContext context) {
     return appScaffold(
-        appBar(title: "Hello", centerTitle: true, actions: [
-          IconButton(
-              onPressed: () {
-                showDialog(
-                    context: context,
-                    builder: (context) {
-                      return DefaultDialog(
-                        icon: const Icon(
-                          Icons.logout,
-                          size: 50,
-                        ),
-                        message: "Do you really want to log out?",
-                        btn1Txt: "Confirm",
-                        btn1Click: () {
-                          //clear user
-                          UserController userController = Get.find();
-                          userController.clearUser();
-                        },
-                        btn2Txt: "Cancel",
-                        btn2Click: () {
-                          Get.back();
-                        },
-                      );
-                    });
-              },
-              icon: const Icon(Icons.logout))
-        ]),
+        appBar(
+            title: "Hello ${userController.userName}",
+            centerTitle: true,
+            actions: [
+              IconButton(
+                  onPressed: () {
+                    showDialog(
+                        context: context,
+                        builder: (context) {
+                          return DefaultDialog(
+                            icon: const Icon(
+                              Icons.logout,
+                              size: 50,
+                            ),
+                            message: "Do you really want to log out?",
+                            btn1Txt: "Confirm",
+                            btn1Click: () {
+                              //clear user
+                              UserController userController = Get.find();
+                              userController.clearUser();
+                            },
+                            btn2Txt: "Cancel",
+                            btn2Click: () {
+                              Get.back();
+                            },
+                          );
+                        });
+                  },
+                  icon: const Icon(Icons.logout))
+            ]),
         Padding(
           padding: EdgeInsets.all(DimensConstants.screePadding),
           child: Container(
@@ -67,16 +72,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: GridView.count(
                 crossAxisCount: 2,
                 children: List.generate(
-                    controller.dashboardItems.length,
+                    userController.userType == UserType.delivery_partner.name
+                        ? controller.partnerDashboardItems.length
+                        : controller.boyDashboardItems.length,
                     (index) => InkWell(
                           onTap: () {
-                            switch (controller.dashboardItems[index].id) {
+                            switch (userController.userType ==
+                                    UserType.delivery_partner.name
+                                ? controller.partnerDashboardItems[index].id
+                                : controller.boyDashboardItems[index].id) {
                               case DashboardItemId.addDeliveryBoy:
-                                Get.to(() => const AddDeliveryBoy(addEditDeliveryBoy: AddEditDeliveryBoy.add,));
+                                Get.to(() => const AddDeliveryBoy(
+                                      addEditDeliveryBoy:
+                                          AddEditDeliveryBoy.add,
+                                    ));
                               case DashboardItemId.manageDeliveryBoy:
                                 Get.to(() => const ManageDeliveryBoy());
-                              /*case DashboardItemId.viewAssignOrders:
-                                Get.to(() => const OrderList());*/
                               case DashboardItemId.myOrders:
                                 Get.to(() => const OrderList());
                               case DashboardItemId.financialLogs:
@@ -91,8 +102,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 Get.to(() => const CodCollectionScreen());
                             }
                           },
-                          child:
-                              singleGridItem(controller.dashboardItems[index]),
+                          child: singleGridItem(userController.userType ==
+                                  UserType.delivery_partner.name
+                              ? controller.partnerDashboardItems[index]
+                              : controller.boyDashboardItems[index]),
                         )),
               )),
         ));

@@ -14,4 +14,5 @@ enum FilterItemId {
   pickupBoy,
   city,
   status,
+  print,
 }

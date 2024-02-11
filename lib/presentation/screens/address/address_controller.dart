@@ -47,7 +47,7 @@ class AddressController extends GetxController {
           response.data[StringConstants.status] == Status.success.name) {
         addressList.clear();
         AddressListResponse addressListResponse =
-            AddressListResponse.fromJson(response.data);
+        AddressListResponse.fromJson(response.data);
         if (addressListResponse.address != null &&
             addressListResponse.address!.isNotEmpty) {
           addressList.value = addressListResponse.address!;
@@ -64,7 +64,6 @@ class AddressController extends GetxController {
 
   Future<void> getAllStates() async {
     isLoadingAllStates.value = true;
-
     try {
       await _apiService.get(URIConstants.stateList).then((response) {
         if (response != null) {
@@ -77,6 +76,7 @@ class AddressController extends GetxController {
       });
     } finally {
       isLoadingAllStates.value = false;
+      update();
     }
   }
 
@@ -85,7 +85,7 @@ class AddressController extends GetxController {
 
     try {
       await _apiService
-          .get(URIConstants.cityList + stateId)
+          .get("${URIConstants.cityList}?state=$stateId")
           .then((response) {
         if (response != null) {
           cityList.clear();
@@ -106,7 +106,7 @@ class AddressController extends GetxController {
 
     try {
       await _apiService
-          .get(URIConstants.zipList + cityId)
+          .get("${URIConstants.zipList}?city=$cityId")
           .then((response) {
         if (response != null) {
           zipList.clear();
@@ -121,23 +121,21 @@ class AddressController extends GetxController {
     }
   }
 
-  Future<void> addAddress(
-      {String? title,
-      String? address,
-      String? address2,
-      String? cityId,
-      String? cityName,
-      String? stateId,
-      String? stateName,
-      String? postOffice,
-      String? postalCode,
-      String? contactName,
-      String? contactPhone,
-      String? lat,
-      String? lng,
-      String? landmark,
-      bool? redirectToHome}) async {
-
+  Future<void> addAddress({String? title,
+    String? address,
+    String? address2,
+    String? cityId,
+    String? cityName,
+    String? stateId,
+    String? stateName,
+    String? postOffice,
+    String? postalCode,
+    String? contactName,
+    String? contactPhone,
+    String? lat,
+    String? lng,
+    String? landmark,
+    bool? redirectToHome}) async {
     setLoading();
 
     UserController userController = Get.find();
@@ -177,6 +175,87 @@ class AddressController extends GetxController {
       update();
     } finally {
       setLoading();
+    }
+  }
+
+
+  Future<void> editAddress(
+      {String? addressId,
+        String? title,
+        String? address,
+        String? address2,
+        String? cityId,
+        String? cityName,
+        String? stateId,
+        String? stateName,
+        String? postOffice,
+        String? postalCode,
+        String? contactName,
+        String? contactPhone,
+        String? lat,
+        String? lng,
+        String? landmark,
+        bool? redirectToHome}) async {
+    UserController userController = Get.find();
+    // savedLocationController savedLocationController = Get.find();
+    isAddingEdittingAddress.value = true;
+
+    var payLoad = {
+      'id': addressId,
+      "userid": userController.userId,
+      "title": title,
+      "address": address,
+      "address2": address2,
+      "city": cityId,
+      "state": stateId,
+      "post_office": postOffice,
+      "pincode": postalCode,
+      "contact_name": contactName,
+      "contact_mobile": contactPhone,
+      "lat": lat,
+      "lng": lng,
+      "landmark": landmark
+    };
+    try {
+      await _apiService
+          .post(URIConstants.editAddress, payLoad)
+          .then((response) async {
+        if (response != null && response.data['status'] == 'success') {
+            Get.back();
+
+          CustomSnackBar.showSnackBar(
+              CustomSnackBar.error, 'Address updated', CustomSnackBar.error);
+          await getAddressList();
+        } else {
+          if (response != null &&
+              response.data['message']['_message'] != null) {
+            CustomSnackBar.showSnackBar(CustomSnackBar.error,
+                response.data['message']['_message'], CustomSnackBar.error);
+          }
+        }
+      });
+    } finally {
+      isAddingEdittingAddress.value = false;
+    }
+  }
+
+  Future<void> deleteAddress(addressId) async {
+    try {
+      await _apiService
+          .get(URIConstants.deleteAddress + addressId)
+          .then((response) {
+        if (response != null) {
+          if (response.data['status'] == 'success') {
+            CustomSnackBar.showSnackBar(CustomSnackBar.success,
+                response.data['message'], CustomSnackBar.success);
+          } else {
+            CustomSnackBar.showSnackBar(CustomSnackBar.error,
+                response.data['message'], CustomSnackBar.error);
+          }
+        }
+      });
+    } finally {
+      await getAddressList();
     }
   }
 }

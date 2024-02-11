@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:t2p_logistic/presentation/screens/trip/add_trip.dart';
 import 'package:t2p_logistic/presentation/theme/resource/dimens.dart';
 import 'package:t2p_logistic/presentation/widgets/app_bar.dart';
 import 'package:t2p_logistic/presentation/widgets/app_scaffold.dart';
@@ -34,7 +35,7 @@ class _TripListScreenState extends State<TripListScreen> {
                   alignment: Alignment.bottomCenter,
                   child: ElevatedButton(
                       onPressed: () {
-                        //Get.to(AddTr)
+                        Get.to(()=> const AddTripScreen());
                       }, child: const Text("Add New Trip"))),
             )
           ],

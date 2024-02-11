@@ -1,8 +1,11 @@
-/*
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
+import 'package:t2p_logistic/domain/Model/user/AddressListResponse.dart';
 import 'package:t2p_logistic/presentation/screens/trip/trip_controller.dart';
+
+import '../address/address_cards.dart';
+import '../address/address_controller.dart';
 
 class SelectLocationWidget extends StatelessWidget {
   const SelectLocationWidget({super.key});
@@ -15,18 +18,19 @@ class SelectLocationWidget extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
         Obx(() => locationWidget(
-            context, gharKaKhanaController.pickupAddress.value,
+            context, tripController.pickupAddress.value,
             isPickup: true)),
         Obx(() => locationWidget(
-            context, gharKaKhanaController.destinationAddress.value,
+            context, tripController.destinationAddress.value,
             isPickup: false)),
       ],
     );
   }
 
-  Widget locationWidget(BuildContext context, AddressModel address,
+  Widget locationWidget(BuildContext context, Address address,
       {bool isPickup = true}) {
-    GharKaKhanaController gharKaKhanaController = Get.find();
+    TripController tripController = Get.find();
+
     return GestureDetector(
       onTap: () {
         Get.bottomSheet(selectAddressSheet(context, isPickup));
@@ -41,8 +45,8 @@ class SelectLocationWidget extends StatelessWidget {
             children: [
               Icon(
                 isPickup
-                    ? FontAwesomeIcons.utensils
-                    : FontAwesomeIcons.locationDot,
+                    ? Icons.local_activity
+                    : Icons.add,
                 color: Colors.grey.shade100,
                 size: 40,
               ),
@@ -60,10 +64,10 @@ class SelectLocationWidget extends StatelessWidget {
                   const Gap(2),
                   Text(
                     (isPickup
-                        ? gharKaKhanaController.pickupAddress.value.id == null
+                        ? tripController.pickupAddress.value.id == null
                             ? ('Tap here to select a pickup location')
                             : '${address.contactName}\n${address.address}\n+91-${address.contactMobile}\n${address.city!.name} (${address.pincode})'
-                        : gharKaKhanaController.destinationAddress.value.id ==
+                        : tripController.destinationAddress.value.id ==
                                 null
                             ? ('Tap here to select a destination location')
                             : '${address.contactName}\n${address.address}\n+91-${address.contactMobile}\n${address.city!.name} (${address.pincode})'),
@@ -83,7 +87,9 @@ class SelectLocationWidget extends StatelessWidget {
 
   Widget selectAddressSheet(BuildContext context, isPickup) {
     AddressController addressController = Get.find();
-    GharKaKhanaController gharKaKhanaController = Get.find();
+    TripController tripController = Get.find();
+
+    addressController.getAddressList();
 
     return BottomSheet(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -101,23 +107,21 @@ class SelectLocationWidget extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const Gap(20),
-              for (var item in addressController.allAddressesList)
+              for (var item in addressController.addressList)
                 GestureDetector(
                     onTap: () {
                       if (isPickup) {
-                        gharKaKhanaController.pickupAddress.value = item;
-                        gharKaKhanaController.destinationAddress.value =
-                            AddressModel(); //reset destination
-                      } else {
-                        gharKaKhanaController.destinationAddress.value = item;
+                        tripController.pickupAddress.value = item;
+                        tripController.destinationAddress.value = Address(); //reset destination
+                      } else  {
+                        tripController.destinationAddress.value = item;
                       }
-                      // gharKaKhanaController.getGharKahanaCart();
                       Get.back();
                     },
                     child:
                         // condition for hiding slected pickup location from destination select address list
                         (!isPickup &&
-                                gharKaKhanaController.pickupAddress.value.id ==
+                                tripController.pickupAddress.value.id ==
                                     item.id)
                             ? const SizedBox.shrink()
                             : addressCard(context, item,
@@ -129,4 +133,3 @@ class SelectLocationWidget extends StatelessWidget {
     );
   }
 }
-*/

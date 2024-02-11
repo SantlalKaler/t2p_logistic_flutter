@@ -146,7 +146,8 @@ void _showDeleteActionSheet(BuildContext context, addressId) {
         CupertinoActionSheetAction(
           isDestructiveAction: true,
           onPressed: () async {
-            // await addressController.deleteAddress(addressId);
+            Get.back();
+            await addressController.deleteAddress(addressId);
           },
           child: const Text('Delete'),
         ),

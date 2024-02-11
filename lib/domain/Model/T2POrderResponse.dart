@@ -251,7 +251,7 @@ class T2POrder {
     _scheduleDate = json['schedule_date'];
     _scheduleStatus = json['schedule_status'];
     _scheduleStatusTo = json['schedule_status_to'];
-    _distance = json['distance'];
+    _distance = json['distance'].toString();
     _paid = json['paid'].toString();
     _bundleQr = json['bundle_qr'].toString();
     _bundleId = json['bundle_id'];
