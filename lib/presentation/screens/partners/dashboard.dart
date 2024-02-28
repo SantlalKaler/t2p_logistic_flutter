@@ -69,20 +69,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Container(
               decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10), color: Colors.white),
+              // here dashboard items are change according to user type
               child: GridView.count(
                 crossAxisCount: 2,
                 children: List.generate(
                     userController.userType == UserType.delivery_partner.name
                         ? controller.partnerDashboardItems.length
-                        : controller.boyDashboardItems.length,
+                        : userController.userType == UserType.delivery_boy.name
+                            ? controller.boyDashboardItems.length
+                            : controller.headDashboardItems.length,
                     (index) => InkWell(
                           onTap: () {
                             switch (userController.userType ==
                                     UserType.delivery_partner.name
                                 ? controller.partnerDashboardItems[index].id
-                                : controller.boyDashboardItems[index].id) {
-                              case DashboardItemId.addDeliveryBoy:
-                                Get.to(() => const AddDeliveryBoy(
+                                : userController.userType ==
+                                        UserType.delivery_boy.name
+                                    ? controller.boyDashboardItems[index].id
+                                    : controller.headDashboardItems[index].id) {
+                              case DashboardItemId.addUser:
+                                Get.to(() => const AddUser(
                                       addEditDeliveryBoy:
                                           AddEditDeliveryBoy.add,
                                     ));
@@ -105,7 +111,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           child: singleGridItem(userController.userType ==
                                   UserType.delivery_partner.name
                               ? controller.partnerDashboardItems[index]
-                              : controller.boyDashboardItems[index]),
+                              : userController.userType ==
+                                      UserType.delivery_boy.name
+                                  ? controller.boyDashboardItems[index]
+                                  : controller.headDashboardItems[index]),
                         )),
               )),
         ));

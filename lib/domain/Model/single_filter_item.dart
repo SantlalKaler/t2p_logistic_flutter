@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 class FilterItem {
   String title;
   FilterItemId id;
-  IconData icon;
+  IconData? icon;
 
-  FilterItem({required this.title, required this.id, required this.icon});
+  FilterItem({required this.title, required this.id, this.icon});
 }
 
 enum FilterItemId {
@@ -15,4 +15,6 @@ enum FilterItemId {
   city,
   status,
   print,
+  lpManager,
+  deliveryPartner
 }

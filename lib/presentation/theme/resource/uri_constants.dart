@@ -9,7 +9,7 @@ class URIConstants {
   static String login = 'app/logistic-login';
   static String verify = 'app/verify-logistic';
 
-  //logistic boy
+  // ---------------------------- boy ---------------------------------
   static String boyPickupOrderT2P = "app/pickup-boy-order-list";
   static String boyDeliveryOrderT2P = "app/delivery-boy-order-list";
   static String boyPickupOrderAF2AP = "app/gharkakhana-pickup-boy-list";
@@ -28,7 +28,7 @@ class URIConstants {
   static String updateDeliveryDistance = "app/update-delivery-distance";
   static String deliveryOrderStart = "app/delivery-boy-order-start";
 
-  //pickup partner
+  // <------------------------- partner --------------------------------
   static String employeeStatusChange = 'app/employee-status-chnage';
   static String allDeliveryStatus = 'app/all-delivery-status';
   static String partnerStatusChange = 'app/partner-status-change';
@@ -51,6 +51,15 @@ class URIConstants {
       "app/gharkakhana-delivery-partner-update";
   static String changeOrderStatus = "app/change-order-status";
   static String updatePickupOrderWeight = "app/update-pickup-order-weight";
+
+
+  // <------------------------- head --------------------------------
+  static String lpOrder = "app/lp-manager-order-list";
+
+  // cod
+  static String codExpenseList = "admin/cod-expense-list";
+
+  // ---------------------------------------------------------------->
 
   //common
   static String allAddress = "app/all-address";

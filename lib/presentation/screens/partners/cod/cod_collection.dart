@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:t2p_logistic/presentation/screens/partners/cod/cod_collection_controller.dart';
 import 'package:t2p_logistic/presentation/theme/resource/dimens.dart';
+import 'package:t2p_logistic/presentation/widgets/app_back_button.dart';
 import 'package:t2p_logistic/presentation/widgets/app_bar.dart';
 import 'package:t2p_logistic/presentation/widgets/app_container.dart';
 import 'package:t2p_logistic/presentation/widgets/date_chooser.dart';
@@ -16,36 +18,49 @@ class CodCollectionScreen extends StatefulWidget {
 }
 
 class _CodCollectionScreenState extends State<CodCollectionScreen> {
+  CodCollectionController controller = Get.find();
+
+  @override
+  void initState() {
+    controller.getCodExpenseList();
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return appScaffold(
-        appBar(
-            title: "Cod Collection",
-            leading: IconButton(
-                onPressed: () {
-                  Get.back();
-                },
-                icon: const Icon(Icons.arrow_back_ios))),
-        Column(
-          children: [
-            dateChooser(context),
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.all(DimensConstants.screePadding),
-                child: ListView.separated(
-                    itemBuilder: (context, index) {
-                      return singleCodCollectionItem();
-                    },
-                    separatorBuilder: (context, index) {
-                      return SizedBox(
-                        height: DimensConstants.spaceBetweenViews,
-                      );
-                    },
-                    itemCount: 10),
-              ),
-            )
-          ],
-        ));
+    return AppScaffold(
+        body: NestedScrollView(
+      headerSliverBuilder: (context, innerBoxIsScrolled) {
+        return [
+          const SliverAppBar(
+            pinned: true,
+            floating: true,
+            title: Text("Cod Collection"),
+            leading: AppBackButton(),
+          )
+        ];
+      },
+      body: Column(
+        children: [
+          dateChooser(context),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.all(DimensConstants.screePadding),
+              child: ListView.separated(
+                  itemBuilder: (context, index) {
+                    return singleCodCollectionItem();
+                  },
+                  separatorBuilder: (context, index) {
+                    return SizedBox(
+                      height: DimensConstants.spaceBetweenViews,
+                    );
+                  },
+                  itemCount: 10),
+            ),
+          )
+        ],
+      ),
+    ));
   }
 
   singleCodCollectionItem() {
@@ -80,9 +95,11 @@ class _CodCollectionScreenState extends State<CodCollectionScreen> {
           ),
           const Text("\nAmount\n"),
           const Text("City\n"),
-              ElevatedButton(onPressed: () {
+          ElevatedButton(
+              onPressed: () {
                 Get.to(const AddCodScreen());
-              }, child: const Text("Edit")),
+              },
+              child: const Text("Edit")),
           /*Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,

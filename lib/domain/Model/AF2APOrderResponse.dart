@@ -67,7 +67,9 @@ class AF2APOrder {
       num? active, 
       num? deleted, 
       String? totalPrice, 
-      String? shippingPrice, 
+      String? duesAmount,
+      String? paidAmount,
+      String? shippingPrice,
       String? pickupPrice, 
       String? deliveryPrice, 
       String? pickupDistance, 
@@ -100,6 +102,8 @@ class AF2APOrder {
     _active = active;
     _deleted = deleted;
     _totalPrice = totalPrice;
+    _paidAmount = paidAmount;
+    _duesAmount = duesAmount;
     _shippingPrice = shippingPrice;
     _pickupPrice = pickupPrice;
     _deliveryPrice = deliveryPrice;
@@ -136,6 +140,8 @@ class AF2APOrder {
     _active = json['active'];
     _deleted = json['deleted'];
     _totalPrice = json['total_price'];
+    _paidAmount = json['paid_amount'].toString();
+    _duesAmount = json['dues_amount'].toString();
     _shippingPrice = json['shipping_price'];
     _pickupPrice = json['pickup_price'];
     _deliveryPrice = json['delivery_price'];
@@ -175,6 +181,8 @@ class AF2APOrder {
   num? _active;
   num? _deleted;
   String? _totalPrice;
+  String? _paidAmount;
+  String? _duesAmount;
   String? _shippingPrice;
   String? _pickupPrice;
   String? _deliveryPrice;
@@ -208,6 +216,8 @@ AF2APOrder copyWith({  String? orderid,
   num? active,
   num? deleted,
   String? totalPrice,
+  String? paidAmount,
+  String? duesAmount,
   String? shippingPrice,
   String? pickupPrice,
   String? deliveryPrice,
@@ -241,6 +251,8 @@ AF2APOrder copyWith({  String? orderid,
   active: active ?? _active,
   deleted: deleted ?? _deleted,
   totalPrice: totalPrice ?? _totalPrice,
+  paidAmount: paidAmount ?? _paidAmount,
+  duesAmount: duesAmount ?? _duesAmount,
   shippingPrice: shippingPrice ?? _shippingPrice,
   pickupPrice: pickupPrice ?? _pickupPrice,
   deliveryPrice: deliveryPrice ?? _deliveryPrice,
@@ -275,6 +287,8 @@ AF2APOrder copyWith({  String? orderid,
   num? get active => _active;
   num? get deleted => _deleted;
   String? get totalPrice => _totalPrice;
+  String? get paidAmount => _paidAmount;
+  String? get duesAmount => _duesAmount;
   String? get shippingPrice => _shippingPrice;
   String? get pickupPrice => _pickupPrice;
   String? get deliveryPrice => _deliveryPrice;
@@ -313,6 +327,8 @@ AF2APOrder copyWith({  String? orderid,
     map['active'] = _active;
     map['deleted'] = _deleted;
     map['total_price'] = _totalPrice;
+    map['paid_amount'] = _paidAmount;
+    map['dues_amount'] = _duesAmount;
     map['shipping_price'] = _shippingPrice;
     map['pickup_price'] = _pickupPrice;
     map['delivery_price'] = _deliveryPrice;

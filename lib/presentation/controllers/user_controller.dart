@@ -44,7 +44,9 @@ class UserController extends GetxController {
       box.read(GetStorageKeys.orderCustomerMobile);
 
   double? get pickupLng => box.read(GetStorageKeys.pickupLng);
+
   double? get orderType => box.read(GetStorageKeys.orderType);
+
   double? get t2pOrderType => box.read(GetStorageKeys.t2pOrderType);
 
   String? get paymentMode => box.read(GetStorageKeys.paymentMode);
@@ -66,7 +68,8 @@ class UserController extends GetxController {
     });
   }
 
-  saveStartedOrderInfo(CommonOrder? order, Position position, T2POrderType t2pOrderType, OrderType orderType) {
+  saveStartedOrderInfo(CommonOrder? order, Position position,
+      T2POrderType t2pOrderType, OrderType orderType) {
     final Map<String, dynamic> orderMpa = {
       GetStorageKeys.orderAlreadyStarted: true,
       GetStorageKeys.deliveryLat:
@@ -77,7 +80,8 @@ class UserController extends GetxController {
       GetStorageKeys.pickupLng: position.longitude,
       GetStorageKeys.orderId: order!.id!,
       GetStorageKeys.paymentMode: order.paymentMode!,
-      GetStorageKeys.orderPrice: order.price!,
+      GetStorageKeys.orderPrice:
+          t2pOrderType == T2POrderType.AF2AP ? order.duesAmount : order.price!,
       GetStorageKeys.orderCustomerMobile: order.customerNumber!,
       GetStorageKeys.t2pOrderType: t2pOrderType.name,
       GetStorageKeys.orderType: orderType.name,

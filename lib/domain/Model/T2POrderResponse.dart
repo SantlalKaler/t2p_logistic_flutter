@@ -69,8 +69,8 @@ class T2POrder {
       CargoPartner? cargoPartner, 
       String? cargoPartnerCommission,
       DeliveryPartner? deliveryPartner, 
-      dynamic lpHead,
-      dynamic lpManager,
+      User? lpHead,
+      User? lpManager,
       String? deliveryPartnerCommission,
       String? totalWeight,
       User? deliveryBoy,
@@ -220,8 +220,8 @@ class T2POrder {
     _cargoPartner = json['cargo_partner'] != null ? CargoPartner.fromJson(json['cargo_partner']) : null;
     _cargoPartnerCommission = json['cargo_partner_commission'].toString();
     _deliveryPartner = json['delivery_partner'] != null ? DeliveryPartner.fromJson(json['delivery_partner']) : null;
-    _lpHead = json['lp_head'];
-    _lpManager = json['lp_manager'];
+    _lpHead = json['lp_head'] != null ? User.fromJson(json['lp_head']) : null;
+    _lpManager = json['lp_manager'] != null ? User.fromJson(json['lp_manager']) : null;
     _deliveryPartnerCommission = json['delivery_partner_commission'].toString();
     _totalWeight = json['total_weight'];
     _deliveryBoy = json['delivery_boy'] != null ? User.fromJson(json['delivery_boy']) : null;
@@ -300,8 +300,8 @@ class T2POrder {
   CargoPartner? _cargoPartner;
   String? _cargoPartnerCommission;
   DeliveryPartner? _deliveryPartner;
-  dynamic _lpHead;
-  dynamic _lpManager;
+  User? _lpHead;
+  User? _lpManager;
   String? _deliveryPartnerCommission;
   String? _totalWeight;
   User? _deliveryBoy;
@@ -373,9 +373,9 @@ T2POrder copyWith({  Position? position,
   User? pickupBoy,
   CargoPartner? cargoPartner,
   String? cargoPartnerCommission,
-  DeliveryPartner? deliveryPartner,
-  dynamic lpHead,
-  dynamic lpManager,
+  DeliveryPartner? UsereryPartner,
+  User? lpHead,
+  User? lpManager,
   String? deliveryPartnerCommission,
   String? totalWeight,
   User? deliveryBoy,
@@ -523,8 +523,8 @@ T2POrder copyWith({  Position? position,
   CargoPartner? get cargoPartner => _cargoPartner;
   String? get cargoPartnerCommission => _cargoPartnerCommission;
   DeliveryPartner? get deliveryPartner => _deliveryPartner;
-  dynamic get lpHead => _lpHead;
-  dynamic get lpManager => _lpManager;
+  User? get lpHead => _lpHead;
+  User? get lpManager => _lpManager;
   String? get deliveryPartnerCommission => _deliveryPartnerCommission;
   String? get totalWeight => _totalWeight;
   User? get deliveryBoy => _deliveryBoy;
@@ -620,8 +620,12 @@ T2POrder copyWith({  Position? position,
     if (_deliveryPartner != null) {
       map['delivery_partner'] = _deliveryPartner?.toJson();
     }
-    map['lp_head'] = _lpHead;
-    map['lp_manager'] = _lpManager;
+    if (_lpHead != null) {
+      map['lp_head'] = _lpHead?.toJson();
+    }
+    if (_lpManager != null) {
+      map['lp_manager'] = _lpManager?.toJson();
+    }
     map['delivery_partner_commission'] = _deliveryPartnerCommission;
     map['total_weight'] = _totalWeight;
     if (_deliveryBoy != null) {

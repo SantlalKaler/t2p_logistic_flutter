@@ -9,12 +9,12 @@ extension DateFormatExtension on String {//7985398008
       DateTime istDateTime = utcDateTime.add(const Duration(hours: 5, minutes: 30));
       String formattedIST = DateFormat(outputDate).format(istDateTime);
 
-      printValue(
-          "Input date : $this\nOutput date : $formattedIST");
+      /*printValue(
+          "Input date : $this\nOutput date : $formattedIST");*/
 
       return formattedIST;
     } catch (e) {
-      printValue("Error in converting Date: $e");
+      //printValue("Error in converting Date: $e");
       return this;
     }
   }

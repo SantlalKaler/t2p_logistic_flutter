@@ -5,8 +5,8 @@ import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:t2p_logistic/data/api_services.dart';
 import 'package:t2p_logistic/data/status.dart';
 import 'package:t2p_logistic/domain/Model/AF2APOrderResponse.dart'
@@ -20,6 +20,7 @@ import 'package:t2p_logistic/presentation/theme/resource/strings_constants.dart'
 import 'package:t2p_logistic/presentation/theme/resource/uri_constants.dart';
 import 'package:t2p_logistic/presentation/widgets/custom_snackbar.dart';
 
+import '../../../domain/Model/single_filter_item.dart';
 import '../../constants/view_constants.dart';
 import '../../theme/resource/custom_constants.dart';
 import '../address/map_location_controller.dart';
@@ -40,19 +41,33 @@ class OrderController extends GetxController {
   UserController userController = Get.find();
 
   RxBool gharKaKhanaCheck = false.obs;
+
+  // here we create 2 list
+  // 1 for original list and 1 for filter list
+  // when user apply any filter then we update filter list
+  // and the actual data is store in another list
   RxList<CommonOrder> t2pPickupOrders = RxList<CommonOrder>();
+  RxList<CommonOrder> t2pPickupFilterOrders = RxList<CommonOrder>();
   RxList<CommonOrder> t2pDeliveryOrders = RxList<CommonOrder>();
-  RxList<CommonOrder> aF2APPickupOrders = RxList<CommonOrder>();
-  RxList<CommonOrder> aF2APDeliveryOrders = RxList<CommonOrder>();
+  RxList<CommonOrder> t2pDeliveryFilterOrders = RxList<CommonOrder>();
+  RxList<CommonOrder> aF2APPickupFilterOrders = RxList<CommonOrder>();
+  RxList<CommonOrder> aF2APDeliveryFilterOrders = RxList<CommonOrder>();
   RxList<String> orderIds = RxList<String>();
   RxList<String> pickupOrderStatus = RxList<String>();
+
+  RxList<String> lpManager = RxList<String>();
+  RxList<String> deliveryPartner = RxList<String>();
+  RxString selectedManger = "LP Manager".obs;
+  RxString selectedPartner = "Delivery Partner".obs;
+
   RxList<String> deliveryOrderStatus = RxList<String>();
   RxList<String> t2pPickupSelectedOrderIds = RxList<String>();
   RxList<String> t2pDeliverSelectedOrderIds = RxList<String>();
   RxList<String> aF2APDeliverSelectedOrderIds = RxList<String>();
   RxList<String> aF2APPickupSelectedOrderIds = RxList<String>();
 
-  Rxn<AllDeliveryStatusResponse> allDeliveryStatusResponse = Rxn<AllDeliveryStatusResponse>();
+  Rxn<AllDeliveryStatusResponse> allDeliveryStatusResponse =
+      Rxn<AllDeliveryStatusResponse>();
 
   RxString pickupSelectedOrderStatus = "".obs;
   RxString deliverySelectedOrderStatus = "".obs;
@@ -93,6 +108,64 @@ class OrderController extends GetxController {
     }
   }
 
+  filterOrder(UserType userType, String value) {
+    List<CommonOrder> filterOrders = [];
+    for (var order in t2pPickupOrders) {
+      if (userType == UserType.lp_manager && order.lpManager == value) {
+        selectedManger.value = value;
+        filterOrders.add(order);
+      } else if (userType == UserType.delivery_partner &&
+          order.deliveryPartner == value) {
+        selectedPartner.value = value;
+        filterOrders.add(order);
+      }
+    }
+
+    t2pPickupFilterOrders.assignAll(filterOrders);
+    update();
+  }
+
+  clearFilter() {
+    selectedManger.value = "LP Manager";
+    selectedPartner.value = "Delivery Partner";
+    t2pPickupFilterOrders.assignAll(List.from(t2pPickupOrders));
+    update();
+  }
+
+  List<FilterItem> getChipList() {
+    var chipList = [
+      FilterItem(title: t2pOrderType.name, id: FilterItemId.orderType),
+    ];
+
+    // only partner and delivery boy can print his orders
+    if (userController.userType == UserType.delivery_boy.name ||
+        userController.userType == UserType.delivery_partner.name) {
+      FilterItem(title: "Print", id: FilterItemId.print);
+    }
+
+    // delivery partner can change order status
+    if (userController.userType == UserType.delivery_partner.name) {
+      chipList.add(FilterItem(title: "Change Status", id: FilterItemId.status));
+    }
+
+    // lp head can filter order according to lp manager and delivery partner
+    // but first lp-head need to select lp manager after that he can select
+    // delivery partner because delivery partner come under lp manager
+    if (userController.userType == UserType.lp_head.name) {
+      chipList.add(
+          FilterItem(title: selectedManger.value, id: FilterItemId.lpManager));
+    }
+
+    // lp manager can filter order according to delivery partner
+    if (userController.userType == UserType.lp_head.name ||
+        userController.userType == UserType.lp_manager.name) {
+      chipList.add(FilterItem(
+          title: selectedPartner.value, id: FilterItemId.deliveryPartner));
+    }
+
+    return chipList;
+  }
+
   // --------------------- Select Order Id --------------------
   bool orderSelected(String orderId) {
     bool orderSelected = false;
@@ -122,22 +195,24 @@ class OrderController extends GetxController {
 
     if (t2pOrderType == T2POrderType.T2P) {
       if (orderType == OrderType.pickup &&
-          t2pPickupOrders.length == t2pPickupSelectedOrderIds.length &&
-          t2pPickupOrders.isNotEmpty) {
+          t2pPickupFilterOrders.length == t2pPickupSelectedOrderIds.length &&
+          t2pPickupFilterOrders.isNotEmpty) {
         selected = true;
       } else if (orderType == OrderType.deliver &&
-          t2pDeliveryOrders.length == t2pDeliverSelectedOrderIds.length &&
-          t2pDeliveryOrders.isNotEmpty) {
+          t2pDeliveryFilterOrders.length == t2pDeliverSelectedOrderIds.length &&
+          t2pDeliveryFilterOrders.isNotEmpty) {
         selected = true;
       }
     } else {
       if (orderType == OrderType.pickup &&
-          aF2APPickupOrders.length == aF2APPickupSelectedOrderIds.length &&
-          aF2APPickupOrders.isNotEmpty) {
+          aF2APPickupFilterOrders.length ==
+              aF2APPickupSelectedOrderIds.length &&
+          aF2APPickupFilterOrders.isNotEmpty) {
         selected = true;
       } else if (orderType == OrderType.deliver &&
-          aF2APDeliveryOrders.length == aF2APDeliverSelectedOrderIds.length &&
-          aF2APDeliveryOrders.isNotEmpty) {
+          aF2APDeliveryFilterOrders.length ==
+              aF2APDeliverSelectedOrderIds.length &&
+          aF2APDeliveryFilterOrders.isNotEmpty) {
         selected = true;
       }
     }
@@ -200,14 +275,14 @@ class OrderController extends GetxController {
       if (orderType == OrderType.pickup) {
         t2pPickupSelectedOrderIds.clear();
         if (selectAll) {
-          for (var order in t2pPickupOrders) {
+          for (var order in t2pPickupFilterOrders) {
             t2pPickupSelectedOrderIds.add(order.id!);
           }
         }
       } else {
         t2pDeliverSelectedOrderIds.clear();
         if (selectAll) {
-          for (var order in t2pDeliveryOrders) {
+          for (var order in t2pDeliveryFilterOrders) {
             t2pDeliverSelectedOrderIds.add(order.id!);
           }
         }
@@ -216,14 +291,14 @@ class OrderController extends GetxController {
       if (orderType == OrderType.pickup) {
         aF2APPickupSelectedOrderIds.clear();
         if (selectAll) {
-          for (var order in aF2APPickupOrders) {
+          for (var order in aF2APPickupFilterOrders) {
             aF2APPickupSelectedOrderIds.add(order.id!);
           }
         }
       } else {
         aF2APDeliverSelectedOrderIds.clear();
         if (selectAll) {
-          for (var order in aF2APDeliveryOrders) {
+          for (var order in aF2APDeliveryFilterOrders) {
             selectOrder(order.id!);
           }
         }
@@ -262,18 +337,18 @@ class OrderController extends GetxController {
 
     switch (t2pOrderType) {
       case T2POrderType.T2P:
-        if (orderType == OrderType.pickup && t2pPickupOrders.isEmpty) {
+        if (orderType == OrderType.pickup && t2pPickupFilterOrders.isEmpty) {
           getT2POrders();
         } else if (orderType == OrderType.deliver &&
-            t2pDeliveryOrders.isEmpty) {
+            t2pDeliveryFilterOrders.isEmpty) {
           getT2POrders(orderType: OrderType.deliver);
         }
         break;
       case T2POrderType.AF2AP:
-        if (orderType == OrderType.pickup && aF2APPickupOrders.isEmpty) {
+        if (orderType == OrderType.pickup && aF2APPickupFilterOrders.isEmpty) {
           getAF2APOrders();
         } else if (orderType == OrderType.deliver &&
-            aF2APDeliveryOrders.isEmpty) {
+            aF2APDeliveryFilterOrders.isEmpty) {
           getAF2APOrders(orderType: OrderType.deliver);
         }
         break;
@@ -305,7 +380,7 @@ class OrderController extends GetxController {
       }
     }
     // if user type is delivery boy
-    else {
+    else if (userController.userType == UserType.delivery_boy.name) {
       if (t2pOrderType == T2POrderType.T2P) {
         if (orderType == OrderType.pickup) {
           path = URIConstants.boyPickupOrderT2P;
@@ -320,6 +395,14 @@ class OrderController extends GetxController {
         } else {
           path = URIConstants.boyDeliveryOrderAF2AP;
         }
+      }
+    }
+
+    // if user type is lp head
+    else if (userController.userType == UserType.lp_head.name ||
+        userController.userType == UserType.lp_manager.name) {
+      if (t2pOrderType == T2POrderType.T2P) {
+        path = URIConstants.lpOrder;
       }
     }
 
@@ -339,9 +422,23 @@ class OrderController extends GetxController {
       var path = getOrderPath(orderType: orderType);
 
       var userId = userController.userId;
+
+      // if user type is delivery boy or delivery partner
       var data = {"id": userId};
 
-      var response = await _apiService.post(path, data);
+      // if user type is lp head
+      if (userController.userType == UserType.lp_head.name) {
+        path += "?lp_head=$userId";
+      }
+      if (userController.userType == UserType.lp_manager.name) {
+        path += "?lp_manager=$userId";
+      }
+
+      // for lp head and manger api is get type with query parameters
+      var response = (userController.userType == UserType.lp_head.name ||
+              userController.userType == UserType.lp_manager.name)
+          ? await _apiService.get(path)
+          : await _apiService.post(path, data);
 
       if (response != null && response.data['status'] == Status.success.name) {
         //clear order list
@@ -358,6 +455,14 @@ class OrderController extends GetxController {
 
           for (var order in t2pOrderResponse.order!) {
             var orderAfterConvert = order.toCommonOrder();
+            if (order.deliveryPartner != null &&
+                !deliveryPartner.contains(order.deliveryPartner!.fullName)) {
+              deliveryPartner.add(order.deliveryPartner!.fullName!);
+            }
+            if (order.lpManager != null &&
+                !lpManager.contains(order.lpManager!.fullName)) {
+              lpManager.add(order.lpManager!.fullName!);
+            }
             if (orderAfterConvert != null) {
               if (orderType == OrderType.pickup) {
                 t2pPickupOrders.add(orderAfterConvert);
@@ -367,6 +472,12 @@ class OrderController extends GetxController {
             }
           }
         }
+
+        printValue("Delivery partner list $deliveryPartner\n"
+            "Lp Manager list : $lpManager");
+
+        t2pPickupFilterOrders.assignAll(List.from(t2pPickupOrders));
+        t2pDeliveryFilterOrders.assignAll(List.from(t2pDeliveryOrders));
       } else {
         CustomSnackBar.showSnackBar(
             CustomSnackBar.error, "No Order Found", CustomSnackBar.error);
@@ -383,24 +494,24 @@ class OrderController extends GetxController {
   }
 
   clearList(T2POrderType t2pOrderType, OrderType orderType) {
-   // orderToBeAssign.clear();
+    // orderToBeAssign.clear();
     if (t2pOrderType == T2POrderType.T2P) {
       if (orderType == OrderType.pickup) {
-        t2pPickupOrders.clear();
+        t2pPickupFilterOrders.clear();
         pickupOrderStatus.clear();
       } else {
         deliveryOrderStatus.clear();
-        t2pDeliveryOrders.clear();
+        t2pDeliveryFilterOrders.clear();
       }
     }
     // AF2AP
     else {
       if (orderType == OrderType.pickup) {
         pickupOrderStatus.clear();
-        aF2APPickupOrders.clear();
+        aF2APPickupFilterOrders.clear();
       } else {
         deliveryOrderStatus.clear();
-        aF2APDeliveryOrders.clear();
+        aF2APDeliveryFilterOrders.clear();
       }
     }
   }
@@ -449,9 +560,9 @@ class OrderController extends GetxController {
             //printValue("Order After Convert $orderAfterConvert");
             if (orderAfterConvert != null) {
               if (orderType == OrderType.pickup) {
-                aF2APPickupOrders.add(orderAfterConvert);
+                aF2APPickupFilterOrders.add(orderAfterConvert);
               } else {
-                aF2APDeliveryOrders.add(orderAfterConvert);
+                aF2APDeliveryFilterOrders.add(orderAfterConvert);
               }
             }
           }
@@ -495,11 +606,12 @@ class OrderController extends GetxController {
     } finally {}
   }
 
-  getExactStatusKey(String status){
-    for(var entry in allDeliveryStatusResponse.value!.result!.toJson().entries){
-     if(entry.value == status){
-       partnerStatusChange(entry.key);
-     }
+  getExactStatusKey(String status) {
+    for (var entry
+        in allDeliveryStatusResponse.value!.result!.toJson().entries) {
+      if (entry.value == status) {
+        partnerStatusChange(entry.key);
+      }
     }
   }
 
@@ -528,31 +640,28 @@ class OrderController extends GetxController {
 
   // ------------------------------- Assign Order -------------------------------
 
-  Future printOrder(PrintInvoiceType invoiceType)async{
+  Future printOrder(PrintInvoiceType invoiceType) async {
     setButtonLoading();
-    try{
+    try {
       var url = "${URIConstants.pdfBaseURI}${invoiceType.name}";
       var userId = userController.userId;
-      if(userController.userType == UserType.delivery_partner.name){
-            url += "?pickup_partner=$userId";
-        if(t2pOrderType == T2POrderType.T2P){
-          if(orderType == OrderType.pickup){
-          }
+      if (userController.userType == UserType.delivery_partner.name) {
+        url += "?pickup_partner=$userId";
+        if (t2pOrderType == T2POrderType.T2P) {
+          if (orderType == OrderType.pickup) {}
         }
-      }else{
-            url += "?pickup_boy=$userId";
-        if(t2pOrderType == T2POrderType.T2P){
-          if(orderType == OrderType.pickup){
-          }
+      } else {
+        url += "?pickup_boy=$userId";
+        if (t2pOrderType == T2POrderType.T2P) {
+          if (orderType == OrderType.pickup) {}
         }
       }
 
       await openUrl(url);
-    }finally{
+    } finally {
       setButtonLoading();
     }
   }
-
 
   // ------------------------------- Assign Order -------------------------------
 
@@ -593,13 +702,12 @@ class OrderController extends GetxController {
 
   String getStatus(String status) {
     List<String> statusList = List.filled(orderToBeAssign.length, status);
-    return statusList.length > 1
-        ? statusList.join(",")
-        : statusList.first;
+    return statusList.length > 1 ? statusList.join(",") : statusList.first;
   }
 
   String getUserType() {
-    List<String> userTypeList = List.filled(orderToBeAssign.length, userController.userType);
+    List<String> userTypeList =
+        List.filled(orderToBeAssign.length, userController.userType);
     return userTypeList.length > 1
         ? userTypeList.join(",")
         : userTypeList.first;
@@ -752,9 +860,14 @@ class OrderController extends GetxController {
 
       // to start af2ap orders
       else {
-        await startOrderAF2AP();
-        /*if (orderType == OrderType.deliver) {
-        }*/
+        if (await mapLocationController.locationAndGpsEnabled()) {
+          await startOrderAF2AP();
+        } else {
+          CustomSnackBar.showSnackBar(
+              CustomSnackBar.error,
+              "Make sure location permission is granted and GPS is enabled.",
+              CustomSnackBar.error);
+        }
       }
     } else {
       CustomSnackBar.showSnackBar(
@@ -961,46 +1074,46 @@ class OrderController extends GetxController {
     if (t2pOrderType == T2POrderType.T2P) {
       //t2p pickup orders
       if (orderType == OrderType.pickup) {
-        for (var order in t2pPickupOrders) {
+        for (var order in t2pPickupFilterOrders) {
           if (order.id == orderId) {
             return order;
           } else {
-            return t2pPickupOrders[0];
+            return t2pPickupFilterOrders[0];
           }
         }
       }
 
       //t2p delivery orders
       else {
-        for (var order in t2pDeliveryOrders) {
+        for (var order in t2pDeliveryFilterOrders) {
           if (order.id == orderId) {
             //paymentGateway = order.paymentMode;
             return order;
           } else {
-            return t2pDeliveryOrders[0];
+            return t2pDeliveryFilterOrders[0];
           }
         }
       }
     } else {
       // af2ap pickup order
       if (orderType == OrderType.pickup) {
-        for (var order in aF2APPickupOrders) {
+        for (var order in aF2APPickupFilterOrders) {
           if (order.id == orderId) {
             //paymentGateway = order.paymentMode;
             return order;
           } else {
-            return aF2APPickupOrders[0];
+            return aF2APPickupFilterOrders[0];
           }
         }
       }
       //af2ap delivery orders
       else {
-        for (var order in aF2APDeliveryOrders) {
+        for (var order in aF2APDeliveryFilterOrders) {
           if (order.id == orderId) {
             //paymentGateway = order.paymentMode;
             return order;
           } else {
-            return aF2APDeliveryOrders[0];
+            return aF2APDeliveryFilterOrders[0];
           }
         }
       }

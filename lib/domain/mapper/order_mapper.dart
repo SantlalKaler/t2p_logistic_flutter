@@ -13,8 +13,8 @@ extension T2POrderExtension on T2POrder {
       productList += "${i + 1}. (Qty : ${products?[i].quantity}) ${products![i].productname}\n";
     }
     try {
-      printValue("Delivery boy is $deliveryBoy\n"
-          "Pickup boy is $pickupBoy");
+      /*printValue("Delivery boy is $deliveryBoy\n"
+          "Pickup boy is $pickupBoy");*/
       return CommonOrder(
           id: id ?? "",
           orderId: orderid ?? "",
@@ -27,7 +27,7 @@ extension T2POrderExtension on T2POrder {
           deliveryWeight: deliveryWeight ?? "",
           deliveryZipcode: address?.pincode ?? "",
           customerNumber: user?.mobile ?? "",
-          customerAddress: "${address?.address}, \n${address?.city?.name}, ${address?.pincode}",
+          customerAddress: "${address?.contactName},\n${address?.address}, \n${address?.city?.name},${address?.state?.name},\n${address?.pincode}",
           express: express ?? "N",
           paymentMode: gateway ?? "",
           deliveryDate: deliveryDate?.toDate() ?? "",
@@ -35,6 +35,8 @@ extension T2POrderExtension on T2POrder {
           orderStatus: status?.toUpperCase() ?? "",
           pickupBoy: pickupBoy?.fullName ?? "Unassigned",
           deliveryBoy: deliveryBoy?.fullName ?? "Unassigned",
+          deliveryPartner : deliveryPartner?.fullName ?? "",
+          lpManager: lpManager?.fullName ?? "",
           pickupAddress: Address(),
           deliveryAddress: address ?? Address());
     } catch (e) {
@@ -65,13 +67,15 @@ extension AF2APOrderExtension on af2apResponse.AF2APOrder {
           pickupCity: sourceLocation?.city?.name ?? "",
           deliveryCity: destinationLocation?.city?.name ?? "",
           price: totalPrice ?? "",
+          duesAmount: duesAmount ?? "",
+          paidAmount: paidAmount ?? "",
           pickupWeight: totalWeight ?? "",
           deliveryWeight: totalWeight ?? "",
           deliveryZipcode: destinationLocation?.pincode ?? "",
           customerNumber: user?.mobile ?? "",
           customerAddress: "${user?.fullName}, ${user?.address}",
           express: express,
-          paymentMode: "",
+          paymentMode: "COD",
           deliveryDate: deliveryDate?.toDate() ?? "",
           deliveryTime: deliveryTimeslot ?? "",
           orderStatus: status?.toUpperCase() ?? "",
@@ -95,6 +99,8 @@ class CommonOrder {
   String? pickupCity;
   String? deliveryCity;
   String? price;
+  String? duesAmount;
+  String? paidAmount;
   String? pickupWeight;
   String? deliveryWeight;
   String? deliveryZipcode;
@@ -107,6 +113,8 @@ class CommonOrder {
   String? orderStatus;
   String? pickupBoy;
   String? deliveryBoy;
+  String? lpManager;
+  String? deliveryPartner;
   Address? pickupAddress;
   Address? deliveryAddress;
   List<af2apResponse.Products>? af2apProducts;
@@ -119,6 +127,8 @@ class CommonOrder {
     required this.pickupCity,
     required this.deliveryCity,
     required this.price,
+    this.duesAmount,
+    this.paidAmount,
     required this.pickupWeight,
     required this.deliveryWeight,
     required this.deliveryZipcode,
@@ -131,6 +141,8 @@ class CommonOrder {
     required this.orderStatus,
     required this.pickupBoy,
     required this.deliveryBoy,
+    this.deliveryPartner,
+    this.lpManager,
     required this.pickupAddress,
     required this.deliveryAddress,
     this.af2apProducts,

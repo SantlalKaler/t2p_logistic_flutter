@@ -52,7 +52,7 @@ class _ManageDeliveryBoyState extends State<ManageDeliveryBoy> {
                             itemBuilder: (context, index) {
                               return InkWell(
                                 onTap: () {
-                                  Get.to(() => AddDeliveryBoy(
+                                  Get.to(() => AddUser(
                                       addEditDeliveryBoy:
                                           AddEditDeliveryBoy.edit,
                                       user: controller.boyList[index]));

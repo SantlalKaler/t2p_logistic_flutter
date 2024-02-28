@@ -203,7 +203,6 @@ Address copyWith({  Position? position,
     map['__v'] = _v;
     return map;
   }
-
 }
 
 State stateFromJson(String str) => State.fromJson(json.decode(str));

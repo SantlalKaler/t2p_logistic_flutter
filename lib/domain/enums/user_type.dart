@@ -1,6 +1,8 @@
 enum UserType{
   delivery_boy,
-  delivery_partner
+  delivery_partner,
+  lp_head,
+  lp_manager
 }
 
 enum OrderType{

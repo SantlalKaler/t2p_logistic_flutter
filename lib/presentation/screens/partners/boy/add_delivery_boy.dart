@@ -21,18 +21,18 @@ import '../../../constants/view_constants.dart';
 import '../../../theme/resource/custom_constants.dart';
 import '../../permission_handler.dart';
 
-class AddDeliveryBoy extends StatefulWidget {
+class AddUser extends StatefulWidget {
   final AddEditDeliveryBoy addEditDeliveryBoy;
   final User? user;
 
-  const AddDeliveryBoy(
+  const AddUser(
       {super.key, required this.addEditDeliveryBoy, this.user});
 
   @override
-  State<AddDeliveryBoy> createState() => _AddDeliveryBoyState();
+  State<AddUser> createState() => _AddUserState();
 }
 
-class _AddDeliveryBoyState extends State<AddDeliveryBoy> {
+class _AddUserState extends State<AddUser> {
   AddDeliveryBoyController controller = Get.find();
   final _formKey = GlobalKey<FormState>();
   TextEditingController fullNameController = TextEditingController();

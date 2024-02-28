@@ -6,7 +6,7 @@ import '../../../domain/dashboard_item.dart';
 class DashboardController extends GetxController {
   List<DashboardItem> partnerDashboardItems = [
     DashboardItem("Add Delivery Boy", ImageConstants.category1,
-        DashboardItemId.addDeliveryBoy),
+        DashboardItemId.addUser),
     DashboardItem("Manage Delivery Boy", ImageConstants.category2,
         DashboardItemId.manageDeliveryBoy),
     /*DashboardItem("View Assigned Orders", ImageConstants.category3,
@@ -33,5 +33,14 @@ class DashboardController extends GetxController {
         "My Profile", ImageConstants.category7, DashboardItemId.myProfile),
     DashboardItem(
         "My Trips", ImageConstants.category8, DashboardItemId.myTrips),
+  ];
+
+  List<DashboardItem> headDashboardItems = [
+    DashboardItem(
+        "My Orders", ImageConstants.category4, DashboardItemId.myOrders),
+    /*DashboardItem("Manage LP Manager", ImageConstants.category2,
+        DashboardItemId.manageDeliveryBoy),*/
+    DashboardItem(
+        "My Profile", ImageConstants.category7, DashboardItemId.myProfile),
   ];
 }

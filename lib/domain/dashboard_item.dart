@@ -11,7 +11,7 @@ class DashboardItem {
 }
 
 enum DashboardItemId {
-  addDeliveryBoy,
+  addUser,
   manageDeliveryBoy,
   //viewAssignOrders,
   myOrders,
