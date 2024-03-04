@@ -2,7 +2,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:t2p_logistic/domain/Model/user/VerifyOtpResponse.dart';
-import 'package:t2p_logistic/domain/enums/user_type.dart';
+import 'package:t2p_logistic/domain/enums/other.dart';
 import 'package:t2p_logistic/domain/mapper/order_mapper.dart';
 import 'package:t2p_logistic/presentation/screens/auth/auth_controller.dart';
 import 'package:t2p_logistic/presentation/theme/resource/getstorage_keys_constants.dart';

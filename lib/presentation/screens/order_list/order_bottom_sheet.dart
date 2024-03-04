@@ -3,7 +3,7 @@ import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:t2p_logistic/domain/Model/AF2APOrderResponse.dart';
 import 'package:t2p_logistic/domain/enums/add_edit_delivery_boy.dart';
-import 'package:t2p_logistic/domain/enums/user_type.dart';
+import 'package:t2p_logistic/domain/enums/other.dart';
 import 'package:t2p_logistic/presentation/controllers/user_controller.dart';
 import 'package:t2p_logistic/presentation/dialogs/default_dialog.dart';
 import 'package:t2p_logistic/presentation/screens/partners/boy/add_delivery_boy.dart';

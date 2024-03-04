@@ -74,7 +74,8 @@ class AF2APOrder {
       String? deliveryPrice, 
       String? pickupDistance, 
       String? deliveryDistance, 
-      String? totalWeight, 
+      String? totalWeight,
+    User? lpManager,
       String? status, 
       num? orderConfirmation,
     User? pickupPartner,
@@ -97,6 +98,7 @@ class AF2APOrder {
     _pickupDate = pickupDate;
     _pickupTime = pickupTime;
     _deliveryType = deliveryType;
+    _lpManager = lpManager;
     _deliveryDate = deliveryDate;
     _deliveryTimeslot = deliveryTimeslot;
     _active = active;
@@ -151,6 +153,7 @@ class AF2APOrder {
     _status = json['status'];
     _orderConfirmation = json['order_confirmation'];
     _pickupPartner = json['pickup_partner'] != null ? User.fromJson(json['pickup_partner']) : null;
+    _lpManager = json['lp_manager'] != null ? User.fromJson(json['lp_manager']) : null;
     _pickupBoy = json['pickup_boy'] != null ? User.fromJson(json['pickup_boy']) : null;
     _deliveryPartner = json['delivery_partner'] != null ? DeliveryPartner.fromJson(json['delivery_partner']) : null;
     _deliveryBoy = json['delivery_boy'] != null ? User.fromJson(json['delivery_boy']) : null;
@@ -175,6 +178,7 @@ class AF2APOrder {
   String? _remarks;
   String? _pickupDate;
   String? _pickupTime;
+  User? _lpManager;
   String? _deliveryType;
   String? _deliveryDate;
   String? _deliveryTimeslot;
@@ -209,6 +213,7 @@ AF2APOrder copyWith({  String? orderid,
   User? user,
   String? remarks,
   String? pickupDate,
+  User? lpManager,
   String? pickupTime,
   String? deliveryType,
   String? deliveryDate,
@@ -245,6 +250,7 @@ AF2APOrder copyWith({  String? orderid,
   remarks: remarks ?? _remarks,
   pickupDate: pickupDate ?? _pickupDate,
   pickupTime: pickupTime ?? _pickupTime,
+  lpManager: lpManager ?? _lpManager,
   deliveryType: deliveryType ?? _deliveryType,
   deliveryDate: deliveryDate ?? _deliveryDate,
   deliveryTimeslot: deliveryTimeslot ?? _deliveryTimeslot,
@@ -280,6 +286,7 @@ AF2APOrder copyWith({  String? orderid,
   User? get user => _user;
   String? get remarks => _remarks;
   String? get pickupDate => _pickupDate;
+  User? get lpManager => _lpManager;
   String? get pickupTime => _pickupTime;
   String? get deliveryType => _deliveryType;
   String? get deliveryDate => _deliveryDate;
@@ -322,8 +329,8 @@ AF2APOrder copyWith({  String? orderid,
     map['pickup_date'] = _pickupDate;
     map['pickup_time'] = _pickupTime;
     map['delivery_type'] = _deliveryType;
-    map['delivery_date'] = _deliveryDate;
     map['delivery_timeslot'] = _deliveryTimeslot;
+    map['lp_manager'] = _lpManager;
     map['active'] = _active;
     map['deleted'] = _deleted;
     map['total_price'] = _totalPrice;
@@ -339,6 +346,9 @@ AF2APOrder copyWith({  String? orderid,
     map['order_confirmation'] = _orderConfirmation;
     if (_pickupPartner != null) {
       map['pickup_partner'] = _pickupPartner?.toJson();
+    }
+    if (_lpManager != null) {
+      map['lp_manager'] = _lpManager?.toJson();
     }
     if (_pickupBoy != null) {
       map['pickup_boy'] = _pickupBoy?.toJson();

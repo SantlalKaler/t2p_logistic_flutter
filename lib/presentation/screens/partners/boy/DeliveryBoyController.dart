@@ -2,7 +2,7 @@ import 'package:get/get.dart';
 import 'package:t2p_logistic/data/api_services.dart';
 import 'package:t2p_logistic/domain/Model/partner/LogisticBoyListResponse.dart';
 import 'package:t2p_logistic/domain/Model/user/VerifyOtpResponse.dart';
-import 'package:t2p_logistic/domain/enums/user_type.dart';
+import 'package:t2p_logistic/domain/enums/other.dart';
 import 'package:t2p_logistic/presentation/controllers/user_controller.dart';
 import 'package:t2p_logistic/presentation/theme/resource/uri_constants.dart';
 import 'package:t2p_logistic/presentation/widgets/custom_snackbar.dart';

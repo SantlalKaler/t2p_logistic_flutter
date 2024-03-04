@@ -4,7 +4,7 @@ import 'package:t2p_logistic/presentation/controllers/user_controller.dart';
 import 'package:t2p_logistic/presentation/screens/order_list/order_controller.dart';
 
 import '../../../../domain/Model/single_filter_item.dart';
-import '../../../../domain/enums/user_type.dart';
+import '../../../../domain/enums/other.dart';
 import '../../../theme/resource/color_constant.dart';
 import '../../../theme/resource/dimens.dart';
 import '../../../widgets/custom_snackbar.dart';
@@ -43,12 +43,7 @@ class _ChipListState extends State<ChipList> {
                       onDeleted: () {
                         switch (item.id) {
                           case FilterItemId.orderType:
-                            if ((userController.userType !=
-                                    UserType.lp_head.name) &&
-                                (userController.userType !=
-                                    UserType.lp_manager.name)) {
-                              showT2POrderTypes();
-                            }
+                            showT2POrderTypes();
                             break;
                           case FilterItemId.dateRange:
                           // TODO: Handle this case.
@@ -69,9 +64,15 @@ class _ChipListState extends State<ChipList> {
                             break;
                           case FilterItemId.lpManager:
                             showManagerOrPartnerList(
-                                controller.lpManager, UserType.lp_manager);
+                                controller.t2pOrderType == T2POrderType.T2P
+                                    ? controller.t2pLpManagers
+                                    : controller.af2apLpManagers,
+                                UserType.lp_manager);
                           case FilterItemId.deliveryPartner:
-                            showManagerOrPartnerList(controller.deliveryPartner,
+                            showManagerOrPartnerList(
+                                controller.t2pOrderType == T2POrderType.T2P
+                                    ? controller.t2pDeliveryPartners
+                                    : controller.af2apDeliveryPartners,
                                 UserType.delivery_partner);
                         }
                       },

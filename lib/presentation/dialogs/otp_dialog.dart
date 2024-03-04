@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:t2p_logistic/domain/enums/user_type.dart';
+import 'package:t2p_logistic/domain/enums/other.dart';
 import 'package:t2p_logistic/presentation/controllers/user_controller.dart';
 import 'package:t2p_logistic/presentation/screens/order_list/order_controller.dart';
 import 'package:t2p_logistic/presentation/widgets/circular_loadings.dart';

@@ -54,7 +54,8 @@ class URIConstants {
 
 
   // <------------------------- head --------------------------------
-  static String lpOrder = "app/lp-manager-order-list";
+  static String lpT2POrder = "app/lp-manager-order-list";
+  static String lpAF2APOrder = "app/ghar-ka-khana-lp-head-or-manager-order-list";
 
   // cod
   static String codExpenseList = "admin/cod-expense-list";

@@ -35,3 +35,10 @@ enum PrintInvoiceType{
   partner_tomorrow_order_invoice,
   partner_tomorrow_order_by_product_invoice
 }
+
+enum CodStatus{
+  pending,
+  reject,
+  accepted,
+  submitted
+}

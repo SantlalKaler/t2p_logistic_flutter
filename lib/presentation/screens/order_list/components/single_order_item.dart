@@ -7,7 +7,7 @@ import 'package:t2p_logistic/presentation/screens/order_list/components/single_o
 import 'package:t2p_logistic/presentation/screens/order_list/order_controller.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../../domain/enums/user_type.dart';
+import '../../../../domain/enums/other.dart';
 import '../../../../domain/mapper/order_mapper.dart';
 import '../../../dialogs/af2ap_product_dialog.dart';
 import '../../../dialogs/default_dialog.dart';

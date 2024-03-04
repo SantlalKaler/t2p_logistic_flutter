@@ -9,6 +9,7 @@ class FilterItem {
 }
 
 enum FilterItemId {
+  // for order
   orderType,
   dateRange,
   pickupBoy,
@@ -16,5 +17,7 @@ enum FilterItemId {
   status,
   print,
   lpManager,
-  deliveryPartner
+  deliveryPartner,
 }
+
+

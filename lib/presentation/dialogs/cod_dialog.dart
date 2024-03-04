@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:t2p_logistic/domain/enums/user_type.dart';
+import 'package:t2p_logistic/domain/enums/other.dart';
 import 'package:t2p_logistic/presentation/dialogs/otp_dialog.dart';
 import 'package:t2p_logistic/presentation/screens/order_list/order_controller.dart';
 import 'package:t2p_logistic/presentation/theme/resource/dimens.dart';
