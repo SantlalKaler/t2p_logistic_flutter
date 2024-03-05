@@ -7,38 +7,53 @@ import '../../../../theme/resource/color_constant.dart';
 import '../../../../theme/resource/dimens.dart';
 import 'cod_chip_list.dart';
 
-PreferredSize codAppBarBottom(){
+PreferredSize codAppBarBottom() {
   CodCollectionController controller = Get.find();
-  return PreferredSize(
-      preferredSize: const Size(double.infinity, 140),
-      child: Column(
-        children: [
-          Obx(() => Container(
-            padding: EdgeInsets.symmetric(
-                vertical: DimensConstants.spaceBetweenViews),
-            child: Text(
-              "Cod Expense [Total collections : Rs. ${controller.totalExpense.value}",
-              style: const TextStyle(color: Colors.white),
-            ),
-          )),
-          Container(
-              width: double.infinity,
-              color: ColorConstants.screenBackgroundColor,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const CodChipList(),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  return/* controller.filterCodExpenseList.isEmpty
+      ? PreferredSize(preferredSize: const Size(0, 0), child: Container())
+      : */PreferredSize(
+          preferredSize: const Size(double.infinity, 140),
+          child: Column(
+            children: [
+              Obx(() => Container(
+                    padding: EdgeInsets.symmetric(
+                        vertical: DimensConstants.spaceBetweenViews),
+                    child: Text(
+                      "Cod Expense [Total collections : Rs. ${controller.totalExpense.value}",
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  )),
+              Container(
+                  width: double.infinity,
+                  color: ColorConstants.screenBackgroundColor,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(child: ElevatedButton(onPressed: () {}, child: const Text("Search"))),
-                      Gap(DimensConstants.spaceBetweenViews),
-                      Expanded(child: ElevatedButton(onPressed: () {}, child: const Text("Reset"))),
+                      const CodChipList(),
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: DimensConstants.screePadding),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                                child: ElevatedButton(
+                                    onPressed: () {
+                                      controller.getCodExpenseList();
+                                    },
+                                    child: const Text("Search"))),
+                            Gap(DimensConstants.spaceBetweenViews),
+                            Expanded(
+                                child: ElevatedButton(
+                                    onPressed: () {
+                                      controller.clearFilter();
+                                    },
+                                    child: const Text("Reset"))),
+                          ],
+                        ),
+                      )
                     ],
-                  )
-                ],
-              )),
-
-        ],
-      ));
+                  )),
+            ],
+          ));
 }

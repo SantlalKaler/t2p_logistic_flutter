@@ -51,6 +51,7 @@ class URIConstants {
       "app/gharkakhana-delivery-partner-update";
   static String changeOrderStatus = "app/change-order-status";
   static String updatePickupOrderWeight = "app/update-pickup-order-weight";
+  static String updateCodExpense = "admin/update-cod-expense";
 
 
   // <------------------------- head --------------------------------

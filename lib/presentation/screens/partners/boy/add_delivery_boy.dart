@@ -19,6 +19,7 @@ import '../../../../domain/Model/user/VerifyOtpResponse.dart';
 import '../../../../domain/upload_file_item.dart';
 import '../../../constants/view_constants.dart';
 import '../../../theme/resource/custom_constants.dart';
+import '../../../widgets/app_image_picker.dart';
 import '../../permission_handler.dart';
 
 class AddUser extends StatefulWidget {
@@ -209,59 +210,6 @@ class _AddUserState extends State<AddUser> {
                     ),
                   );
                 })));
-  }
-
-  Future pickImage(
-      ImageSource source, Function(String name, String path) function,
-      {int imageQuality = 40}) async {
-    try {
-      printValue("image quality is $imageQuality");
-      final image = await ImagePicker()
-          .pickImage(source: source, imageQuality: imageQuality);
-      if (image == null) return;
-      final imagePath = File(image.path).path;
-      final imageName = imagePath.split('/').last;
-      function(imagePath, imageName);
-    } on PlatformException catch (e) {
-      printValue('Failed to pick image: $e');
-    }
-  }
-
-  Future showOptions(BuildContext context, Function function) async {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => CupertinoActionSheet(
-        actions: [
-          CupertinoActionSheetAction(
-            child: const Text(
-              "Gallery",
-            ),
-            onPressed: () {
-              Get.back();
-              function(ImageSource.gallery);
-            },
-          ),
-          CupertinoActionSheetAction(
-            child: const Text(
-              "Camera",
-            ),
-            onPressed: () async {
-              Get.back();
-              if (await isPermissionGranted(Permission.camera)) {
-                function(ImageSource.camera);
-              } else {
-                if (context.mounted) {
-                  CustomSnackBar.showSnackBar(
-                      CustomSnackBar.error,
-                      "Please allow camera permission to capture image.",
-                      CustomSnackBar.error);
-                }
-              }
-            },
-          ),
-        ],
-      ),
-    );
   }
 
   addBoy() {}

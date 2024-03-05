@@ -32,13 +32,20 @@ class CodChipList extends StatelessWidget {
                     ),
                     onDeleted: () {
                       if (chip.id == FilterItemId.city) {
-                        showCityOrStatus(context,
+                        showCityOrStatus(context, chip.id,
                             cityList: controller.cityList);
                       }
                       if (chip.id == FilterItemId.status) {
                         showCityOrStatus(
                           context,
+                          chip.id,
                         );
+                      }
+                      if (chip.id == FilterItemId.startDate) {
+                        showCalendar(context, FilterItemId.startDate);
+                      }
+                      if (chip.id == FilterItemId.endDate) {
+                        showCalendar(context, FilterItemId.endDate);
                       }
                     },
                   ),
@@ -49,42 +56,37 @@ class CodChipList extends StatelessWidget {
         });
   }
 
-  showCityOrStatus(BuildContext context, {List<City>? cityList}) {
+  showCalendar(BuildContext context, FilterItemId itemId) async {
+    CodCollectionController controller = Get.find();
+    final DateTime? picked = await showDatePicker(
+        context: context,
+        firstDate: DateTime(2020, 8),
+        lastDate: DateTime.now());
+    if (picked != null && controller.selectedStartDate.value != picked) {
+      controller.setSelectedItem(itemId, date: picked);
+    }
+  }
+
+  showCityOrStatus(BuildContext context, FilterItemId itemId,
+      {List<City>? cityList}) {
     CodCollectionController controller = Get.find();
     return showModalBottomSheet(
       context: context,
       isScrollControlled: false,
       builder: (context) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            TextButton(
-                onPressed: () {
-                  controller.clearCityFilter();
+        return ListView.builder(
+          itemCount: cityList?.length ?? controller.statusList.length,
+          itemBuilder: (context, index) {
+            return ListTile(
+                title: Text(
+                  (cityList?[index].name ?? controller.statusList[index].name!)
+                      .toUpperCase(),
+                ),
+                onTap: () {
+                  controller.setSelectedItem(itemId, index: index);
                   Get.back();
-                },
-                child: const Text("Clear")),
-            Expanded(
-              child: ListView.builder(
-                itemCount: cityList?.length ?? controller.statusList.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                      title: Text(
-                        cityList?[index].name ??
-                            controller.statusList[index].name!,
-                      ),
-                      onTap: () {
-                        if (cityList != null) {
-                          controller.filterByCity(cityList[index]);
-                        }else{
-
-                        }
-                        Get.back();
-                      });
-                },
-              ),
-            ),
-          ],
+                });
+          },
         );
       },
     );

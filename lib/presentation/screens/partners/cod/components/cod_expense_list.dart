@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
@@ -7,7 +5,6 @@ import 'package:t2p_logistic/domain/Model/partner/CodExpenseListResponse.dart';
 import 'package:t2p_logistic/domain/Model/partner/cod_collection_status.dart';
 import 'package:t2p_logistic/presentation/constants/extension.dart';
 import 'package:t2p_logistic/presentation/screens/partners/cod/cod_collection_controller.dart';
-import 'package:t2p_logistic/presentation/theme/resource/custom_constants.dart';
 
 import '../../../../theme/resource/dimens.dart';
 import '../../../../widgets/app_container.dart';
@@ -103,7 +100,7 @@ class SingleCodCollectionItem extends StatelessWidget {
                 Expanded(
                   child: ElevatedButton(
                       onPressed: () {
-                        Get.to(const AddCodScreen());
+                        Get.to(AddCodScreen(expense: expense,));
                       },
                       child: const Text("Edit")),
                 ),

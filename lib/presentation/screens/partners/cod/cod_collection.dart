@@ -4,12 +4,11 @@ import 'package:t2p_logistic/presentation/screens/partners/cod/cod_collection_co
 import 'package:t2p_logistic/presentation/screens/partners/cod/components/cod_expense_list.dart';
 import 'package:t2p_logistic/presentation/theme/resource/dimens.dart';
 import 'package:t2p_logistic/presentation/widgets/app_back_button.dart';
+import 'package:t2p_logistic/presentation/widgets/app_empty_view.dart';
 import 'package:t2p_logistic/presentation/widgets/circular_loadings.dart';
 
-import '../../../theme/resource/color_constant.dart';
 import '../../../widgets/app_scaffold.dart';
 import 'components/cod_app_bar_bottom.dart';
-import 'components/cod_chip_list.dart';
 
 class CodCollectionScreen extends StatefulWidget {
   const CodCollectionScreen({super.key});
@@ -19,10 +18,12 @@ class CodCollectionScreen extends StatefulWidget {
 }
 
 class _CodCollectionScreenState extends State<CodCollectionScreen> {
-  CodCollectionController controller = Get.find();
+  late CodCollectionController controller;
 
   @override
   void initState() {
+    Get.delete<CodCollectionController>();
+    controller = Get.put(CodCollectionController());
     controller.getCodExpenseList();
     super.initState();
   }
@@ -46,8 +47,10 @@ class _CodCollectionScreenState extends State<CodCollectionScreen> {
           init: CodCollectionController(),
           builder: (controller) {
             return controller.loading.isTrue
-                ? circularloadingRedSmall()
-                : Column(
+                ? circularloadingRedSmallInfinitySize()
+                : controller.filterCodExpenseList.isEmpty
+                ? const AppEmptyView(message: "No Data Found",)
+                :Column(
                     children: [
                       Expanded(
                         child: Padding(

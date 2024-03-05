@@ -74,6 +74,10 @@ class _ChipListState extends State<ChipList> {
                                     ? controller.t2pDeliveryPartners
                                     : controller.af2apDeliveryPartners,
                                 UserType.delivery_partner);
+                          case FilterItemId.startDate:
+                            // TODO: Handle this case.
+                          case FilterItemId.endDate:
+                            // TODO: Handle this case.
                         }
                       },
                       //avatar: Icon(item.icon),
