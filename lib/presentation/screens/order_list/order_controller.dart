@@ -431,12 +431,19 @@ class OrderController extends GetxController {
     }
 
     // if user type is lp head
-    else if (userController.userType == UserType.lp_head.name ||
-        userController.userType == UserType.lp_manager.name) {
+    else if(userController.userType == UserType.lp_manager.name){
+      path = URIConstants.lpManagerT2POrder;
       if (t2pOrderType == T2POrderType.T2P) {
-        path = URIConstants.lpT2POrder;
+        path = URIConstants.lpManagerT2POrder;
       } else {
-        path = URIConstants.lpAF2APOrder;
+        path = URIConstants.lpManagerAF2APOrder;
+      }
+    }
+    else if (userController.userType == UserType.lp_head.name ) {
+      if (t2pOrderType == T2POrderType.T2P) {
+        path = URIConstants.lpHeadT2POrder;
+      } else {
+        path = URIConstants.lpHeadAF2APOrder;
       }
     }
 

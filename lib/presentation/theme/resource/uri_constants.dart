@@ -14,6 +14,7 @@ class URIConstants {
   static String boyDeliveryOrderT2P = "app/delivery-boy-order-list";
   static String boyPickupOrderAF2AP = "app/gharkakhana-pickup-boy-list";
   static String boyDeliveryOrderAF2AP = "app/gharkakhana-pickup-boy-list";
+  static String deliveryOrderStart = "app/delivery-boy-order-start";
   static String pickupOrderStart = "app/pickup-boy-order-start";
   static String pickupOrderStartAF2AP = "app/gharkakhana-pickup-boy-order-start";
   static String deliveryOrderStartAF2AP = "app/gharkakhana-delivery-boy-order-start";
@@ -26,7 +27,6 @@ class URIConstants {
   static String updateDeliveryOrderWeight = "app/update-delivery-order-weight";
   static String updateAF2APOrder = "app/gharkakhana-pickup-order";
   static String updateDeliveryDistance = "app/update-delivery-distance";
-  static String deliveryOrderStart = "app/delivery-boy-order-start";
 
   // <------------------------- partner --------------------------------
   static String employeeStatusChange = 'app/employee-status-chnage';
@@ -55,8 +55,10 @@ class URIConstants {
 
 
   // <------------------------- head --------------------------------
-  static String lpT2POrder = "app/lp-manager-order-list";
-  static String lpAF2APOrder = "app/ghar-ka-khana-lp-head-or-manager-order-list";
+  static String lpManagerT2POrder = "app/lp-manager-order-list";
+  static String lpManagerAF2APOrder = "app/ghar-ka-khana-lp-manager-order-list";
+  static String lpHeadT2POrder = "app/lp-head-order-list";
+  static String lpHeadAF2APOrder = "app/ghar-ka-khana-lp-head-order-list";
 
   // cod
   static String codExpenseList = "admin/cod-expense-list";
