@@ -54,11 +54,20 @@ class URIConstants {
   static String updateCodExpense = "admin/update-cod-expense";
 
 
+  // <------------------------- manager --------------------------------
+  static String lpManagerT2PPickupOrder = "app/lp-manager-pickup-partner-order-list";
+  static String lpManagerT2PDeliveryOrder = "app/lp-manager-delivery-partner-order-list";
+  static String lpManagerAF2APPickupOrder = "app/ghar-ka-khana-lp-manager-pickup-partner-order-list";
+  static String lpManagerAF2APDeliveryOrder = "app/ghar-ka-khana-lp-manager-delivery-partner-order-list";
+  static String lpManagerDeliveryPartner = "app/lp-manager-delivery-partner";
+
   // <------------------------- head --------------------------------
-  static String lpManagerT2POrder = "app/lp-manager-order-list";
-  static String lpManagerAF2APOrder = "app/ghar-ka-khana-lp-manager-order-list";
-  static String lpHeadT2POrder = "app/lp-head-order-list";
-  static String lpHeadAF2APOrder = "app/ghar-ka-khana-lp-head-order-list";
+
+  static String lpManagerList = "app/lp-manager-list";
+  static String lpHeadT2PPickupOrder = "app/lp-head-pickup-partner-order-list";
+  static String lpHeadT2PDeliveryOrder = "app/lp-head-delivery-partner-order-list";
+  static String lpHeadAF2APPickupOrder = "app/ghar-ka-khana-lp-head-pickup-partner-order-list";
+  static String lpHeadAF2APDeliveryOrder = "app/ghar-ka-khana-lp-head-delivery-partner-order-list";
 
   // cod
   static String codExpenseList = "admin/cod-expense-list";

@@ -58,10 +58,9 @@ class _OrderListState extends State<OrderList>
                 var pickupCount = "";
                 var deliveryCount = "";
                 if (controller.t2pOrderType == T2POrderType.T2P) {
-                  pickupCount =
-                      controller.t2pPickupFilterOrders.length.toString();
+                  pickupCount = controller.t2pPickupOrders.length.toString();
                   deliveryCount =
-                      controller.t2pDeliveryFilterOrders.length.toString();
+                      controller.t2pDeliveryOrders.length.toString();
                 } else {
                   pickupCount =
                       controller.aF2APPickupFilterOrders.length.toString();
@@ -82,32 +81,35 @@ class _OrderListState extends State<OrderList>
                     bottom: PreferredSize(
                       preferredSize: Size(
                           double.infinity,
-                          userController.userType ==
-                                  UserType.delivery_partner.name
+                          (userController.userType ==
+                                      UserType.delivery_partner.name ||
+                                  userController.userType ==
+                                      UserType.lp_manager.name ||
+                                  userController.userType ==
+                                      UserType.lp_head.name)
                               ? 160
                               : 100),
                       child: Column(
                         children: [
-                          if ((userController.userType !=
-                                  UserType.lp_head.name) &&
-                              (userController.userType !=
-                                  UserType.lp_manager.name))
-                            TabBar(
-                                controller: _tabController,
-                                indicatorColor: Colors.green,
-                                indicatorWeight: 5,
-                                tabs: [
-                                  Tab(
-                                    text: "Pickup($pickupCount)",
-                                  ),
-                                  Tab(
-                                    text: "Deliver($deliveryCount)",
-                                  ),
-                                ]),
+                          TabBar(
+                              controller: _tabController,
+                              indicatorColor: Colors.green,
+                              indicatorWeight: 5,
+                              tabs: [
+                                Tab(
+                                  text: "Pickup($pickupCount)",
+                                ),
+                                Tab(
+                                  text: "Deliver($deliveryCount)",
+                                ),
+                              ]),
 
                           // only delivery partner can select all orders at once
                           if (userController.userType ==
-                              UserType.delivery_partner.name)
+                                  UserType.delivery_partner.name ||
+                              userController.userType ==
+                                  UserType.lp_manager.name ||
+                              userController.userType == UserType.lp_head.name)
                             CheckboxListTile(
                               checkColor: Colors.green,
                               value: controller.allOrderSelected(),
@@ -140,14 +142,14 @@ class _OrderListState extends State<OrderList>
                 controller.pickupLoading.isTrue && _tabController.index == 0
                     ? circularloadingRedSmallInfinitySize()
                     : (controller.t2pOrderType == T2POrderType.T2P &&
-                                controller.t2pPickupFilterOrders.isEmpty ||
+                                controller.t2pPickupOrders.isEmpty ||
                             controller.t2pOrderType == T2POrderType.AF2AP &&
                                 controller.aF2APPickupFilterOrders.isEmpty)
                         ? const AppEmptyView(message: "No Orders Found.")
                         : ListView.builder(
                             itemCount:
                                 controller.t2pOrderType == T2POrderType.T2P
-                                    ? controller.t2pPickupFilterOrders.length
+                                    ? controller.t2pPickupOrders.length
                                     : controller.aF2APPickupFilterOrders.length,
                             itemBuilder: (context, index) {
                               return Padding(
@@ -158,8 +160,7 @@ class _OrderListState extends State<OrderList>
                                 child: SingleOrderItem(
                                     order: controller.t2pOrderType ==
                                             T2POrderType.T2P
-                                        ? controller
-                                            .t2pPickupFilterOrders[index]
+                                        ? controller.t2pPickupOrders[index]
                                         : controller
                                             .aF2APPickupFilterOrders[index]),
                               );
@@ -170,14 +171,14 @@ class _OrderListState extends State<OrderList>
                 controller.deliveryLoading.isTrue && _tabController.index == 1
                     ? circularloadingRedSmallInfinitySize()
                     : (controller.t2pOrderType == T2POrderType.T2P &&
-                                controller.t2pDeliveryFilterOrders.isEmpty ||
+                                controller.t2pDeliveryOrders.isEmpty ||
                             controller.t2pOrderType == T2POrderType.AF2AP &&
                                 controller.aF2APDeliveryFilterOrders.isEmpty)
                         ? const AppEmptyView(message: "No Orders Found.")
                         : ListView.builder(
                             itemCount: controller.t2pOrderType ==
                                     T2POrderType.T2P
-                                ? controller.t2pDeliveryFilterOrders.length
+                                ? controller.t2pDeliveryOrders.length
                                 : controller.aF2APDeliveryFilterOrders.length,
                             itemBuilder: (context, index) {
                               //printValue(controller.t2pDeliveryOrders.length);
@@ -189,8 +190,7 @@ class _OrderListState extends State<OrderList>
                                 child: SingleOrderItem(
                                     order: controller.t2pOrderType ==
                                             T2POrderType.T2P
-                                        ? controller
-                                            .t2pDeliveryFilterOrders[index]
+                                        ? controller.t2pDeliveryOrders[index]
                                         : controller
                                             .aF2APDeliveryFilterOrders[index]),
                               );

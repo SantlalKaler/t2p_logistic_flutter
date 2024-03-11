@@ -8,6 +8,7 @@ import '../../../../domain/enums/other.dart';
 import '../../../theme/resource/color_constant.dart';
 import '../../../theme/resource/dimens.dart';
 import '../../../widgets/custom_snackbar.dart';
+import '../../partners/boy/DeliveryBoyController.dart';
 
 class ChipList extends StatefulWidget {
   const ChipList({super.key});
@@ -19,6 +20,7 @@ class ChipList extends StatefulWidget {
 class _ChipListState extends State<ChipList> {
   OrderController controller = Get.find();
   UserController userController = Get.find();
+  DeliveryBoyController deliveryBoyController = Get.find();
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +57,7 @@ class _ChipListState extends State<ChipList> {
                           case FilterItemId.city:
                           // TODO: Handle this case.
                           case FilterItemId.status:
-                            if (controller.canAssignOrStart()) {
+                            if (controller.anyOrderSelected()) {
                               showStatus();
                             } else {
                               CustomSnackBar.showSnackBar(CustomSnackBar.error,
@@ -63,21 +65,34 @@ class _ChipListState extends State<ChipList> {
                             }
                             break;
                           case FilterItemId.lpManager:
+                            /*here user type I use to determine, by which type
+                          need to filter order list
+                          by lp manager or delivery partner*/
                             showManagerOrPartnerList(
-                                controller.t2pOrderType == T2POrderType.T2P
-                                    ? controller.t2pLpManagers
-                                    : controller.af2apLpManagers,
+                                deliveryBoyController.managerList
+                                    .map((element) => element.fullName!)
+                                    .toList(),
                                 UserType.lp_manager);
+
                           case FilterItemId.deliveryPartner:
+                          // if user type is lp head then if he want to filter order list
+                          // according to delivery partner then he need to first select manager
+                          // then he can get delivery partner list of that manger
+                            if (userController.userType ==
+                                UserType.lp_head.name &&
+                                controller.selectedManager == null) {
+                              CustomSnackBar.showSnackBar(
+                                  "", "Please select lp manager first", "");
+                            } else {
                             showManagerOrPartnerList(
-                                controller.t2pOrderType == T2POrderType.T2P
-                                    ? controller.t2pDeliveryPartners
-                                    : controller.af2apDeliveryPartners,
-                                UserType.delivery_partner);
+                                deliveryBoyController.partnerList
+                                    .map((element) => element.fullName!)
+                                    .toList(),
+                                UserType.delivery_partner);}
                           case FilterItemId.startDate:
-                            // TODO: Handle this case.
+                          // TODO: Handle this case.
                           case FilterItemId.endDate:
-                            // TODO: Handle this case.
+                          // TODO: Handle this case.
                         }
                       },
                       //avatar: Icon(item.icon),
@@ -158,7 +173,6 @@ class _ChipListState extends State<ChipList> {
                       ),
                       onTap: () {
                         controller.filterOrder(userType, item);
-
                         Get.back();
                       });
                 },

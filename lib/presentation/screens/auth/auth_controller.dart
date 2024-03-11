@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:t2p_logistic/domain/Model/user/VerifyOtpResponse.dart';
+import 'package:t2p_logistic/domain/enums/other.dart';
 import 'package:t2p_logistic/presentation/controllers/user_controller.dart';
 import 'package:t2p_logistic/presentation/screens/partners/dashboard.dart';
 import 'package:t2p_logistic/presentation/theme/resource/getstorage_keys_constants.dart';
@@ -81,7 +82,15 @@ class AuthController extends GetxController {
         cleartextControllers();
 
         //move to next screen
-        Get.offAll(() => const DashboardScreen());
+        if (user.userType == UserType.lp_head.name ||
+            user.userType == UserType.lp_manager.name ||
+            user.userType == UserType.delivery_partner.name ||
+            user.userType == UserType.delivery_boy.name) {
+          Get.offAll(() => const DashboardScreen());
+        }else{
+          CustomSnackBar.showSnackBar(CustomSnackBar.error,
+              "UnAuthorized User", CustomSnackBar.error);
+        }
       } else {
         CustomSnackBar.showSnackBar(CustomSnackBar.error,
             response!.data['message'], CustomSnackBar.error);
