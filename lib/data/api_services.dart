@@ -16,7 +16,7 @@ class ApiService {
     _dio.interceptors.add(PrettyDioLogger(
         requestHeader: false,
         requestBody: true,
-        responseBody: false,
+        responseBody: true,
         responseHeader: false,
         error: true,
         compact: true,

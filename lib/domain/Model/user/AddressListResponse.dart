@@ -88,7 +88,7 @@ class Address {
 }
 
   Address.fromJson(dynamic json) {
-    _position = json['position'] != null ? Position.fromJson(json['position']) : null;
+    _position = json ['position'] != null ? Position.fromJson(json['position']) : null;
     _user = json['user'];
     _title = json['title'];
     _address = json['address'];

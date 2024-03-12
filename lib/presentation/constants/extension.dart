@@ -25,7 +25,7 @@ extension StringExtension on String? {
     try {
       return double.parse(this ?? "0.0").toStringAsFixed(2);
     } catch (e) {
-      printValue("Error in converting : $e\nHas to convert $this");
+     // printValue("Error in converting : $e\nHas to convert $this");
       return this ?? "0.0";
     }
   }

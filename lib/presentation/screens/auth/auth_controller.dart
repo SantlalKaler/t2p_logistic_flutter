@@ -77,15 +77,14 @@ class AuthController extends GetxController {
       if (response != null && response.data['status'] == Status.success.name) {
         User user = User.fromJson(response.data['result']);
 
-        //save user info
-        userController.saveUser(user);
-        cleartextControllers();
-
         //move to next screen
         if (user.userType == UserType.lp_head.name ||
             user.userType == UserType.lp_manager.name ||
             user.userType == UserType.delivery_partner.name ||
             user.userType == UserType.delivery_boy.name) {
+
+          userController.saveUser(user);
+          cleartextControllers();
           Get.offAll(() => const DashboardScreen());
         }else{
           CustomSnackBar.showSnackBar(CustomSnackBar.error,

@@ -150,7 +150,9 @@ class OrderController extends GetxController {
     }*/
 
     // delivery partner can change order status
-    if (userController.userType == UserType.delivery_partner.name) {
+    if (userController.userType == UserType.delivery_partner.name ||
+        userController.userType == UserType.lp_head.name ||
+        userController.userType == UserType.lp_manager.name) {
       chipList.add(FilterItem(title: "Change Status", id: FilterItemId.status));
     }
 
@@ -509,11 +511,6 @@ class OrderController extends GetxController {
           ? await _apiService.get(path)
           : await _apiService.post(path, data);
 
-      // for partner we need to get status so partner can change order status
-      if (userController.userType == UserType.delivery_partner.name) {
-        await allDeliveryStatus();
-      }
-
       // for lp manager we need delivery partners to filter order list
       if (userController.userType == UserType.lp_manager.name &&
           deliveryBoyController.partnerList.isEmpty) {
@@ -526,7 +523,8 @@ class OrderController extends GetxController {
           await deliveryBoyController.getLpManager();
         }
         if (selectedManager != null && selectedPartner == null) {
-          await deliveryBoyController.getDeliveryPartners(getSelectedManagerId());
+          await deliveryBoyController
+              .getDeliveryPartners(getSelectedManagerId());
         }
       }
 
@@ -538,6 +536,13 @@ class OrderController extends GetxController {
             T2pOrderResponse.fromJson(response.data);
 
         if (t2pOrderResponse.order!.isNotEmpty) {
+          // for partner we need to get status so partner can change order status
+          if (userController.userType == UserType.delivery_partner.name ||
+              userController.userType == UserType.lp_head.name ||
+              userController.userType == UserType.lp_manager.name) {
+            await allDeliveryStatus();
+          }
+
           for (var order in t2pOrderResponse.order!) {
             var orderAfterConvert = order.toCommonOrder();
             if (order.deliveryPartner != null &&
@@ -663,9 +668,11 @@ class OrderController extends GetxController {
         }
       } else if (userType == UserType.lp_head.name) {
         if (orderType == OrderType.pickup) {
-          path += "?lp_head=$userId&pickup_partner=${getPartnerId()}&lp_manager=${getSelectedManagerId()}";
+          path +=
+              "?lp_head=$userId&pickup_partner=${getPartnerId()}&lp_manager=${getSelectedManagerId()}";
         } else {
-          path += "?lp_head=$userId&delivery_partner=${getPartnerId()}&lp_manager=${getSelectedManagerId()}";
+          path +=
+              "?lp_head=$userId&delivery_partner=${getPartnerId()}&lp_manager=${getSelectedManagerId()}";
         }
       }
 
@@ -759,8 +766,12 @@ class OrderController extends GetxController {
             deliveryOrderStatus.add(result.deliveryBoyAssigned!);
           }
         }
+        printValue("Pickup order status : $pickupOrderStatus\n"
+            "delivery order status : $deliveryOrderStatus\n");
       }
-    } finally {}
+    } finally {
+      update();
+    }
   }
 
   getExactStatusKey(String status) {

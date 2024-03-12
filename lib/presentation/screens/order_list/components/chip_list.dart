@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:t2p_logistic/presentation/controllers/user_controller.dart';
 import 'package:t2p_logistic/presentation/screens/order_list/order_controller.dart';
+import 'package:t2p_logistic/presentation/theme/resource/custom_constants.dart';
 
 import '../../../../domain/Model/single_filter_item.dart';
 import '../../../../domain/enums/other.dart';
@@ -192,6 +193,8 @@ class _ChipListState extends State<ChipList> {
         var items = controller.orderType == OrderType.pickup
             ? controller.pickupOrderStatus
             : controller.deliveryOrderStatus;
+        printValue("Items length : ${items.length}\n"
+            "Pickup order type : ${controller.pickupOrderStatus.length}");
         return SizedBox(
             //  height: 120,
             child: ListView.builder(
