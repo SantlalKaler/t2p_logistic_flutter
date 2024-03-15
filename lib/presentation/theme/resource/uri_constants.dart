@@ -16,8 +16,10 @@ class URIConstants {
   static String boyDeliveryOrderAF2AP = "app/gharkakhana-pickup-boy-list";
   static String deliveryOrderStart = "app/delivery-boy-order-start";
   static String pickupOrderStart = "app/pickup-boy-order-start";
-  static String pickupOrderStartAF2AP = "app/gharkakhana-pickup-boy-order-start";
-  static String deliveryOrderStartAF2AP = "app/gharkakhana-delivery-boy-order-start";
+  static String pickupOrderStartAF2AP =
+      "app/gharkakhana-pickup-boy-order-start";
+  static String deliveryOrderStartAF2AP =
+      "app/gharkakhana-delivery-boy-order-start";
   static String deliveredToCargo = "app/delivered-to-cargo";
   static String deliveredToCustomer = "app/delivered-to-customer";
   static String deliveredToCustomerAF2AP = "app/gharkakhana-delivered-order";
@@ -53,28 +55,35 @@ class URIConstants {
   static String updatePickupOrderWeight = "app/update-pickup-order-weight";
   static String updateCodExpense = "admin/update-cod-expense";
 
-
   // <------------------------- manager --------------------------------
-  static String lpManagerT2PPickupOrder = "app/lp-manager-pickup-partner-order-list";
-  static String lpManagerT2PDeliveryOrder = "app/lp-manager-delivery-partner-order-list";
-  static String lpManagerAF2APPickupOrder = "app/ghar-ka-khana-lp-manager-pickup-partner-order-list";
-  static String lpManagerAF2APDeliveryOrder = "app/ghar-ka-khana-lp-manager-delivery-partner-order-list";
+  static String lpManagerT2PPickupOrder =
+      "app/lp-manager-pickup-partner-order-list";
+  static String lpManagerT2PDeliveryOrder =
+      "app/lp-manager-delivery-partner-order-list";
+  static String lpManagerAF2APPickupOrder =
+      "app/ghar-ka-khana-lp-manager-pickup-partner-order-list";
+  static String lpManagerAF2APDeliveryOrder =
+      "app/ghar-ka-khana-lp-manager-delivery-partner-order-list";
   static String lpManagerDeliveryPartner = "app/lp-manager-delivery-partner";
 
   // <------------------------- head --------------------------------
 
   static String lpManagerList = "app/lp-manager-list";
   static String lpHeadT2PPickupOrder = "app/lp-head-pickup-partner-order-list";
-  static String lpHeadT2PDeliveryOrder = "app/lp-head-delivery-partner-order-list";
-  static String lpHeadAF2APPickupOrder = "app/ghar-ka-khana-lp-head-pickup-partner-order-list";
-  static String lpHeadAF2APDeliveryOrder = "app/ghar-ka-khana-lp-head-delivery-partner-order-list";
+  static String lpHeadT2PDeliveryOrder =
+      "app/lp-head-delivery-partner-order-list";
+  static String lpHeadAF2APPickupOrder =
+      "app/ghar-ka-khana-lp-head-pickup-partner-order-list";
+  static String lpHeadAF2APDeliveryOrder =
+      "app/ghar-ka-khana-lp-head-delivery-partner-order-list";
 
   // cod
   static String codExpenseList = "admin/cod-expense-list";
 
   // ---------------------------------------------------------------->
 
-  //common
+  // --------------------------------- common -----------------------------------
+  // address
   static String allAddress = "app/all-address";
   static String addAddress = "app/add-address";
   static String editAddress = 'app/edit-address';
@@ -85,4 +94,11 @@ class URIConstants {
 
   //payment
   static String getQr = "v3/qr/init";
+
+  // expense
+  static String expenseCategory = "admin/all-expense-category";
+  static String expenseSubCategory = "admin/all-expense-sub-category";
+  static String addExpense = "admin/add-other-expense";
+
+//---------------------------------------------------------------------->
 }

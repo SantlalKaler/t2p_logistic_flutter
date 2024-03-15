@@ -789,7 +789,7 @@ class OrderController extends GetxController {
       var data = {
         "by": getUserType(),
         "id": getOrderIds(),
-        "status": getStatus(status)
+        "status": getSameLengthInfoAsSelectedOrderHas(status)
       };
       var response =
           await _apiService.post(URIConstants.partnerStatusChange, data);
@@ -872,11 +872,17 @@ class OrderController extends GetxController {
         : orderToBeAssign.first;
   }
 
-  String getStatus(String status) {
+  String getSameLengthInfoAsSelectedOrderHas(String status) {
     List<String> statusList = List.filled(orderToBeAssign.length, status);
     return statusList.length > 1 ? statusList.join(",") : statusList.first;
   }
 
+
+ /* String getBoy(String boy) {
+    List<String> boyList = List.filled(orderToBeAssign.length, boy);
+    return boyList.length > 1 ? boyList.join(",") : boyList.first;
+  }
+*/
   String getUserType() {
     List<String> userTypeList =
         List.filled(orderToBeAssign.length, userController.userType);
@@ -889,26 +895,27 @@ class OrderController extends GetxController {
     setButtonLoading();
     try {
       // parameters
+      var boyList = getSameLengthInfoAsSelectedOrderHas(boy);
       Map<String, String> data = {"id": getOrderIds()};
       var path = "";
       if (t2pOrderType == T2POrderType.T2P) {
         if (orderType == OrderType.pickup) {
-          data["pickup_boy"] = boy;
+          data["pickup_boy"] = boyList;
           path = URIConstants.assignT2PPickupOrder;
         } else {
-          data["delivery_boy"] = boy;
+          data["delivery_boy"] = boyList;
           data["user_id"] =
               userController.userType == UserType.delivery_partner.name
-                  ? userController.userId
-                  : getPartnerId();
+                  ? getSameLengthInfoAsSelectedOrderHas(userController.userId)
+                  : getSameLengthInfoAsSelectedOrderHas(getPartnerId());
           path = URIConstants.assignT2PDeliveryOrder;
         }
       } else {
         if (orderType == OrderType.pickup) {
-          data["pickup_boy"] = boy;
+          data["pickup_boy"] = boyList;
           path = URIConstants.assignAF2APPickupOrder;
         } else {
-          data["delivery_boy"] = boy;
+          data["delivery_boy"] = boyList;
           path = URIConstants.assignAF2APDeliveryOrder;
         }
       }

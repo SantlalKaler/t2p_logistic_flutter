@@ -5,6 +5,7 @@ import 'package:t2p_logistic/domain/dashboard_item.dart';
 import 'package:t2p_logistic/domain/enums/add_edit_delivery_boy.dart';
 import 'package:t2p_logistic/domain/enums/other.dart';
 import 'package:t2p_logistic/presentation/controllers/user_controller.dart';
+import 'package:t2p_logistic/presentation/screens/expense_management/expense_list.dart';
 import 'package:t2p_logistic/presentation/screens/order_list/order_list.dart';
 import 'package:t2p_logistic/presentation/screens/partners/boy/manage_delivery_boy.dart';
 import 'package:t2p_logistic/presentation/screens/partners/dashboard_controller.dart';
@@ -106,6 +107,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 Get.to(() => const TripListScreen());
                               case DashboardItemId.codCollection:
                                 Get.to(() => const CodCollectionScreen());
+                              case DashboardItemId.expenseManagement:
+                                //Get.to(() => const ExpenseListScreen());
                             }
                           },
                           child: singleGridItem(userController.userType ==

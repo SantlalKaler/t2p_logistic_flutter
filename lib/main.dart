@@ -5,6 +5,7 @@ import 'package:t2p_logistic/presentation/controllers/user_controller.dart';
 import 'package:t2p_logistic/presentation/screens/address/address_controller.dart';
 import 'package:t2p_logistic/presentation/screens/address/map_location_controller.dart';
 import 'package:t2p_logistic/presentation/screens/auth/auth_controller.dart';
+import 'package:t2p_logistic/presentation/screens/expense_management/expense_controller.dart';
 import 'package:t2p_logistic/presentation/screens/order_list/order_controller.dart';
 import 'package:t2p_logistic/presentation/screens/partners/boy/DeliveryBoyController.dart';
 import 'package:t2p_logistic/presentation/screens/partners/boy/add_delivery_boy_controller.dart';
@@ -41,7 +42,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-
 class InitialBindings extends Bindings {
   @override
   void dependencies() {
@@ -49,6 +49,7 @@ class InitialBindings extends Bindings {
     Get.put(SettingsController());
     Get.put(AuthController());
     Get.put(ConnectivityController());
+    Get.put(ExpenseController());
     Get.put(DashboardController());
     Get.put(AddDeliveryBoyController());
     Get.put(DeliveryBoyController());

@@ -824,7 +824,7 @@ class Product {
       String? shortDesc, 
       List<File>? file, 
       num? price, 
-      num? sellingPrice, 
+      String? sellingPrice,
       String? discountedPrice, 
       String? purchasePrice, 
       String? batchno, 
@@ -946,7 +946,7 @@ class Product {
       });
     }
     _price = json['price'];
-    _sellingPrice = json['selling_price'];
+    _sellingPrice = json['selling_price'].toString();
     _discountedPrice = json['discounted_price'];
     _purchasePrice = json['purchase_price'];
     _batchno = json['batchno'];
@@ -1004,7 +1004,7 @@ class Product {
   String? _shortDesc;
   List<File>? _file;
   num? _price;
-  num? _sellingPrice;
+  String? _sellingPrice;
   String? _discountedPrice;
   String? _purchasePrice;
   String? _batchno;
@@ -1061,7 +1061,7 @@ Product copyWith({  dynamic comboProducts,
   String? shortDesc,
   List<File>? file,
   num? price,
-  num? sellingPrice,
+  String? sellingPrice,
   String? discountedPrice,
   String? purchasePrice,
   String? batchno,
@@ -1176,7 +1176,7 @@ Product copyWith({  dynamic comboProducts,
   String? get shortDesc => _shortDesc;
   List<File>? get file => _file;
   num? get price => _price;
-  num? get sellingPrice => _sellingPrice;
+  String? get sellingPrice => _sellingPrice;
   String? get discountedPrice => _discountedPrice;
   String? get purchasePrice => _purchasePrice;
   String? get batchno => _batchno;

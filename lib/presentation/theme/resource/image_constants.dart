@@ -18,4 +18,5 @@ class ImageConstants {
   static String category7 = 'profile.png';
   static String category8 = 'trip.png';
   static String category9 = 'cod_collection.png';
+  static String category10 = 'expense.jpg';
 }

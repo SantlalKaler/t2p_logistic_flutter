@@ -19,5 +19,6 @@ enum DashboardItemId {
   reports,
   myProfile,
   myTrips,
-  codCollection
+  codCollection,
+  expenseManagement
 }

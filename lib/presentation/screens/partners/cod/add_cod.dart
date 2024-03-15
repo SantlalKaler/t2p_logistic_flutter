@@ -10,6 +10,7 @@ import 'package:t2p_logistic/presentation/widgets/app_scaffold.dart';
 import 'package:t2p_logistic/presentation/widgets/circular_loadings.dart';
 import 'package:t2p_logistic/presentation/widgets/custom_snackbar.dart';
 
+import '../../../dialogs/date_picker_dialog.dart';
 import '../../../widgets/app_container.dart';
 import '../../../widgets/app_image_picker.dart';
 import '../boy/add_delivery_boy.dart';
@@ -144,7 +145,11 @@ class _AddCodScreenState extends State<AddCodScreen> {
                                 Gap(DimensConstants.spaceBetweenViews),
                                 GestureDetector(
                                   onTap: () {
-                                    showDatePickerDialog();
+                                    showDatePickerDialog(context, (value) {
+                                      if (value != null) {
+                                        dateOfPaymentController.text = value;
+                                      }
+                                    });
                                   },
                                   child: TextFormField(
                                     enabled: false,
@@ -229,15 +234,5 @@ class _AddCodScreenState extends State<AddCodScreen> {
                 ),
               );
             }));
-  }
-
-  showDatePickerDialog() async {
-    final DateTime? picked = await showDatePicker(
-        context: context,
-        firstDate: DateTime(2020, 10),
-        lastDate: DateTime.now());
-    if (picked != null && controller.dateOfPayment.value != picked) {
-      dateOfPaymentController.text = picked.toString().toDate();
-    }
   }
 }

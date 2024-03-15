@@ -54,6 +54,7 @@ class UserController extends GetxController {
   // CommonOrder? get savedOrder => box.read(GetStorageKeys.startedOrder);
 
   saveUser(User user) {
+
     final Map<String, dynamic> userMap = {
       GetStorageKeys.isLoggedIn: true,
       GetStorageKeys.userId: user.id,

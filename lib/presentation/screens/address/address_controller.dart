@@ -1,6 +1,5 @@
 import 'package:get/get.dart';
 import 'package:t2p_logistic/presentation/controllers/user_controller.dart';
-import 'package:t2p_logistic/presentation/screens/partners/dashboard.dart';
 import 'package:t2p_logistic/presentation/theme/resource/uri_constants.dart';
 
 import '../../../data/api_services.dart';
