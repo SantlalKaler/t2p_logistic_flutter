@@ -120,6 +120,8 @@ class MapLocationController extends GetxController {
     String googleMapsUrl =
         'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude';
 
+    printValue("Map location is $googleMapsUrl");
+
     if (await launchUrl(Uri.parse(googleMapsUrl))) {
       await launchUrl(
         Uri.parse(googleMapsUrl),

@@ -48,6 +48,8 @@ class OrderController extends GetxController {
   // 1 for original list and 1 for filter list
   // when user apply any filter then we update filter list
   // and the actual data is store in another list
+  RxList<CommonOrder> t2pPickupFilterOrders = RxList<CommonOrder>();
+  RxList<CommonOrder> t2pDeliveryFilterOrders = RxList<CommonOrder>();
   RxList<CommonOrder> t2pPickupOrders = RxList<CommonOrder>();
   RxList<CommonOrder> t2pDeliveryOrders = RxList<CommonOrder>();
 
@@ -175,6 +177,44 @@ class OrderController extends GetxController {
     return chipList;
   }
 
+  void searchOrderById(String query) {
+    List<CommonOrder> filterOrderList = [];
+    if (t2pOrderType == T2POrderType.T2P) {
+      if (orderType == OrderType.pickup) {
+        for (var order in t2pPickupOrders) {
+          if (order.orderId!.contains(query)) {
+            filterOrderList.add(order);
+          }
+        }
+        t2pPickupFilterOrders.assignAll(filterOrderList);
+      } else {
+        for (var order in t2pDeliveryOrders) {
+          if (order.orderId!.contains(query)) {
+            filterOrderList.add(order);
+          }
+        }
+        t2pDeliveryFilterOrders.assignAll(filterOrderList);
+      }
+    }else{
+      if (orderType == OrderType.pickup) {
+        for (var order in aF2APPickupOrders) {
+          if (order.orderId!.contains(query)) {
+            filterOrderList.add(order);
+          }
+        }
+        aF2APPickupFilterOrders.assignAll(filterOrderList);
+      } else {
+        for (var order in aF2APDeliveryOrders) {
+          if (order.orderId!.contains(query)) {
+            filterOrderList.add(order);
+          }
+        }
+        aF2APDeliveryFilterOrders.assignAll(filterOrderList);
+      }
+    }
+    update();
+  }
+
   // --------------------- Select Order Id --------------------
   bool orderSelected(String orderId) {
     bool orderSelected = false;
@@ -204,12 +244,12 @@ class OrderController extends GetxController {
 
     if (t2pOrderType == T2POrderType.T2P) {
       if (orderType == OrderType.pickup &&
-          t2pPickupOrders.length == t2pPickupSelectedOrderIds.length &&
-          t2pPickupOrders.isNotEmpty) {
+          t2pPickupFilterOrders.length == t2pPickupSelectedOrderIds.length &&
+          t2pPickupFilterOrders.isNotEmpty) {
         selected = true;
       } else if (orderType == OrderType.deliver &&
-          t2pDeliveryOrders.length == t2pDeliverSelectedOrderIds.length &&
-          t2pDeliveryOrders.isNotEmpty) {
+          t2pDeliveryFilterOrders.length == t2pDeliverSelectedOrderIds.length &&
+          t2pDeliveryFilterOrders.isNotEmpty) {
         selected = true;
       }
     } else {
@@ -284,14 +324,14 @@ class OrderController extends GetxController {
       if (orderType == OrderType.pickup) {
         t2pPickupSelectedOrderIds.clear();
         if (selectAll) {
-          for (var order in t2pPickupOrders) {
+          for (var order in t2pPickupFilterOrders) {
             t2pPickupSelectedOrderIds.add(order.id!);
           }
         }
       } else {
         t2pDeliverSelectedOrderIds.clear();
         if (selectAll) {
-          for (var order in t2pDeliveryOrders) {
+          for (var order in t2pDeliveryFilterOrders) {
             t2pDeliverSelectedOrderIds.add(order.id!);
           }
         }
@@ -370,10 +410,10 @@ class OrderController extends GetxController {
 
     switch (t2pOrderType) {
       case T2POrderType.T2P:
-        if (orderType == OrderType.pickup && t2pPickupOrders.isEmpty) {
+        if (orderType == OrderType.pickup && t2pPickupFilterOrders.isEmpty) {
           getT2POrders();
         } else if (orderType == OrderType.deliver &&
-            t2pDeliveryOrders.isEmpty) {
+            t2pDeliveryFilterOrders.isEmpty) {
           getT2POrders(orderType: OrderType.deliver);
         }
         break;
@@ -545,7 +585,7 @@ class OrderController extends GetxController {
 
           for (var order in t2pOrderResponse.order!) {
             var orderAfterConvert = order.toCommonOrder();
-            if (order.deliveryPartner != null &&
+            /*if (order.deliveryPartner != null &&
                 !t2pDeliveryPartners
                     .contains(order.deliveryPartner!.fullName)) {
               t2pDeliveryPartners.add(order.deliveryPartner!.fullName!);
@@ -553,7 +593,7 @@ class OrderController extends GetxController {
             if (order.lpManager != null &&
                 !t2pLpManagers.contains(order.lpManager!.fullName)) {
               t2pLpManagers.add(order.lpManager!.fullName!);
-            }
+            }*/
             if (orderAfterConvert != null) {
               if (orderType == OrderType.pickup) {
                 t2pPickupOrders.add(orderAfterConvert);
@@ -563,9 +603,8 @@ class OrderController extends GetxController {
             }
           }
         }
-
-        printValue("Delivery partner list $t2pDeliveryPartners\n"
-            "Lp Manager list : $t2pLpManagers");
+        t2pPickupFilterOrders.assignAll(t2pPickupOrders);
+        t2pDeliveryFilterOrders.assignAll(t2pDeliveryOrders);
       } else {
         CustomSnackBar.showSnackBar(
             CustomSnackBar.error, "No Order Found", CustomSnackBar.error);
@@ -611,11 +650,11 @@ class OrderController extends GetxController {
 
     if (t2pOrderType == T2POrderType.T2P) {
       if (orderType == OrderType.pickup) {
-        t2pPickupOrders.clear();
+        t2pPickupFilterOrders.clear();
         pickupOrderStatus.clear();
       } else {
         deliveryOrderStatus.clear();
-        t2pDeliveryOrders.clear();
+        t2pDeliveryFilterOrders.clear();
       }
     }
     // AF2AP
@@ -877,8 +916,7 @@ class OrderController extends GetxController {
     return statusList.length > 1 ? statusList.join(",") : statusList.first;
   }
 
-
- /* String getBoy(String boy) {
+  /* String getBoy(String boy) {
     List<String> boyList = List.filled(orderToBeAssign.length, boy);
     return boyList.length > 1 ? boyList.join(",") : boyList.first;
   }
@@ -1170,10 +1208,10 @@ class OrderController extends GetxController {
           response.data[StringConstants.status] == Status.success.name) {
         // update delivery boy distance of delivery order only
         if (orderType == OrderType.deliver) {
-          await updateDeliveryDistance();
           userController.clearOrderInfo();
+          await updateDeliveryDistance();
         }
-        clearList(t2pOrderType, orderType);
+        clearList(t2pOrderType, orderType, orderAssignClear: true);
         getOrders();
       }
     } finally {
@@ -1260,23 +1298,23 @@ class OrderController extends GetxController {
     if (t2pOrderType == T2POrderType.T2P) {
       //t2p pickup orders
       if (orderType == OrderType.pickup) {
-        for (var order in t2pPickupOrders) {
+        for (var order in t2pPickupFilterOrders) {
           if (order.id == orderId) {
             return order;
           } else {
-            return t2pPickupOrders[0];
+            return t2pPickupFilterOrders[0];
           }
         }
       }
 
       //t2p delivery orders
       else {
-        for (var order in t2pDeliveryOrders) {
+        for (var order in t2pDeliveryFilterOrders) {
           if (order.id == orderId) {
             //paymentGateway = order.paymentMode;
             return order;
           } else {
-            return t2pDeliveryOrders[0];
+            return t2pDeliveryFilterOrders[0];
           }
         }
       }
