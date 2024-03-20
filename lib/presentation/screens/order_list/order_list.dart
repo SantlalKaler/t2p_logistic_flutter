@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:t2p_logistic/domain/enums/other.dart';
 import 'package:t2p_logistic/presentation/controllers/user_controller.dart';
+import 'package:t2p_logistic/presentation/screens/address/address_controller.dart';
 import 'package:t2p_logistic/presentation/screens/order_list/components/single_order_item.dart';
 import 'package:t2p_logistic/presentation/screens/order_list/order_bottom_sheet.dart';
 import 'package:t2p_logistic/presentation/theme/resource/color_constant.dart';
@@ -22,9 +23,13 @@ class OrderList extends StatefulWidget {
 
 class _OrderListState extends State<OrderList>
     with SingleTickerProviderStateMixin {
+
   late TabController _tabController;
+
   late OrderController controller;
   UserController userController = Get.find();
+  AddressController addressController = Get.find();
+
   TextEditingController searchController = TextEditingController();
 
   @override
@@ -34,6 +39,9 @@ class _OrderListState extends State<OrderList>
 
     _tabController = TabController(initialIndex: 0, length: 2, vsync: this);
     controller.getOrders();
+
+    //get all cities so that user can filter order based on city
+    addressController.getAllCities();
 
     //when user change pickup to deliver or deliver to pickup
     _tabController.addListener(() {

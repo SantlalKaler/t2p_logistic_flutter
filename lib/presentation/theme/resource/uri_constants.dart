@@ -90,6 +90,7 @@ class URIConstants {
   static String deleteAddress = 'app/delete-address?id=';
   static String stateList = "app/state-list";
   static String cityList = "app/city-list-by-state";
+  static String allCities= "app/all-cities";
   static String zipList = "app/zipcode-by-city";
 
   //payment

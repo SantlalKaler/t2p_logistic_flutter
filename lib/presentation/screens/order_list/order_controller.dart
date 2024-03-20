@@ -16,6 +16,7 @@ import 'package:t2p_logistic/domain/Model/T2POrderResponse.dart';
 import 'package:t2p_logistic/domain/enums/other.dart';
 import 'package:t2p_logistic/domain/mapper/order_mapper.dart';
 import 'package:t2p_logistic/presentation/controllers/user_controller.dart';
+import 'package:t2p_logistic/presentation/screens/address/address_controller.dart';
 import 'package:t2p_logistic/presentation/theme/resource/strings_constants.dart';
 import 'package:t2p_logistic/presentation/theme/resource/uri_constants.dart';
 import 'package:t2p_logistic/presentation/widgets/custom_snackbar.dart';
@@ -41,6 +42,7 @@ class OrderController extends GetxController {
 
   UserController userController = Get.find();
   DeliveryBoyController deliveryBoyController = Get.find();
+  AddressController addressController = Get.find();
 
   RxBool gharKaKhanaCheck = false.obs;
 
@@ -80,6 +82,7 @@ class OrderController extends GetxController {
 
   String? selectedPartner;
   String? selectedManager;
+  String? selectedCity;
 
   Rxn<AllDeliveryStatusResponse> allDeliveryStatusResponse =
       Rxn<AllDeliveryStatusResponse>();
@@ -132,6 +135,13 @@ class OrderController extends GetxController {
     update();
   }
 
+  filterOrderByCity(String value) {
+    selectedCity = value;
+    clearList(t2pOrderType, orderType, orderAssignClear: true);
+    getOrders();
+    update();
+  }
+
   clearFilter() {
     selectedManager = null;
     selectedPartner = null;
@@ -140,10 +150,18 @@ class OrderController extends GetxController {
     update();
   }
 
+  clearCityFilter() {
+    selectedCity = null;
+    clearList(t2pOrderType, orderType, orderAssignClear: true);
+    getOrders();
+    update();
+  }
+
   List<FilterItem> getChipList() {
     var chipList = [
       FilterItem(title: t2pOrderType.name, id: FilterItemId.orderType),
-      FilterItem(title: "Print", id: FilterItemId.print)
+      FilterItem(title: "Print", id: FilterItemId.print),
+      FilterItem(title: selectedCity ?? "City", id: FilterItemId.city),
     ];
 
     /* // only partner and delivery boy can print his orders
@@ -195,7 +213,7 @@ class OrderController extends GetxController {
         }
         t2pDeliveryFilterOrders.assignAll(filterOrderList);
       }
-    }else{
+    } else {
       if (orderType == OrderType.pickup) {
         for (var order in aF2APPickupOrders) {
           if (order.orderId!.contains(query)) {
@@ -394,11 +412,14 @@ class OrderController extends GetxController {
     * and see that order and change delivery partner from drop down and switch back
     * delivery partner is change now so we call that particular api again with new
     * delivery partner
+    *
+    * if delivery partner or delivery boy filter order based on city then he switch
+    * to delivery order type then search delivery order of that city
     * */
-    if (userController.userType == UserType.lp_head.name ||
-        userController.userType == UserType.lp_manager.name) {
-      clearList(t2pOrderType, orderType);
-    }
+    /*  if (userController.userType == UserType.lp_head.name ||
+        userController.userType == UserType.lp_manager.name) {*/
+    clearList(t2pOrderType, orderType);
+    //}
 
     getOrders();
   }
@@ -523,16 +544,16 @@ class OrderController extends GetxController {
       var userId = userController.userId;
 
       // if user type is delivery boy or delivery partner
-      var data = {"id": userId};
+      var data = {"id": userId, "order_city": getSelectedCityId()};
 
       // if user type is lp head
       if (userController.userType == UserType.lp_head.name) {
         if (orderType == OrderType.pickup) {
           path +=
-              "?lp_head=$userId&pickup_partner=${getPartnerId()}&lp_manager=${getSelectedManagerId()}";
+              "?lp_head=$userId&pickup_partner=${getPartnerId()}&lp_manager=${getSelectedManagerId()}&order_city=${getSelectedCityId()}";
         } else {
           path +=
-              "?lp_head=$userId&delivery_partner=${getPartnerId()}&lp_manager=${getSelectedManagerId()}";
+              "?lp_head=$userId&delivery_partner=${getPartnerId()}&lp_manager=${getSelectedManagerId()}&order_city=${getSelectedCityId()}";
         }
       }
 
@@ -632,6 +653,18 @@ class OrderController extends GetxController {
     return partnerId;
   }
 
+  getSelectedCityId() {
+    var cityId = "";
+    if (selectedCity != null) {
+      for (var city in addressController.allCities) {
+        if (city.name == selectedCity!) {
+          cityId = city.id!;
+        }
+      }
+    }
+    return cityId;
+  }
+
   getSelectedManagerId() {
     var managerId = "";
     if (selectedManager != null) {
@@ -650,9 +683,11 @@ class OrderController extends GetxController {
 
     if (t2pOrderType == T2POrderType.T2P) {
       if (orderType == OrderType.pickup) {
+        t2pPickupOrders.clear();
         t2pPickupFilterOrders.clear();
         pickupOrderStatus.clear();
       } else {
+        t2pDeliveryOrders.clear();
         deliveryOrderStatus.clear();
         t2pDeliveryFilterOrders.clear();
       }
@@ -661,8 +696,10 @@ class OrderController extends GetxController {
     else {
       if (orderType == OrderType.pickup) {
         pickupOrderStatus.clear();
+        aF2APPickupOrders.clear();
         aF2APPickupFilterOrders.clear();
       } else {
+        aF2APDeliveryOrders.clear();
         deliveryOrderStatus.clear();
         aF2APDeliveryFilterOrders.clear();
       }
@@ -686,14 +723,14 @@ class OrderController extends GetxController {
       var userType = userController.userType;
       var data = userType == UserType.delivery_partner.name &&
               orderType == OrderType.deliver
-          ? {"delivery_partner": userId}
+          ? {"delivery_partner": userId, "order_city": getSelectedCityId()}
           : userType == UserType.delivery_partner.name &&
                   orderType == OrderType.pickup
-              ? {"pickup_partner": userId}
+              ? {"pickup_partner": userId, "order_city": getSelectedCityId()}
               : userType == UserType.delivery_boy.name &&
                       orderType == OrderType.deliver
-                  ? {"delivery_boy": userId}
-                  : {"pickup_boy": userId};
+                  ? {"delivery_boy": userId, "order_city": getSelectedCityId()}
+                  : {"pickup_boy": userId, "order_city": getSelectedCityId()};
 
       // request is different according to user
       // lp_manager and lp_head -> Get with query parameters
@@ -701,17 +738,19 @@ class OrderController extends GetxController {
       if (userType == UserType.lp_manager.name) {
         var partner = getPartnerId();
         if (orderType == OrderType.pickup) {
-          path += "?lp_manager=$userId&pickup_partner=$partner";
+          path +=
+              "?lp_manager=$userId&pickup_partner=$partner&order_city=${getSelectedCityId()}";
         } else {
-          path += "?lp_manager=$userId&delivery_partner=$partner";
+          path +=
+              "?lp_manager=$userId&delivery_partner=$partner&order_city=${getSelectedCityId()}";
         }
       } else if (userType == UserType.lp_head.name) {
         if (orderType == OrderType.pickup) {
           path +=
-              "?lp_head=$userId&pickup_partner=${getPartnerId()}&lp_manager=${getSelectedManagerId()}";
+              "?lp_head=$userId&pickup_partner=${getPartnerId()}&lp_manager=${getSelectedManagerId()}&order_city=${getSelectedCityId()}";
         } else {
           path +=
-              "?lp_head=$userId&delivery_partner=${getPartnerId()}&lp_manager=${getSelectedManagerId()}";
+              "?lp_head=$userId&delivery_partner=${getPartnerId()}&lp_manager=${getSelectedManagerId()}&order_city=${getSelectedCityId()}";
         }
       }
 

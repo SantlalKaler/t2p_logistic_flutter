@@ -53,9 +53,9 @@ class InitialBindings extends Bindings {
     Get.put(DashboardController());
     Get.put(AddDeliveryBoyController());
     Get.put(DeliveryBoyController());
+    Get.put(AddressController());
     Get.put(OrderController());
     Get.put(FinancialLogController());
-    Get.put(AddressController());
     Get.put(MapLocationController());
     Get.put(TripController());
     Get.put(CodCollectionController());

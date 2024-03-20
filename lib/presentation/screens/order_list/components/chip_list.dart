@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:t2p_logistic/presentation/controllers/user_controller.dart';
+import 'package:t2p_logistic/presentation/screens/address/address_controller.dart';
 import 'package:t2p_logistic/presentation/screens/order_list/order_controller.dart';
 import 'package:t2p_logistic/presentation/theme/resource/custom_constants.dart';
 
@@ -56,7 +57,8 @@ class _ChipListState extends State<ChipList> {
                             showPrintView();
                             break;
                           case FilterItemId.city:
-                          // TODO: Handle this case.
+                            showCities();
+                            break;
                           case FilterItemId.status:
                             if (controller.anyOrderSelected()) {
                               showStatus();
@@ -76,20 +78,21 @@ class _ChipListState extends State<ChipList> {
                                 UserType.lp_manager);
 
                           case FilterItemId.deliveryPartner:
-                          // if user type is lp head then if he want to filter order list
-                          // according to delivery partner then he need to first select manager
-                          // then he can get delivery partner list of that manger
+                            // if user type is lp head then if he want to filter order list
+                            // according to delivery partner then he need to first select manager
+                            // then he can get delivery partner list of that manger
                             if (userController.userType ==
-                                UserType.lp_head.name &&
+                                    UserType.lp_head.name &&
                                 controller.selectedManager == null) {
                               CustomSnackBar.showSnackBar(
                                   "", "Please select lp manager first", "");
                             } else {
-                            showManagerOrPartnerList(
-                                deliveryBoyController.partnerList
-                                    .map((element) => element.fullName!)
-                                    .toList(),
-                                UserType.delivery_partner);}
+                              showManagerOrPartnerList(
+                                  deliveryBoyController.partnerList
+                                      .map((element) => element.fullName!)
+                                      .toList(),
+                                  UserType.delivery_partner);
+                            }
                           case FilterItemId.startDate:
                           // TODO: Handle this case.
                           case FilterItemId.endDate:
@@ -210,6 +213,45 @@ class _ChipListState extends State<ChipList> {
             );
           },
         ));
+      },
+    );
+  }
+
+  showCities() {
+    AddressController addressController = Get.find();
+    return showModalBottomSheet(
+      context: context,
+      isScrollControlled: false,
+      builder: (context) {
+        var items = addressController.allCities;
+        printValue("Items length : ${items.length}\n"
+            "Pickup order type : ${controller.pickupOrderStatus.length}");
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            TextButton(
+                onPressed: () {
+                  controller.clearCityFilter();
+                  Get.back();
+                },
+                child: const Text("Clear")),
+            Expanded(
+              child: ListView.builder(
+                itemCount: items.length,
+                itemBuilder: (context, index) {
+                  var item = items[index];
+                  return ListTile(
+                    title: Text(item.name ?? ""),
+                    onTap: () {
+                      controller.filterOrderByCity(item.name ?? "");
+                      Get.back();
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        );
       },
     );
   }

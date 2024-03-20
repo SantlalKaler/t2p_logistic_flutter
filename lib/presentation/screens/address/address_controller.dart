@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:t2p_logistic/presentation/controllers/user_controller.dart';
+import 'package:t2p_logistic/presentation/theme/resource/custom_constants.dart';
 import 'package:t2p_logistic/presentation/theme/resource/uri_constants.dart';
 
 import '../../../data/api_services.dart';
@@ -31,6 +32,7 @@ class AddressController extends GetxController {
   RxList<Address> addressList = RxList<Address>();
   RxList<State> stateList = RxList<State>();
   RxList<City> cityList = RxList<City>();
+  RxList<City> allCities = RxList<City>();
   RxList<City> zipList = RxList<City>();
   RxDouble lat = 28.6139.obs;
   RxDouble lng = 77.2090.obs;
@@ -46,7 +48,7 @@ class AddressController extends GetxController {
           response.data[StringConstants.status] == Status.success.name) {
         addressList.clear();
         AddressListResponse addressListResponse =
-        AddressListResponse.fromJson(response.data);
+            AddressListResponse.fromJson(response.data);
         if (addressListResponse.address != null &&
             addressListResponse.address!.isNotEmpty) {
           addressList.value = addressListResponse.address!;
@@ -68,9 +70,8 @@ class AddressController extends GetxController {
         if (response != null) {
           stateList.clear();
           List result = response.data['result'];
-          stateList.value = result
-              .map((element) => State.fromJson(element))
-              .toList();
+          stateList.value =
+              result.map((element) => State.fromJson(element)).toList();
         }
       });
     } finally {
@@ -89,16 +90,14 @@ class AddressController extends GetxController {
         if (response != null) {
           cityList.clear();
           List result = response.data['result'];
-          cityList.value = result
-              .map((element) => City.fromJson(element))
-              .toList();
+          cityList.value =
+              result.map((element) => City.fromJson(element)).toList();
         }
       });
     } finally {
       isLoadingCityByStates.value = false;
     }
   }
-
 
   Future<void> getZipCodeByCity(cityId) async {
     isLoadingZipCodeByCity.value = true;
@@ -110,9 +109,8 @@ class AddressController extends GetxController {
         if (response != null) {
           zipList.clear();
           List result = response.data['result'];
-          zipList.value = result
-              .map((element) => City.fromJson(element))
-              .toList();
+          zipList.value =
+              result.map((element) => City.fromJson(element)).toList();
         }
       });
     } finally {
@@ -120,21 +118,22 @@ class AddressController extends GetxController {
     }
   }
 
-  Future<void> addAddress({String? title,
-    String? address,
-    String? address2,
-    String? cityId,
-    String? cityName,
-    String? stateId,
-    String? stateName,
-    String? postOffice,
-    String? postalCode,
-    String? contactName,
-    String? contactPhone,
-    String? lat,
-    String? lng,
-    String? landmark,
-    bool? redirectToHome}) async {
+  Future<void> addAddress(
+      {String? title,
+      String? address,
+      String? address2,
+      String? cityId,
+      String? cityName,
+      String? stateId,
+      String? stateName,
+      String? postOffice,
+      String? postalCode,
+      String? contactName,
+      String? contactPhone,
+      String? lat,
+      String? lng,
+      String? landmark,
+      bool? redirectToHome}) async {
     setLoading();
 
     UserController userController = Get.find();
@@ -177,24 +176,23 @@ class AddressController extends GetxController {
     }
   }
 
-
   Future<void> editAddress(
       {String? addressId,
-        String? title,
-        String? address,
-        String? address2,
-        String? cityId,
-        String? cityName,
-        String? stateId,
-        String? stateName,
-        String? postOffice,
-        String? postalCode,
-        String? contactName,
-        String? contactPhone,
-        String? lat,
-        String? lng,
-        String? landmark,
-        bool? redirectToHome}) async {
+      String? title,
+      String? address,
+      String? address2,
+      String? cityId,
+      String? cityName,
+      String? stateId,
+      String? stateName,
+      String? postOffice,
+      String? postalCode,
+      String? contactName,
+      String? contactPhone,
+      String? lat,
+      String? lng,
+      String? landmark,
+      bool? redirectToHome}) async {
     UserController userController = Get.find();
     // savedLocationController savedLocationController = Get.find();
     isAddingEdittingAddress.value = true;
@@ -220,7 +218,7 @@ class AddressController extends GetxController {
           .post(URIConstants.editAddress, payLoad)
           .then((response) async {
         if (response != null && response.data['status'] == 'success') {
-            Get.back();
+          Get.back();
 
           CustomSnackBar.showSnackBar(
               CustomSnackBar.error, 'Address updated', CustomSnackBar.error);
@@ -256,5 +254,21 @@ class AddressController extends GetxController {
     } finally {
       await getAddressList();
     }
+  }
+
+  Future<void> getAllCities() async {
+    allCities.clear();
+    try {
+      await _apiService.get(URIConstants.allCities).then((response) {
+        if (response != null) {
+          if (response.data['status'] == 'success' &&
+              response.data['result'].isNotEmpty) {
+            for (var city in response.data['result']) {
+              allCities.add(City.fromJson(city));
+            }
+          }
+        }
+      });
+    } finally {}
   }
 }
