@@ -192,8 +192,9 @@ class CodCollectionController extends GetxController {
   ) async {
     try {
       setLoading();
+      update();
       var formData = {
-        'date_of_payment': dateOfPayment,
+        'date_of_payment': dateOfPayment.toServerDate(),
         'comment': comment,
         'delivery_boy': getDeliveryBoyIdByName(deliveryBoy),
         'payment_received': paymentReceived,
@@ -217,6 +218,7 @@ class CodCollectionController extends GetxController {
       }
     } finally {
       setLoading();
+      update();
     }
   }
 

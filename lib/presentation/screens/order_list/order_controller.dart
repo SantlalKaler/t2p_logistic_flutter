@@ -560,9 +560,9 @@ class OrderController extends GetxController {
       // if user type is lp manager
       if (userController.userType == UserType.lp_manager.name) {
         if (orderType == OrderType.pickup) {
-          path += "?lp_manager=$userId&pickup_partner=${getPartnerId()}";
+          path += "?lp_manager=$userId&pickup_partner=${getPartnerId()}&order_city=${getSelectedCityId()}";
         } else {
-          path += "?lp_manager=$userId&delivery_partner=${getPartnerId()}";
+          path += "?lp_manager=$userId&delivery_partner=${getPartnerId()}&order_city=${getSelectedCityId()}";
         }
       }
 

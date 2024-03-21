@@ -114,15 +114,14 @@ class _OrderListState extends State<OrderList>
                                 ),
                               ]),
 
-                          Row(
+                          if (userController.userType ==
+                                  UserType.delivery_partner.name ||
+                              userController.userType ==
+                                  UserType.lp_manager.name ||
+                              userController.userType == UserType.lp_head.name)
+                            Row(
                             children: [
                               // only delivery partner can select all orders at once
-                              if (userController.userType ==
-                                      UserType.delivery_partner.name ||
-                                  userController.userType ==
-                                      UserType.lp_manager.name ||
-                                  userController.userType ==
-                                      UserType.lp_head.name)
                                 Expanded(
                                   child: CheckboxListTile(
                                     contentPadding: const EdgeInsets.all(0),
