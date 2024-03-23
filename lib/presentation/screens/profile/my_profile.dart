@@ -34,7 +34,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
           padding: EdgeInsets.all(DimensConstants.screePadding),
           child: Column(
             children: [
-              appContainer(Column(
+              AppContainer(child: Column(
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -66,7 +66,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                 ],
               )),
               Gap(DimensConstants.spaceBetweenViews),
-              appContainer(TextButton(
+              AppContainer(child: TextButton(
                   onPressed: () {
                     Get.to(const AddressListScreen());
                   },

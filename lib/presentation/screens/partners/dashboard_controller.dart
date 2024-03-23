@@ -9,8 +9,6 @@ class DashboardController extends GetxController {
         DashboardItemId.addUser),
     DashboardItem("Manage Delivery Boy", ImageConstants.category2,
         DashboardItemId.manageDeliveryBoy),
-    /*DashboardItem("View Assigned Orders", ImageConstants.category3,
-        DashboardItemId.viewAssignOrders),*/
     DashboardItem(
         "My Orders", ImageConstants.category4, DashboardItemId.myOrders),
     DashboardItem("Financial Logs", ImageConstants.category5,
@@ -22,6 +20,8 @@ class DashboardController extends GetxController {
         "My Trips", ImageConstants.category8, DashboardItemId.myTrips),
     DashboardItem("Cod Collection", ImageConstants.category9,
         DashboardItemId.codCollection),
+    DashboardItem("Purchase Inward", ImageConstants.category11,
+        DashboardItemId.purchaseInward),
    /* DashboardItem("Expense Management", ImageConstants.category10,
         DashboardItemId.expenseManagement),*/
   ];

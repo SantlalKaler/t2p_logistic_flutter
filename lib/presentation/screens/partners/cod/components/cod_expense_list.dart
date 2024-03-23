@@ -45,7 +45,7 @@ class SingleCodCollectionItem extends StatelessWidget {
         status = statu;
       }
     }
-    return appContainer(Padding(
+    return AppContainer(child: Padding(
       padding: EdgeInsets.all(DimensConstants.cardInnerPadding),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.start,

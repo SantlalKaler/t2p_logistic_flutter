@@ -9,6 +9,7 @@ import 'package:t2p_logistic/presentation/screens/expense_management/expense_lis
 import 'package:t2p_logistic/presentation/screens/order_list/order_list.dart';
 import 'package:t2p_logistic/presentation/screens/partners/boy/manage_delivery_boy.dart';
 import 'package:t2p_logistic/presentation/screens/partners/dashboard_controller.dart';
+import 'package:t2p_logistic/presentation/screens/partners/purchase_inward/purchase_inward.dart';
 import 'package:t2p_logistic/presentation/screens/profile/my_profile.dart';
 import 'package:t2p_logistic/presentation/screens/trip/trip_list.dart';
 import 'package:t2p_logistic/presentation/theme/resource/dimens.dart';
@@ -109,6 +110,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 Get.to(() => const CodCollectionScreen());
                               case DashboardItemId.expenseManagement:
                                 //Get.to(() => const ExpenseListScreen());
+                              case DashboardItemId.purchaseInward:
+                                Get.to(() => const PurchaseInwardList());
                             }
                           },
                           child: singleGridItem(userController.userType ==

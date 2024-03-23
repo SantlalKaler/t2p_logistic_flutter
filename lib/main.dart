@@ -12,6 +12,7 @@ import 'package:t2p_logistic/presentation/screens/partners/boy/add_delivery_boy_
 import 'package:t2p_logistic/presentation/screens/partners/cod/cod_collection_controller.dart';
 import 'package:t2p_logistic/presentation/screens/partners/dashboard_controller.dart';
 import 'package:t2p_logistic/presentation/screens/partners/financial_log/financial_log_controller.dart';
+import 'package:t2p_logistic/presentation/screens/partners/purchase_inward/purchase_inward_controller.dart';
 import 'package:t2p_logistic/presentation/screens/splash/setting_controller.dart';
 import 'package:t2p_logistic/presentation/screens/splash/splash_screen.dart';
 import 'package:t2p_logistic/presentation/screens/trip/trip_controller.dart';
@@ -53,6 +54,7 @@ class InitialBindings extends Bindings {
     Get.put(DashboardController());
     Get.put(AddDeliveryBoyController());
     Get.put(DeliveryBoyController());
+    Get.put(PurchaseInwardController());
     Get.put(AddressController());
     Get.put(OrderController());
     Get.put(FinancialLogController());

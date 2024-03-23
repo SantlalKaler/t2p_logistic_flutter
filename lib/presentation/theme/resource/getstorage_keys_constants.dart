@@ -6,6 +6,7 @@ class GetStorageKeys {
   static String userEmail = 'userEmail';
   static String userMobile = 'userMobile';
   static String userType = 'userType';
+  static String userCity = 'userCity';
   static String startedOrder = 'startedOrder';
 
   static String orderAlreadyStarted = 'orderAlreadyStarted';

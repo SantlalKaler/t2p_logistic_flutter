@@ -16,6 +16,7 @@ enum DashboardItemId {
   //viewAssignOrders,
   myOrders,
   financialLogs,
+  purchaseInward,
   reports,
   myProfile,
   myTrips,

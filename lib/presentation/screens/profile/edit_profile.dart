@@ -44,7 +44,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           padding: EdgeInsets.all(DimensConstants.screePadding),
           child: Column(
             children: [
-              appContainer(Form(
+              AppContainer(child: Form(
                   key: _formKey,
                   child: Column(
                     children: [

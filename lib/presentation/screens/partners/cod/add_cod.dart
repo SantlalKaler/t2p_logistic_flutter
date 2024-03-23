@@ -67,7 +67,7 @@ class _AddCodScreenState extends State<AddCodScreen> {
                   children: [
                     Column(
                       children: [
-                        appContainer(Form(
+                        AppContainer(child: Form(
                             key: _formKey,
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.start,

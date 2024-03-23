@@ -80,6 +80,11 @@ class URIConstants {
   // cod
   static String codExpenseList = "admin/cod-expense-list";
 
+  // purchase inward
+  static String purchaseInwardList = "admin/inward-list2";
+  static String singleInward = "admin/singel-inward-list";
+  static String updateInwardProductPurchasePrice = "admin/update-inward-product-purchase-price";
+
   // ---------------------------------------------------------------->
 
   // --------------------------------- common -----------------------------------

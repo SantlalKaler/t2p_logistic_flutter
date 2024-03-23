@@ -23,7 +23,8 @@ class AppBarSliver extends StatelessWidget {
   List<Widget>? actions = [];
   PreferredSizeWidget? bottom;
 
-  AppBarSliver({super.key, this.title, this.leading,this.actions, this.bottom});
+  AppBarSliver(
+      {super.key, this.title, this.leading, this.actions, this.bottom});
 
   @override
   Widget build(BuildContext context) {
@@ -40,17 +41,21 @@ class AppBarSliver extends StatelessWidget {
 
 class AppBarNormal extends StatelessWidget {
   final String? title;
-  Widget? leading = const AppBackButton();
-  List<Widget>? actions = [];
+  final Widget? leading;
+  final List<Widget>? actions;
 
-  AppBarNormal({super.key, this.title, this.leading,this.actions});
+  const AppBarNormal(
+      {super.key,
+      this.title,
+      this.leading = const AppBackButton(),
+      this.actions});
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
       leading: leading,
       title: Text(title ?? ""),
-      actions: actions,
+      actions: actions ?? [],
     );
   }
 }

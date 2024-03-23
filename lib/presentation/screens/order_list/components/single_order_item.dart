@@ -24,7 +24,7 @@ class SingleOrderItem extends StatelessWidget {
   Widget build(BuildContext context) {
     OrderController controller = Get.find();
     UserController userController = Get.find();
-    return appContainer(Column(
+    return AppContainer(child: Column(
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
