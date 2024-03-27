@@ -18,7 +18,7 @@ class EnterPhoneWidget extends StatelessWidget {
 
     return Obx(() => Column(
           children: [
-            titleDividerSmall(context, 'Login or Signup'),
+            titleDividerSmall(context, 'Login'),
             const SizedBox(
               height: 20,
             ),
