@@ -103,8 +103,10 @@ class URIConstants {
 
   // expense
   static String expenseCategory = "admin/all-expense-category";
+  static String expenseList = "admin/other-expense-list";
   static String expenseSubCategory = "admin/all-expense-sub-category";
   static String addExpense = "admin/add-other-expense";
+  static String updateExpense = "admin/update-other-expense";
 
 //---------------------------------------------------------------------->
 }

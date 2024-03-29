@@ -38,7 +38,7 @@ class PurchaseInwardController extends GetxController {
     setLoading();
     try {
       var data = {
-        "start_city": "60f694e3a48ef40009b51a9e",
+        "start_city": userController.userCity,
         "page": "",
         "limit": "",
       };

@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
+import 'package:t2p_logistic/presentation/constants/extension.dart';
 import 'package:t2p_logistic/presentation/controllers/user_controller.dart';
 import 'package:t2p_logistic/presentation/screens/expense_management/expense_controller.dart';
 import 'package:t2p_logistic/presentation/theme/resource/custom_constants.dart';
 import 'package:t2p_logistic/presentation/theme/resource/dimens.dart';
 import 'package:t2p_logistic/presentation/widgets/custom_snackbar.dart';
 
+import '../../../domain/Model/expense/ExpenseListResponse.dart';
 import '../../dialogs/date_picker_dialog.dart';
 import '../../widgets/app_back_button.dart';
 import '../../widgets/app_bar.dart';
@@ -15,7 +17,9 @@ import '../../widgets/app_scaffold.dart';
 import '../../widgets/circular_loadings.dart';
 
 class AddEditExpenseScreen extends StatefulWidget {
-  const AddEditExpenseScreen({super.key});
+  const AddEditExpenseScreen({super.key, this.expense});
+
+  final Expense? expense;
 
   @override
   State<AddEditExpenseScreen> createState() => _AddEditExpenseScreenState();
@@ -27,6 +31,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
   TextEditingController subCategoryController = TextEditingController();
   TextEditingController officeTypeController = TextEditingController();
   TextEditingController officeController = TextEditingController();
+  TextEditingController nameController = TextEditingController();
   TextEditingController amountController = TextEditingController();
   TextEditingController cityController = TextEditingController();
   TextEditingController dateOfPaymentController = TextEditingController();
@@ -43,12 +48,25 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
     super.initState();
   }
 
-  fillValue() {}
+  fillValue() {
+    if (widget.expense != null) {
+      Expense expense = widget.expense!;
+      categoryController.text = expense.category!.name!;
+      subCategoryController.text = expense.subCategory!.name!;
+      nameController.text = expense.name!;
+      amountController.text = expense.amount!;
+      dateOfPaymentController.text = expense.dateOfPayment!.toDate();
+      commentController.text = expense.comment ?? "";
+      expenseController.getSubCategories(expense.category!.id!);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Obx(() => AppScaffold(
-          appBar: appBar(title: "Add Expense", leading: const AppBackButton()),
+          appBar: appBar(
+              title: widget.expense == null ? "Add Expense" : "Edit Expense",
+              leading: const AppBackButton()),
           body: Padding(
             padding: EdgeInsets.all(DimensConstants.screePadding),
             child: Stack(
@@ -97,6 +115,17 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
                         Gap(DimensConstants.spaceBetweenViews),
                         TextFormField(
                           style: Theme.of(context).textTheme.titleSmall,
+                          controller: nameController,
+                          decoration: const InputDecoration(
+                              label: Text(
+                                'Name',
+                              ),
+                              floatingLabelBehavior:
+                                  FloatingLabelBehavior.auto),
+                        ),
+                        Gap(DimensConstants.spaceBetweenViews),
+                        /*  TextFormField(
+                          style: Theme.of(context).textTheme.titleSmall,
                           controller: officeTypeController,
                           enabled: false,
                           decoration: const InputDecoration(
@@ -130,7 +159,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
                               floatingLabelBehavior:
                                   FloatingLabelBehavior.auto),
                         ),
-                        Gap(DimensConstants.spaceBetweenViews),
+                        Gap(DimensConstants.spaceBetweenViews),*/
                         TextFormField(
                           style: Theme.of(context).textTheme.titleSmall,
                           controller: amountController,
@@ -188,12 +217,12 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
                             decoration: const InputDecoration(
                                 label: Text("Document"),
                                 suffixIcon: Icon(Icons.attach_file)),
-                            validator: (value) {
+                            /* validator: (value) {
                               if (value!.isEmpty) {
                                 return "Select document";
                               }
                               return null;
-                            },
+                            },*/
                           ),
                         ),
                         Gap(DimensConstants.spaceBetweenViews),
@@ -214,12 +243,14 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
                   child: ElevatedButton(
                       onPressed: () {
                         if (_formKey.currentState!.validate()) {
-                          addCodExpense();
+                          addEditExpense();
                         }
                       },
                       child: expenseController.isLoading.isTrue
                           ? circularloadingWhiteSmall()
-                          : const Text("+ Add Other Expense")),
+                          : Text(widget.expense == null
+                              ? "Add Expense"
+                              : "Edit Expense")),
                 )
               ],
             ),
@@ -227,7 +258,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
         ));
   }
 
-  addCodExpense() async {
+  addEditExpense() async {
     if (categoryController.text.isEmpty || subCategoryController.text.isEmpty) {
       CustomSnackBar.showSnackBar("", "Select category and subcategory", "");
     } else {
@@ -238,17 +269,32 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
           .firstWhere((element) => element.name == subCategoryController.text)
           .id!;
 
-      await expenseController.addExpense(
-          category,
-          subCategory,
-          userController.userId,
-          userController.userName,
-          cityController.text,
-          amountController.text,
-          dateOfPaymentController.text,
-          commentController.text,
-          officeController.text,
-          officeTypeController.text);
+      if (widget.expense == null) {
+        await expenseController.addExpense(
+            category,
+            subCategory,
+            userController.userId,
+            nameController.text,
+            userController.userCity,
+            amountController.text,
+            dateOfPaymentController.text,
+            commentController.text,
+            userController.userCity,
+            'local_office');
+      } else {
+        await expenseController.editExpense(
+            widget.expense!.id!,
+            category,
+            subCategory,
+            userController.userId,
+            nameController.text,
+            userController.userCity,
+            amountController.text,
+            dateOfPaymentController.text,
+            commentController.text,
+            userController.userCity,
+            'local_office');
+      }
     }
   }
 }

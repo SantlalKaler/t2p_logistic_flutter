@@ -1,20 +1,28 @@
 import 'package:get/get.dart';
 import 'package:t2p_logistic/data/api_services.dart';
 import 'package:t2p_logistic/data/status.dart';
+import 'package:t2p_logistic/presentation/constants/extension.dart';
+import 'package:t2p_logistic/presentation/controllers/user_controller.dart';
+import 'package:t2p_logistic/presentation/theme/resource/custom_constants.dart';
 import 'package:t2p_logistic/presentation/theme/resource/uri_constants.dart';
 import 'package:t2p_logistic/presentation/widgets/custom_snackbar.dart';
+import 'package:dio/dio.dart' as dio;
 
 import '../../../domain/Model/expense/ExpenseCategoryListResponse.dart';
+import '../../../domain/Model/expense/ExpenseListResponse.dart';
 
 class ExpenseController extends GetxController {
   RxBool isLoading = false.obs;
 
   RxList<CatSubCatCommon> categories = RxList<CatSubCatCommon>();
   RxList<CatSubCatCommon> subCategories = RxList<CatSubCatCommon>();
+  RxList<Expense> expenses = RxList<Expense>();
 
   ApiService apiService = ApiService();
 
   setLoading() => isLoading.value = !isLoading.value;
+
+  UserController userController = Get.find();
 
   String? documentImagePath;
   String? documentImageName;
@@ -23,6 +31,37 @@ class ExpenseController extends GetxController {
     documentImagePath = path;
     documentImageName = name;
     update();
+  }
+
+  Future getExpenseList() async {
+    try {
+      setLoading();
+      var data = {
+        "added_by": userController.userId,
+        "expense_type": "1",
+        "active": "",
+        "office": "",
+        "city": "",
+        "category": "",
+        "sub_category": "",
+        "office_type": "",
+        "start_date": "",
+        "end_date": ""
+      };
+      var res = await apiService.post(URIConstants.expenseList, {},
+          hasQueryParam: true, queryParam: data);
+      if (res != null) {
+        ExpenseListResponse expenseListResponse =
+            ExpenseListResponse.fromJson(res.data);
+        if (expenseListResponse.status == Status.success.name &&
+            expenseListResponse.expense!.isNotEmpty) {
+          expenses.value = expenseListResponse.expense!;
+        }
+      }
+    } finally {
+      setLoading();
+      update();
+    }
   }
 
   Future getCategories() async {
@@ -88,17 +127,84 @@ class ExpenseController extends GetxController {
         "city": city,
         "sub_category": subCategory,
         "amount": amount,
-        "date_of_payment": dateOfPayment,
+        "date_of_payment": "2024-03-27",
         "comment": comment,
         "office": office,
         "office_type": officeType,
+        "expense_type": "1",
+        "platform": "app",
       };
 
-      var res = await apiService.post(URIConstants.addExpense, {},
+      // printValue(data);
+      var uploadData = dio.FormData.fromMap({
+        'upload': documentImagePath == null
+            ? ""
+            : await dio.MultipartFile.fromFile(
+                documentImagePath!,
+                filename: documentImageName,
+              )
+      });
+
+      var res = await apiService.post(URIConstants.addExpense, uploadData,
           queryParam: data, hasQueryParam: true);
 
       if (res != null && res.data['status'] == Status.success.name) {
         CustomSnackBar.showSnackBar("", res.data['message'], "");
+        getExpenseList();
+        Get.back();
+      }
+    } finally {
+      setLoading();
+      update();
+    }
+  }
+
+  Future editExpense(
+    String id,
+    String category,
+    String subCategory,
+    String addedBy,
+    String name,
+    String city,
+    String amount,
+    String dateOfPayment,
+    String comment,
+    String office,
+    String officeType,
+  ) async {
+    try {
+      setLoading();
+      var data = {
+        "id": id,
+        "category": category,
+        "added_by": addedBy,
+        "name": name,
+        "city": city,
+        "sub_category": subCategory,
+        "amount": amount,
+        "date_of_payment": dateOfPayment.toServerDate(),
+        "comment": comment,
+        "office": office,
+        "office_type": officeType,
+        "expense_type": "1",
+        "platform": "app",
+      };
+
+      var uploadData = dio.FormData.fromMap({
+        'upload': documentImagePath == null
+            ? ""
+            : await dio.MultipartFile.fromFile(
+                documentImagePath!,
+                filename: documentImageName,
+              )
+      });
+
+      var res = await apiService.post(URIConstants.updateExpense, uploadData,
+          queryParam: data, hasQueryParam: true);
+
+      if (res != null && res.data['status'] == Status.success.name) {
+        CustomSnackBar.showSnackBar("", res.data['message'], "");
+        getExpenseList();
         Get.back();
       }
     } finally {

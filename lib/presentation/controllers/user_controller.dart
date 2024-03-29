@@ -63,7 +63,9 @@ class UserController extends GetxController {
       GetStorageKeys.userMobile: user.mobile,
       GetStorageKeys.userEmail: user.email,
       GetStorageKeys.userType: user.userType,
-      GetStorageKeys.userCity: user.customerSupportCity![0].toString()
+      GetStorageKeys.userCity: (user.customerSupportCity!.isNotEmpty && user.customerSupportCity != null)
+          ? user.customerSupportCity![0].toString()
+          : ""
     };
 
     userMap.forEach((key, value) {

@@ -72,6 +72,7 @@ class ApiService {
             ? await _dio.post(
             customBaseURI == null ? (URIConstants.baseURI + path) : path,
             queryParameters: queryParam,
+            data: data,
             options: Options(headers: headers))
             :await _dio.post(
             customBaseURI == null ? (URIConstants.baseURI + path) : path,

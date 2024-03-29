@@ -22,8 +22,8 @@ class DashboardController extends GetxController {
         DashboardItemId.codCollection),
     DashboardItem("Purchase Inward", ImageConstants.category11,
         DashboardItemId.purchaseInward),
-   /* DashboardItem("Expense Management", ImageConstants.category10,
-        DashboardItemId.expenseManagement),*/
+    DashboardItem("Expense Management", ImageConstants.category10,
+        DashboardItemId.expenseManagement),
   ];
 
   List<DashboardItem> boyDashboardItems = [

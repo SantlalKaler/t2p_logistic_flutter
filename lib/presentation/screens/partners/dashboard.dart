@@ -43,8 +43,8 @@ class _DashboardScreenState extends State<DashboardScreen>
         : userController.userType == UserType.delivery_boy.name
             ? controller.boyDashboardItems.length
             : controller.headDashboardItems.length;
-    animationController = AnimationController(
-        vsync: this, duration: const Duration(seconds: 1));
+    animationController =
+        AnimationController(vsync: this, duration: const Duration(seconds: 1));
     slideAnimations = List.generate(
         itemLength,
         (index) => Tween(begin: const Offset(-2, 0), end: Offset.zero).animate(
@@ -104,8 +104,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                             ? controller.boyDashboardItems.length
                             : controller.headDashboardItems.length,
                     (index) => SlideTransition(
-                      position: slideAnimations[index],
-                      child: InkWell(
+                          position: slideAnimations[index],
+                          child: InkWell(
                             onTap: () {
                               switch (userController.userType ==
                                       UserType.delivery_partner.name
@@ -113,7 +113,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                                   : userController.userType ==
                                           UserType.delivery_boy.name
                                       ? controller.boyDashboardItems[index].id
-                                      : controller.headDashboardItems[index].id) {
+                                      : controller
+                                          .headDashboardItems[index].id) {
                                 case DashboardItemId.addUser:
                                   Get.to(() => const AddUser(
                                         addEditDeliveryBoy:
@@ -134,7 +135,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                                 case DashboardItemId.codCollection:
                                   Get.to(() => const CodCollectionScreen());
                                 case DashboardItemId.expenseManagement:
-                                //Get.to(() => const ExpenseListScreen());
+                                  Get.to(() => const ExpenseListScreen());
                                 case DashboardItemId.purchaseInward:
                                   Get.to(() => const PurchaseInwardList());
                               }
@@ -147,7 +148,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                                     ? controller.boyDashboardItems[index]
                                     : controller.headDashboardItems[index]),
                           ),
-                    )),
+                        )),
               )),
         ));
   }
