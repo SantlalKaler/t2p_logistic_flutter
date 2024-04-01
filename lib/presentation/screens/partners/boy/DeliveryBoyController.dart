@@ -10,6 +10,7 @@ import 'package:t2p_logistic/presentation/theme/resource/uri_constants.dart';
 import 'package:t2p_logistic/presentation/widgets/custom_snackbar.dart';
 
 import '../../../../data/status.dart';
+import '../../../../domain/Model/user/user.dart';
 
 ApiService _apiService = ApiService();
 

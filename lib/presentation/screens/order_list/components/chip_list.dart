@@ -73,7 +73,7 @@ class _ChipListState extends State<ChipList> {
                           by lp manager or delivery partner*/
                             showManagerOrPartnerList(
                                 deliveryBoyController.managerList
-                                    .map((element) => element.fullName!)
+                                    .map((element) => element?.fullName ?? "")
                                     .toList(),
                                 UserType.lp_manager);
 

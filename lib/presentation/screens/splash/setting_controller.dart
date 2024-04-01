@@ -10,7 +10,7 @@ class SettingsController extends GetxController {
   moveToNext() async {
     Timer(const Duration(seconds: 1), () async {
       UserController controller = Get.find();
-      if (controller.isLoggedIn != null && controller.isLoggedIn) {
+      if (controller.isLoggedIn) {
         controller.getSavedUserInfo();
         Get.offAll(() => const DashboardScreen());
       } else {

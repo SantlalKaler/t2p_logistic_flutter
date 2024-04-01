@@ -2,11 +2,13 @@ import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:t2p_logistic/domain/Model/user/VerifyOtpResponse.dart';
+import 'package:t2p_logistic/domain/Model/user/office_data.dart';
 import 'package:t2p_logistic/domain/enums/other.dart';
 import 'package:t2p_logistic/domain/mapper/order_mapper.dart';
 import 'package:t2p_logistic/presentation/screens/auth/auth_controller.dart';
 import 'package:t2p_logistic/presentation/theme/resource/getstorage_keys_constants.dart';
 
+import '../../domain/Model/user/user.dart';
 import '../screens/auth/auth_screen.dart';
 import '../theme/resource/custom_constants.dart';
 
@@ -25,6 +27,8 @@ class UserController extends GetxController {
   String get userMobile => box.read(GetStorageKeys.userMobile);
 
   String get userType => box.read(GetStorageKeys.userType);
+
+  String get officeId => box.read(GetStorageKeys.officeId);
 
   String get userCity => box.read(GetStorageKeys.userCity);
 
@@ -55,7 +59,7 @@ class UserController extends GetxController {
 
   // CommonOrder? get savedOrder => box.read(GetStorageKeys.startedOrder);
 
-  saveUser(User user) {
+  saveUser(User user, OfficeData officeData) {
     final Map<String, dynamic> userMap = {
       GetStorageKeys.isLoggedIn: true,
       GetStorageKeys.userId: user.id,
@@ -63,7 +67,9 @@ class UserController extends GetxController {
       GetStorageKeys.userMobile: user.mobile,
       GetStorageKeys.userEmail: user.email,
       GetStorageKeys.userType: user.userType,
-      GetStorageKeys.userCity: (user.customerSupportCity!.isNotEmpty && user.customerSupportCity != null)
+      GetStorageKeys.officeId: officeData.id,
+      GetStorageKeys.userCity: (user.customerSupportCity!.isNotEmpty &&
+              user.customerSupportCity != null)
           ? user.customerSupportCity![0].toString()
           : ""
     };
@@ -71,6 +77,8 @@ class UserController extends GetxController {
     userMap.forEach((key, value) {
       box.write(key, value);
     });
+
+    printValue("$userType\n$userId\n$officeId");
   }
 
   saveStartedOrderInfo(CommonOrder? order, Position position,
@@ -123,6 +131,7 @@ class UserController extends GetxController {
     box.remove(GetStorageKeys.userEmail);
     box.remove(GetStorageKeys.userMobile);
     box.remove(GetStorageKeys.userType);
+    box.remove(GetStorageKeys.officeId);
     box.write(GetStorageKeys.isLoggedIn, false);
 
     box.write(GetStorageKeys.orderAlreadyStarted, false);

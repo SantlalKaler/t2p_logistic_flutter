@@ -38,7 +38,7 @@ class PurchaseInwardController extends GetxController {
     setLoading();
     try {
       var data = {
-        "start_city": userController.userCity,
+        "start_city": userController.officeId,
         "page": "",
         "limit": "",
       };

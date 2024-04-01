@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:t2p_logistic/domain/Model/user/VerifyOtpResponse.dart';
+import 'package:t2p_logistic/domain/Model/user/office_data.dart';
 import 'package:t2p_logistic/domain/enums/other.dart';
 import 'package:t2p_logistic/presentation/controllers/user_controller.dart';
 import 'package:t2p_logistic/presentation/screens/partners/dashboard.dart';
@@ -13,6 +14,7 @@ import 'package:dio/dio.dart' as dio;
 
 import '../../../data/status.dart';
 import '../../../domain/Model/user/LogisticLoginResponse.dart';
+import '../../../domain/Model/user/user.dart';
 import '../../widgets/custom_snackbar.dart';
 
 ApiService _apiService = ApiService();
@@ -76,19 +78,20 @@ class AuthController extends GetxController {
 
       if (response != null && response.data['status'] == Status.success.name) {
         User user = User.fromJson(response.data['result']);
+        OfficeData officeData =
+            OfficeData.fromJson(response.data['office_data']);
 
         //move to next screen
         if (user.userType == UserType.lp_head.name ||
             user.userType == UserType.lp_manager.name ||
             user.userType == UserType.delivery_partner.name ||
             user.userType == UserType.delivery_boy.name) {
-
-          userController.saveUser(user);
+          userController.saveUser(user, officeData);
           cleartextControllers();
           Get.offAll(() => const DashboardScreen());
-        }else{
-          CustomSnackBar.showSnackBar(CustomSnackBar.error,
-              "UnAuthorized User", CustomSnackBar.error);
+        } else {
+          CustomSnackBar.showSnackBar(
+              CustomSnackBar.error, "UnAuthorized User", CustomSnackBar.error);
         }
       } else {
         CustomSnackBar.showSnackBar(CustomSnackBar.error,

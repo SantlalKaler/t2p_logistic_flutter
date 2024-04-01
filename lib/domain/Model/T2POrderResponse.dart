@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:t2p_logistic/domain/Model/user/AddressListResponse.dart';
 import 'package:t2p_logistic/domain/Model/user/VerifyOtpResponse.dart';
+
+import 'user/user.dart';
 T2pOrderResponse t2pOrderResponseFromJson(String str) => T2pOrderResponse.fromJson(json.decode(str));
 String t2pOrderResponseToJson(T2pOrderResponse data) => json.encode(data.toJson());
 class T2pOrderResponse {

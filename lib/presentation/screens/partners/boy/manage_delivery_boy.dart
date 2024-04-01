@@ -6,6 +6,7 @@ import 'package:t2p_logistic/presentation/theme/resource/dimens.dart';
 import 'package:t2p_logistic/presentation/widgets/circular_loadings.dart';
 
 import '../../../../domain/Model/user/VerifyOtpResponse.dart';
+import '../../../../domain/Model/user/user.dart';
 import '../../../../domain/enums/add_edit_delivery_boy.dart';
 import '../../../widgets/app_bar.dart';
 import '../../../widgets/app_empty_view.dart';

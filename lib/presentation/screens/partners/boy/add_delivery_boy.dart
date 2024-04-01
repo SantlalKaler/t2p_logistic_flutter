@@ -16,6 +16,7 @@ import 'package:t2p_logistic/presentation/widgets/circular_loadings.dart';
 import 'package:t2p_logistic/presentation/widgets/custom_snackbar.dart';
 
 import '../../../../domain/Model/user/VerifyOtpResponse.dart';
+import '../../../../domain/Model/user/user.dart';
 import '../../../../domain/upload_file_item.dart';
 import '../../../constants/view_constants.dart';
 import '../../../theme/resource/custom_constants.dart';

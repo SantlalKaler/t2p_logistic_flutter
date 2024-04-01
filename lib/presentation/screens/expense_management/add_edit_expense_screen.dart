@@ -279,7 +279,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
             amountController.text,
             dateOfPaymentController.text,
             commentController.text,
-            userController.userCity,
+            userController.officeId,
             'local_office');
       } else {
         await expenseController.editExpense(
@@ -292,7 +292,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
             amountController.text,
             dateOfPaymentController.text,
             commentController.text,
-            userController.userCity,
+            userController.officeId,
             'local_office');
       }
     }

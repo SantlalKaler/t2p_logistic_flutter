@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:t2p_logistic/domain/Model/user/VerifyOtpResponse.dart';
+
+import 'user/user.dart';
 LpHeadLpManagersResponse lpHeadLpManagersResponseFromJson(String str) => LpHeadLpManagersResponse.fromJson(json.decode(str));
 String lpHeadLpManagersResponseToJson(LpHeadLpManagersResponse data) => json.encode(data.toJson());
 class LpHeadLpManagersResponse {

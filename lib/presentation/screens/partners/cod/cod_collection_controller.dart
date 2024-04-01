@@ -14,6 +14,7 @@ import '../../../../domain/Model/partner/LogisticBoyListResponse.dart';
 import '../../../../domain/Model/partner/cod_collection_status.dart';
 import '../../../../domain/Model/single_filter_item.dart';
 import '../../../../domain/Model/user/VerifyOtpResponse.dart';
+import '../../../../domain/Model/user/user.dart';
 import '../../../../domain/enums/other.dart';
 
 class CodCollectionController extends GetxController {

@@ -4,6 +4,7 @@ import 'package:t2p_logistic/domain/Model/user/AddressListResponse.dart';
 import 'package:t2p_logistic/domain/Model/user/VerifyOtpResponse.dart';
 
 import 'T2POrderResponse.dart';
+import 'user/user.dart';
 Af2apOrderResponse af2apOrderResponseFromJson(String str) => Af2apOrderResponse.fromJson(json.decode(str));
 String af2apOrderResponseToJson(Af2apOrderResponse data) => json.encode(data.toJson());
 class Af2apOrderResponse {
