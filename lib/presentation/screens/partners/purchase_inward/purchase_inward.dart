@@ -22,6 +22,7 @@ class PurchaseInwardList extends StatefulWidget {
 
 class _PurchaseInwardListState extends State<PurchaseInwardList> {
   PurchaseInwardController purchaseInwardController = Get.find();
+  TextEditingController searchController = TextEditingController();
 
   @override
   void initState() {
@@ -35,11 +36,30 @@ class _PurchaseInwardListState extends State<PurchaseInwardList> {
       body: NestedScrollView(
         headerSliverBuilder: (context, innerBoxIsScrolled) {
           return [
-            const SliverAppBar(
+            SliverAppBar(
               pinned: true,
               floating: true,
-              title: Text("Purchase Inward"),
-              leading: AppBackButton(),
+              title: const Text("Purchase Inward"),
+              leading: const AppBackButton(),
+              bottom: PreferredSize(
+                preferredSize: const Size(double.infinity, 75),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                          horizontal: DimensConstants.screePadding)
+                      .copyWith(bottom: DimensConstants.spaceBetweenViews),
+                  child: SearchBar(
+                    controller: searchController,
+                    hintText: "Search By Order Id...",
+                    leading: const Icon(
+                      Icons.search,
+                    ),
+                    onChanged: (value) {
+                      purchaseInwardController.searchInwardByOrderId(value);
+                    },
+                    elevation: const MaterialStatePropertyAll(0),
+                  ),
+                ),
+              ),
             )
           ];
         },
@@ -48,28 +68,28 @@ class _PurchaseInwardListState extends State<PurchaseInwardList> {
             builder: (controller) {
               return controller.loading.isTrue
                   ? circularloadingRedSmallInfinitySize()
-                  : controller.inwardList.isEmpty
-                  ? const AppEmptyView(
-                message: "No Data Found",
-              )
-                  : ListView.separated(
-                  padding: EdgeInsets.all(DimensConstants.screePadding),
-                  itemBuilder: (context, index) {
-                    return SingleInwardItem(
-                      inward: controller.inwardList[index],
-                      onEdit: () {
-                        controller.getSingleInward(controller.inwardList[index]
-                            .id!);
-                        Get.to(() => const UpdateInwardScreen());
-                      },
-                    );
-                  },
-                  separatorBuilder: (context, index) {
-                    return SizedBox(
-                      height: DimensConstants.spaceBetweenViews,
-                    );
-                  },
-                  itemCount: controller.inwardList.length);
+                  : controller.filterInwardList.isEmpty
+                      ? const AppEmptyView(
+                          message: "No Data Found",
+                        )
+                      : ListView.separated(
+                          padding: EdgeInsets.all(DimensConstants.screePadding),
+                          itemBuilder: (context, index) {
+                            return SingleInwardItem(
+                              inward: controller.filterInwardList[index],
+                              onEdit: () {
+                                controller.getSingleInward(
+                                    controller.filterInwardList[index].id!);
+                                Get.to(() => const UpdateInwardScreen());
+                              },
+                            );
+                          },
+                          separatorBuilder: (context, index) {
+                            return SizedBox(
+                              height: DimensConstants.spaceBetweenViews,
+                            );
+                          },
+                          itemCount: controller.filterInwardList.length);
             }),
       ),
     );
@@ -89,50 +109,50 @@ class SingleInwardItem extends StatelessWidget {
 
     return AppContainer(
         child: Padding(
-          padding: EdgeInsets.all(DimensConstants.cardInnerPadding),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.start,
+      padding: EdgeInsets.all(DimensConstants.cardInnerPadding),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                      "${inward.createdDate!.toDate(
-                          outputDate: "dd-MM-yyyy, HH:mm")}\n"),
-                  Text("${inward.poId}\n"),
-                ],
-              ),
-              Text("Inward To : ${inward.inwardOffice?.name}\n"),
-              Text("Bill Number : ${inward.billNo}\n"),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text("Rs. ${inward.amount}\n"),
-                  Text("Type : ${inward.type == 0 ? "IN" : "OUT"}\n"),
-                ],
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Expanded(
-                    child: Icon(
-                      approved ? Icons.thumb_up : Icons.thumb_down,
-                      color: approved ? Colors.green : Colors.red,
-                    ),
-                  ),
-                  Gap(DimensConstants.spaceBetweenViews),
-                  Expanded(
-                    child: ElevatedButton(
-                        onPressed: () {
-                          onEdit();
-                        }, child: const Text("Edit")),
-                  ),
-                ],
-              )
+              Text(
+                  "${inward.createdDate!.toDate(outputDate: "dd-MM-yyyy, HH:mm")}\n"),
+              Text("${inward.poId}\n"),
             ],
           ),
-        ));
+          Text("Inward To : ${inward.inwardOffice?.name}\n"),
+          Text("Bill Number : ${inward.billNo}\n"),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text("Rs. ${inward.amount}\n"),
+              Text("Type : ${inward.type == 0 ? "IN" : "OUT"}\n"),
+            ],
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Icon(
+                  approved ? Icons.thumb_up : Icons.thumb_down,
+                  color: approved ? Colors.green : Colors.red,
+                ),
+              ),
+              Gap(DimensConstants.spaceBetweenViews),
+              Expanded(
+                child: ElevatedButton(
+                    onPressed: () {
+                      onEdit();
+                    },
+                    child: const Text("Edit")),
+              ),
+            ],
+          )
+        ],
+      ),
+    ));
   }
 }

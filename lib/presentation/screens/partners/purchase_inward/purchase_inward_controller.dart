@@ -34,6 +34,20 @@ class PurchaseInwardController extends GetxController {
   setUpdatePriceLoading() =>
       updatePriceLoading.value = !updatePriceLoading.value;
 
+  searchInwardByOrderId(String orderId) {
+    List<Inward> filterList = [];
+    for (var inward in inwardList) {
+      printValue("Filter order id is $orderId\nbill No ${inward.billNo}\n"
+          "${inward.billNo!.contains(orderId)}");
+     // List<String> billNo = inward.billNo!.split(",");
+      if (inward.billNo!.contains(orderId)) {
+        filterList.add(inward);
+      }
+    }
+    filterInwardList.assignAll(filterList);
+    update();
+  }
+
   Future getInwardList() async {
     setLoading();
     try {
