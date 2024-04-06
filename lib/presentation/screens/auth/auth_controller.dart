@@ -78,8 +78,11 @@ class AuthController extends GetxController {
 
       if (response != null && response.data['status'] == Status.success.name) {
         User user = User.fromJson(response.data['result']);
-        OfficeData officeData =
-            OfficeData.fromJson(response.data['office_data']);
+
+        OfficeData? officeData;
+        if(response.data['office_data'] != null){
+            officeData = OfficeData.fromJson(response.data['office_data']);
+        }
 
         //move to next screen
         if (user.userType == UserType.lp_head.name ||

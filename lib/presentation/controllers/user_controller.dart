@@ -59,7 +59,7 @@ class UserController extends GetxController {
 
   // CommonOrder? get savedOrder => box.read(GetStorageKeys.startedOrder);
 
-  saveUser(User user, OfficeData officeData) {
+  saveUser(User user, OfficeData? officeData) {
     final Map<String, dynamic> userMap = {
       GetStorageKeys.isLoggedIn: true,
       GetStorageKeys.userId: user.id,
@@ -67,7 +67,7 @@ class UserController extends GetxController {
       GetStorageKeys.userMobile: user.mobile,
       GetStorageKeys.userEmail: user.email,
       GetStorageKeys.userType: user.userType,
-      GetStorageKeys.officeId: officeData.id,
+      GetStorageKeys.officeId: officeData?.id ?? "",
       GetStorageKeys.userCity: (user.customerSupportCity!.isNotEmpty &&
               user.customerSupportCity != null)
           ? user.customerSupportCity![0].toString()

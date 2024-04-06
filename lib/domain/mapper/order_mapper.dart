@@ -10,7 +10,8 @@ extension T2POrderExtension on T2POrder {
   CommonOrder? toCommonOrder() {
     var productList = "";
     for (var i = 0; i < products!.length; i++) {
-      productList += "${i + 1}. (Qty : ${products?[i].quantity}) ${products![i].productname}\n";
+      productList +=
+          "${i + 1}. (Qty : ${products?[i].quantity}) ${products![i].productname}\n";
     }
     try {
       /*printValue("Delivery boy is $deliveryBoy\n"
@@ -27,7 +28,8 @@ extension T2POrderExtension on T2POrder {
           deliveryWeight: deliveryWeight ?? "",
           deliveryZipcode: address?.pincode ?? "",
           customerNumber: user?.mobile ?? "",
-          customerAddress: "${address?.contactName},\n${address?.address}, \n${address?.city?.name},${address?.state?.name},\n${address?.pincode}",
+          customerAddress:
+              "${address?.contactName}, \n${address?.address}, \n${address?.address2},\n${address?.pincode}, ${address?.landmark}, \n${address?.postOffice}, \n${address?.city?.name},${address?.state?.name},",
           express: express ?? "N",
           paymentMode: gateway ?? "",
           deliveryDate: deliveryDate?.toDate() ?? "",
@@ -35,7 +37,7 @@ extension T2POrderExtension on T2POrder {
           orderStatus: status?.toUpperCase() ?? "",
           pickupBoy: pickupBoy?.fullName ?? "Unassigned",
           deliveryBoy: deliveryBoy?.fullName ?? "Unassigned",
-          deliveryPartner : deliveryPartner?.fullName ?? "",
+          deliveryPartner: deliveryPartner?.fullName ?? "",
           lpManager: lpManager?.fullName ?? "",
           pickupAddress: Address(),
           deliveryAddress: address ?? Address());
