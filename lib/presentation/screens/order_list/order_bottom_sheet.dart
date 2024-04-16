@@ -194,7 +194,37 @@ class _OrderBottomSheetState extends State<OrderBottomSheet> {
                                   : circularloadingWhiteSmall(),
                             )),
                       Gap(DimensConstants.spaceBetweenViews),
-                      Expanded(
+                      (controller.t2pOrderType ==
+                          T2POrderType.AF2AP &&
+                          controller.orderType ==
+                              OrderType.pickup)
+                          ? Expanded(
+                          child: ElevatedButton(
+                              onPressed: () {
+                                if (controller.buttonLoading.isFalse) {
+                                  if (controller.anyOrderSelected()) {
+                                    // in these 2 cases boy have to first start order then only he can end order
+                                    // 1. AF2AP pickup order
+                                    if (!userController.orderAlreadyStarted) {
+                                         CustomSnackBar.showSnackBar(
+                                          CustomSnackBar.error,
+                                          "First start order.",
+                                          CustomSnackBar.error);
+                                    } else {
+                                      takePayment(context);
+                                    }
+                                  } else {
+                                    CustomSnackBar.showSnackBar(
+                                        CustomSnackBar.error,
+                                        "Select order.",
+                                        CustomSnackBar.error);
+                                  }
+                                }
+                              },
+                              child: controller.buttonLoading.isTrue
+                                  ? circularloadingWhiteSmall()
+                                  : const Text("Picked Up")))
+                          :Expanded(
                           child: ElevatedButton(
                               onPressed: () {
                                 if (controller.buttonLoading.isFalse) {
@@ -205,11 +235,7 @@ class _OrderBottomSheetState extends State<OrderBottomSheet> {
                                     if (((controller.t2pOrderType ==
                                                     T2POrderType.T2P &&
                                                 controller.orderType ==
-                                                    OrderType.deliver) ||
-                                            (controller.t2pOrderType ==
-                                                    T2POrderType.AF2AP &&
-                                                controller.orderType ==
-                                                    OrderType.pickup)) &&
+                                                    OrderType.deliver)) &&
                                         (!userController.orderAlreadyStarted)) {
                                       printValue(
                                           "Order already started : ${userController.orderAlreadyStarted}\n"

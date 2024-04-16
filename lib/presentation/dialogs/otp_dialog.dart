@@ -25,8 +25,7 @@ class _OTPDialogState extends State<OTPDialog> {
   Widget build(BuildContext context) {
     return Form(
       key: _formKey,
-      child: Obx(() =>
-          DefaultDialog(
+      child: Obx(() => DefaultDialog(
             icon: Column(
               children: [
                 TextFormField(
@@ -44,11 +43,12 @@ class _OTPDialogState extends State<OTPDialog> {
                 TextButton(
                     onPressed: () async {
                       (controller.t2pOrderType == T2POrderType.T2P &&
-                          controller.orderType == OrderType.pickup)
+                              controller.orderType == OrderType.pickup)
                           ? await controller.sendOTPToCargo()
-                      : (controller.t2pOrderType == T2POrderType.AF2AP)
-                          ? await controller.sendOTPToCustomerAF2AP()
-                          :await controller.sendOTPToCustomer(userController.orderId!);
+                          : (controller.t2pOrderType == T2POrderType.AF2AP)
+                              ? await controller.sendOTPToCustomerAF2AP()
+                              : await controller
+                                  .sendOTPToCustomer(userController.orderId!);
                     },
                     child: controller.dialogLoading.isTrue
                         ? circularloadingRedSmall()
@@ -64,9 +64,13 @@ class _OTPDialogState extends State<OTPDialog> {
             btn1Click: () async {
               if (_formKey.currentState!.validate()) {
                 Get.back();
-                controller.t2pOrderType == T2POrderType.AF2AP
+                (controller.t2pOrderType == T2POrderType.AF2AP &&
+                        controller.orderType == OrderType.deliver)
                     ? await controller.orderDeliveredAF2AP()
-                    :  await controller.orderDelivered();
+                    : (controller.t2pOrderType == T2POrderType.AF2AP &&
+                            controller.orderType == OrderType.pickup)
+                        ? await controller.orderPickedUpAF2AP()
+                        : await controller.orderDelivered();
               }
             },
           )),

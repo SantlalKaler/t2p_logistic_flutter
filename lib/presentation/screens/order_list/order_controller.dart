@@ -560,9 +560,11 @@ class OrderController extends GetxController {
       // if user type is lp manager
       if (userController.userType == UserType.lp_manager.name) {
         if (orderType == OrderType.pickup) {
-          path += "?lp_manager=$userId&pickup_partner=${getPartnerId()}&order_city=${getSelectedCityId()}";
+          path +=
+              "?lp_manager=$userId&pickup_partner=${getPartnerId()}&order_city=${getSelectedCityId()}";
         } else {
-          path += "?lp_manager=$userId&delivery_partner=${getPartnerId()}&order_city=${getSelectedCityId()}";
+          path +=
+              "?lp_manager=$userId&delivery_partner=${getPartnerId()}&order_city=${getSelectedCityId()}";
         }
       }
 
@@ -1264,9 +1266,7 @@ class OrderController extends GetxController {
     try {
       var path = URIConstants.deliveredToCustomerAF2AP;
       var data = {
-        "id": orderType == OrderType.deliver
-            ? orderToBeAssign[0].toString()
-            : userController.orderId!,
+        "id": orderToBeAssign[0].toString(),
         /* "otp": otpController.text.toString(),
         "gateway": getPaymentType(),*/
       };
@@ -1278,9 +1278,31 @@ class OrderController extends GetxController {
 
       if (response != null &&
           response.data[StringConstants.status] == Status.success.name) {
-        if (orderType == OrderType.pickup) {
-          userController.clearOrderInfo();
-        }
+        clearList(t2pOrderType, orderType);
+        getOrders();
+      }
+    } finally {
+      setButtonLoading();
+    }
+  }
+
+  Future orderPickedUpAF2AP() async {
+    setButtonLoading();
+
+    try {
+      var path = URIConstants.pickupFromCustomerAF2AP;
+      var data = {
+        "id": userController.orderId!,
+      };
+
+      var response = await _apiService.post(path, data);
+
+      CustomSnackBar.showSnackBar(CustomSnackBar.error,
+          response?.data[StringConstants.message], CustomSnackBar.error);
+
+      if (response != null &&
+          response.data[StringConstants.status] == Status.success.name) {
+        userController.clearOrderInfo();
         clearList(t2pOrderType, orderType);
         getOrders();
       }

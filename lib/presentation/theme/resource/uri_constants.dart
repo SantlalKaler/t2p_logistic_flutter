@@ -23,6 +23,7 @@ class URIConstants {
   static String deliveredToCargo = "app/delivered-to-cargo";
   static String deliveredToCustomer = "app/delivered-to-customer";
   static String deliveredToCustomerAF2AP = "app/gharkakhana-delivered-order";
+  static String pickupFromCustomerAF2AP = "app/gharkakhana-pickup-boy-picked-order";
   static String sendOTPToCargo = "app/send-otp-to-cargo";
   static String sendOTPToCustomer = "app/send-otp-to-customer";
   static String sendOTPToCustomerAF2AP = "app/gharkakhana-send-otp-to-customer";
