@@ -1,21 +1,27 @@
 import 'dart:convert';
 
 import 'package:t2p_logistic/domain/Model/user/AddressListResponse.dart';
-import 'package:t2p_logistic/domain/Model/user/VerifyOtpResponse.dart';
+import 'package:t2p_logistic/presentation/theme/resource/custom_constants.dart';
 
 import 'T2POrderResponse.dart';
 import 'user/user.dart';
-Af2apOrderResponse af2apOrderResponseFromJson(String str) => Af2apOrderResponse.fromJson(json.decode(str));
-String af2apOrderResponseToJson(Af2apOrderResponse data) => json.encode(data.toJson());
+
+Af2apOrderResponse af2apOrderResponseFromJson(String str) =>
+    Af2apOrderResponse.fromJson(json.decode(str));
+
+String af2apOrderResponseToJson(Af2apOrderResponse data) =>
+    json.encode(data.toJson());
+
 class Af2apOrderResponse {
   Af2apOrderResponse({
-      String? status, 
-      List<AF2APOrder>? order,
-      num? totalCount,}){
+    String? status,
+    List<AF2APOrder>? order,
+    num? totalCount,
+  }) {
     _status = status;
     _order = order;
     _totalCount = totalCount;
-}
+  }
 
   Af2apOrderResponse.fromJson(dynamic json) {
     _status = json['status'];
@@ -27,18 +33,26 @@ class Af2apOrderResponse {
     }
     _totalCount = json['totalCount'];
   }
+
   String? _status;
   List<AF2APOrder>? _order;
   num? _totalCount;
-Af2apOrderResponse copyWith({  String? status,
-  List<AF2APOrder>? order,
-  num? totalCount,
-}) => Af2apOrderResponse(  status: status ?? _status,
-  order: order ?? _order,
-  totalCount: totalCount ?? _totalCount,
-);
+
+  Af2apOrderResponse copyWith({
+    String? status,
+    List<AF2APOrder>? order,
+    num? totalCount,
+  }) =>
+      Af2apOrderResponse(
+        status: status ?? _status,
+        order: order ?? _order,
+        totalCount: totalCount ?? _totalCount,
+      );
+
   String? get status => _status;
+
   List<AF2APOrder>? get order => _order;
+
   num? get totalCount => _totalCount;
 
   Map<String, dynamic> toJson() {
@@ -50,49 +64,52 @@ Af2apOrderResponse copyWith({  String? status,
     map['totalCount'] = _totalCount;
     return map;
   }
-
 }
 
-AF2APOrder aF2APOrderFromJson(String str) => AF2APOrder.fromJson(json.decode(str));
+AF2APOrder aF2APOrderFromJson(String str) =>
+    AF2APOrder.fromJson(json.decode(str));
+
 String aF2APOrderToJson(AF2APOrder data) => json.encode(data.toJson());
+
 class AF2APOrder {
   AF2APOrder({
-      String? orderid, 
-      User? user, 
-      String? remarks, 
-      String? pickupDate, 
-      String? pickupTime, 
-      String? deliveryType, 
-      String? deliveryDate, 
-      String? deliveryTimeslot, 
-      num? active, 
-      num? deleted, 
-      String? totalPrice, 
-      String? duesAmount,
-      String? paidAmount,
-      String? shippingPrice,
-      String? pickupPrice, 
-      String? deliveryPrice, 
-      String? pickupDistance, 
-      String? deliveryDistance, 
-      String? totalWeight,
+    String? orderid,
+    User? user,
+    String? remarks,
+    String? pickupDate,
+    String? pickupTime,
+    String? deliveryType,
+    String? deliveryDate,
+    String? deliveryTimeslot,
+    num? active,
+    num? deleted,
+    String? totalPrice,
+    String? duesAmount,
+    String? paidAmount,
+    String? shippingPrice,
+    String? pickupPrice,
+    String? deliveryPrice,
+    String? pickupDistance,
+    String? deliveryDistance,
+    String? totalWeight,
     User? lpManager,
-      String? status, 
-      num? orderConfirmation,
+    String? status,
+    num? orderConfirmation,
     User? pickupPartner,
-      User? pickupBoy,
-      DeliveryPartner? deliveryPartner, 
-      User? deliveryBoy,
-      String? sgst, 
-      String? igst, 
-      String? cgst, 
-      String? id, 
-      Address? sourceLocation,
-      Address? destinationLocation,
-      List<Products>? products, 
-      String? createdAt, 
-      String? updatedAt, 
-      num? v,}){
+    User? pickupBoy,
+    DeliveryPartner? deliveryPartner,
+    User? deliveryBoy,
+    String? sgst,
+    String? igst,
+    String? cgst,
+    String? id,
+    Address? sourceLocation,
+    Address? destinationLocation,
+    List<Products>? products,
+    String? createdAt,
+    String? updatedAt,
+    num? v,
+  }) {
     _orderid = orderid;
     _user = user;
     _remarks = remarks;
@@ -129,9 +146,10 @@ class AF2APOrder {
     _createdAt = createdAt;
     _updatedAt = updatedAt;
     _v = v;
-}
+  }
 
   AF2APOrder.fromJson(dynamic json) {
+    printValue("LP Manager : ${json['user'] is Map}");
     _orderid = json['orderid'];
     _user = json['user'] != null ? User.fromJson(json['user']) : null;
     _remarks = json['remarks'];
@@ -153,17 +171,30 @@ class AF2APOrder {
     _totalWeight = json['total_weight'];
     _status = json['status'];
     _orderConfirmation = json['order_confirmation'];
-    _pickupPartner = json['pickup_partner'] != null ? User.fromJson(json['pickup_partner']) : null;
-    _lpManager = json['lp_manager'] != null ? User.fromJson(json['lp_manager']) : null;
-    _pickupBoy = json['pickup_boy'] != null ? User.fromJson(json['pickup_boy']) : null;
-    _deliveryPartner = json['delivery_partner'] != null ? DeliveryPartner.fromJson(json['delivery_partner']) : null;
-    _deliveryBoy = json['delivery_boy'] != null ? User.fromJson(json['delivery_boy']) : null;
+    _pickupPartner = json['pickup_partner'] != null
+        ? User.fromJson(json['pickup_partner'])
+        : null;
+    _lpManager = json['lp_manager'] != null && json['lp_manager'] is Map
+        ? User.fromJson(json['lp_manager'])
+        : null;
+    _pickupBoy =
+        json['pickup_boy'] != null ? User.fromJson(json['pickup_boy']) : null;
+    _deliveryPartner = json['delivery_partner'] != null
+        ? DeliveryPartner.fromJson(json['delivery_partner'])
+        : null;
+    _deliveryBoy = json['delivery_boy'] != null
+        ? User.fromJson(json['delivery_boy'])
+        : null;
     _sgst = json['sgst'];
     _igst = json['igst'];
     _cgst = json['cgst'];
     _id = json['_id'];
-    _sourceLocation = json['source_location'] != null ? Address.fromJson(json['source_location']) : null;
-    _destinationLocation = json['destination_location'] != null ? Address.fromJson(json['destination_location']) : null;
+    _sourceLocation = json['source_location'] != null
+        ? Address.fromJson(json['source_location'])
+        : null;
+    _destinationLocation = json['destination_location'] != null
+        ? Address.fromJson(json['destination_location'])
+        : null;
     if (json['products'] != null) {
       _products = [];
       json['products'].forEach((v) {
@@ -174,6 +205,7 @@ class AF2APOrder {
     _updatedAt = json['updatedAt'];
     _v = json['__v'];
   }
+
   String? _orderid;
   User? _user;
   String? _remarks;
@@ -210,114 +242,154 @@ class AF2APOrder {
   String? _createdAt;
   String? _updatedAt;
   num? _v;
-AF2APOrder copyWith({  String? orderid,
-  User? user,
-  String? remarks,
-  String? pickupDate,
-  User? lpManager,
-  String? pickupTime,
-  String? deliveryType,
-  String? deliveryDate,
-  String? deliveryTimeslot,
-  num? active,
-  num? deleted,
-  String? totalPrice,
-  String? paidAmount,
-  String? duesAmount,
-  String? shippingPrice,
-  String? pickupPrice,
-  String? deliveryPrice,
-  String? pickupDistance,
-  String? deliveryDistance,
-  String? totalWeight,
-  String? status,
-  num? orderConfirmation,
-  User? pickupPartner,
-  dynamic pickupBoy,
-  DeliveryPartner? deliveryPartner,
-  dynamic deliveryBoy,
-  String? sgst,
-  String? igst,
-  String? cgst,
-  String? id,
-  Address? sourceLocation,
-  Address? destinationLocation,
-  List<Products>? products,
-  String? createdAt,
-  String? updatedAt,
-  num? v,
-}) => AF2APOrder(  orderid: orderid ?? _orderid,
-  user: user ?? _user,
-  remarks: remarks ?? _remarks,
-  pickupDate: pickupDate ?? _pickupDate,
-  pickupTime: pickupTime ?? _pickupTime,
-  lpManager: lpManager ?? _lpManager,
-  deliveryType: deliveryType ?? _deliveryType,
-  deliveryDate: deliveryDate ?? _deliveryDate,
-  deliveryTimeslot: deliveryTimeslot ?? _deliveryTimeslot,
-  active: active ?? _active,
-  deleted: deleted ?? _deleted,
-  totalPrice: totalPrice ?? _totalPrice,
-  paidAmount: paidAmount ?? _paidAmount,
-  duesAmount: duesAmount ?? _duesAmount,
-  shippingPrice: shippingPrice ?? _shippingPrice,
-  pickupPrice: pickupPrice ?? _pickupPrice,
-  deliveryPrice: deliveryPrice ?? _deliveryPrice,
-  pickupDistance: pickupDistance ?? _pickupDistance,
-  deliveryDistance: deliveryDistance ?? _deliveryDistance,
-  totalWeight: totalWeight ?? _totalWeight,
-  status: status ?? _status,
-  orderConfirmation: orderConfirmation ?? _orderConfirmation,
-  pickupPartner: pickupPartner ?? _pickupPartner,
-  pickupBoy: pickupBoy ?? _pickupBoy,
-  deliveryPartner: deliveryPartner ?? _deliveryPartner,
-  deliveryBoy: deliveryBoy ?? _deliveryBoy,
-  sgst: sgst ?? _sgst,
-  igst: igst ?? _igst,
-  cgst: cgst ?? _cgst,
-  id: id ?? _id,
-  sourceLocation: sourceLocation ?? _sourceLocation,
-  destinationLocation: destinationLocation ?? _destinationLocation,
-  products: products ?? _products,
-  createdAt: createdAt ?? _createdAt,
-  updatedAt: updatedAt ?? _updatedAt,
-  v: v ?? _v,
-);
+
+  AF2APOrder copyWith({
+    String? orderid,
+    User? user,
+    String? remarks,
+    String? pickupDate,
+    User? lpManager,
+    String? pickupTime,
+    String? deliveryType,
+    String? deliveryDate,
+    String? deliveryTimeslot,
+    num? active,
+    num? deleted,
+    String? totalPrice,
+    String? paidAmount,
+    String? duesAmount,
+    String? shippingPrice,
+    String? pickupPrice,
+    String? deliveryPrice,
+    String? pickupDistance,
+    String? deliveryDistance,
+    String? totalWeight,
+    String? status,
+    num? orderConfirmation,
+    User? pickupPartner,
+    dynamic pickupBoy,
+    DeliveryPartner? deliveryPartner,
+    dynamic deliveryBoy,
+    String? sgst,
+    String? igst,
+    String? cgst,
+    String? id,
+    Address? sourceLocation,
+    Address? destinationLocation,
+    List<Products>? products,
+    String? createdAt,
+    String? updatedAt,
+    num? v,
+  }) =>
+      AF2APOrder(
+        orderid: orderid ?? _orderid,
+        user: user ?? _user,
+        remarks: remarks ?? _remarks,
+        pickupDate: pickupDate ?? _pickupDate,
+        pickupTime: pickupTime ?? _pickupTime,
+        lpManager: lpManager ?? _lpManager,
+        deliveryType: deliveryType ?? _deliveryType,
+        deliveryDate: deliveryDate ?? _deliveryDate,
+        deliveryTimeslot: deliveryTimeslot ?? _deliveryTimeslot,
+        active: active ?? _active,
+        deleted: deleted ?? _deleted,
+        totalPrice: totalPrice ?? _totalPrice,
+        paidAmount: paidAmount ?? _paidAmount,
+        duesAmount: duesAmount ?? _duesAmount,
+        shippingPrice: shippingPrice ?? _shippingPrice,
+        pickupPrice: pickupPrice ?? _pickupPrice,
+        deliveryPrice: deliveryPrice ?? _deliveryPrice,
+        pickupDistance: pickupDistance ?? _pickupDistance,
+        deliveryDistance: deliveryDistance ?? _deliveryDistance,
+        totalWeight: totalWeight ?? _totalWeight,
+        status: status ?? _status,
+        orderConfirmation: orderConfirmation ?? _orderConfirmation,
+        pickupPartner: pickupPartner ?? _pickupPartner,
+        pickupBoy: pickupBoy ?? _pickupBoy,
+        deliveryPartner: deliveryPartner ?? _deliveryPartner,
+        deliveryBoy: deliveryBoy ?? _deliveryBoy,
+        sgst: sgst ?? _sgst,
+        igst: igst ?? _igst,
+        cgst: cgst ?? _cgst,
+        id: id ?? _id,
+        sourceLocation: sourceLocation ?? _sourceLocation,
+        destinationLocation: destinationLocation ?? _destinationLocation,
+        products: products ?? _products,
+        createdAt: createdAt ?? _createdAt,
+        updatedAt: updatedAt ?? _updatedAt,
+        v: v ?? _v,
+      );
+
   String? get orderid => _orderid;
+
   User? get user => _user;
+
   String? get remarks => _remarks;
+
   String? get pickupDate => _pickupDate;
+
   User? get lpManager => _lpManager;
+
   String? get pickupTime => _pickupTime;
+
   String? get deliveryType => _deliveryType;
+
   String? get deliveryDate => _deliveryDate;
+
   String? get deliveryTimeslot => _deliveryTimeslot;
+
   num? get active => _active;
+
   num? get deleted => _deleted;
+
   String? get totalPrice => _totalPrice;
+
   String? get paidAmount => _paidAmount;
+
   String? get duesAmount => _duesAmount;
+
   String? get shippingPrice => _shippingPrice;
+
   String? get pickupPrice => _pickupPrice;
+
   String? get deliveryPrice => _deliveryPrice;
+
   String? get pickupDistance => _pickupDistance;
+
   String? get deliveryDistance => _deliveryDistance;
+
   String? get totalWeight => _totalWeight;
+
   String? get status => _status;
+
   num? get orderConfirmation => _orderConfirmation;
+
   User? get pickupPartner => _pickupPartner;
+
   User? get pickupBoy => _pickupBoy;
+
   DeliveryPartner? get deliveryPartner => _deliveryPartner;
+
   User? get deliveryBoy => _deliveryBoy;
+
   String? get sgst => _sgst;
+
   String? get igst => _igst;
+
   String? get cgst => _cgst;
+
   String? get id => _id;
+
   Address? get sourceLocation => _sourceLocation;
+
   Address? get destinationLocation => _destinationLocation;
+
   List<Products>? get products => _products;
+
   String? get createdAt => _createdAt;
+
   String? get updatedAt => _updatedAt;
+
   num? get v => _v;
 
   Map<String, dynamic> toJson() {
@@ -378,21 +450,23 @@ AF2APOrder copyWith({  String? orderid,
     map['__v'] = _v;
     return map;
   }
-
 }
 
 Products productsFromJson(String str) => Products.fromJson(json.decode(str));
+
 String productsToJson(Products data) => json.encode(data.toJson());
+
 class Products {
   Products({
-      String? name, 
-      String? weight, 
-      String? height, 
-      String? weidth, 
-      String? length, 
-      String? id, 
-      Category? category, 
-      SubCategory? subCategory,}){
+    String? name,
+    String? weight,
+    String? height,
+    String? weidth,
+    String? length,
+    String? id,
+    Category? category,
+    SubCategory? subCategory,
+  }) {
     _name = name;
     _weight = weight;
     _height = height;
@@ -401,7 +475,7 @@ class Products {
     _id = id;
     _category = category;
     _subCategory = subCategory;
-}
+  }
 
   Products.fromJson(dynamic json) {
     _name = json['name'];
@@ -410,9 +484,13 @@ class Products {
     _weidth = json['weidth'];
     _length = json['length'];
     _id = json['_id'];
-    _category = json['category'] != null ? Category.fromJson(json['category']) : null;
-    _subCategory = json['sub_category'] != null ? SubCategory.fromJson(json['sub_category']) : null;
+    _category =
+        json['category'] != null ? Category.fromJson(json['category']) : null;
+    _subCategory = json['sub_category'] != null
+        ? SubCategory.fromJson(json['sub_category'])
+        : null;
   }
+
   String? _name;
   String? _weight;
   String? _height;
@@ -421,30 +499,42 @@ class Products {
   String? _id;
   Category? _category;
   SubCategory? _subCategory;
-Products copyWith({  String? name,
-  String? weight,
-  String? height,
-  String? weidth,
-  String? length,
-  String? id,
-  Category? category,
-  SubCategory? subCategory,
-}) => Products(  name: name ?? _name,
-  weight: weight ?? _weight,
-  height: height ?? _height,
-  weidth: weidth ?? _weidth,
-  length: length ?? _length,
-  id: id ?? _id,
-  category: category ?? _category,
-  subCategory: subCategory ?? _subCategory,
-);
+
+  Products copyWith({
+    String? name,
+    String? weight,
+    String? height,
+    String? weidth,
+    String? length,
+    String? id,
+    Category? category,
+    SubCategory? subCategory,
+  }) =>
+      Products(
+        name: name ?? _name,
+        weight: weight ?? _weight,
+        height: height ?? _height,
+        weidth: weidth ?? _weidth,
+        length: length ?? _length,
+        id: id ?? _id,
+        category: category ?? _category,
+        subCategory: subCategory ?? _subCategory,
+      );
+
   String? get name => _name;
+
   String? get weight => _weight;
+
   String? get height => _height;
+
   String? get weidth => _weidth;
+
   String? get length => _length;
+
   String? get id => _id;
+
   Category? get category => _category;
+
   SubCategory? get subCategory => _subCategory;
 
   Map<String, dynamic> toJson() {
@@ -463,30 +553,33 @@ Products copyWith({  String? name,
     }
     return map;
   }
-
 }
 
-SubCategory subCategoryFromJson(String str) => SubCategory.fromJson(json.decode(str));
+SubCategory subCategoryFromJson(String str) =>
+    SubCategory.fromJson(json.decode(str));
+
 String subCategoryToJson(SubCategory data) => json.encode(data.toJson());
+
 class SubCategory {
   SubCategory({
-      String? name, 
-      String? description, 
-      String? descriptionAfterContent, 
-      String? parent, 
-      String? file, 
-      String? createdDate, 
-      String? updateDate, 
-      num? active, 
-      num? deleted, 
-      String? seoTitle, 
-      String? seoDescription, 
-      String? seoKeywords, 
-      String? additionalCost, 
-      List<String>? slugHistory, 
-      String? id, 
-      String? slug, 
-      num? v,}){
+    String? name,
+    String? description,
+    String? descriptionAfterContent,
+    String? parent,
+    String? file,
+    String? createdDate,
+    String? updateDate,
+    num? active,
+    num? deleted,
+    String? seoTitle,
+    String? seoDescription,
+    String? seoKeywords,
+    String? additionalCost,
+    List<String>? slugHistory,
+    String? id,
+    String? slug,
+    num? v,
+  }) {
     _name = name;
     _description = description;
     _descriptionAfterContent = descriptionAfterContent;
@@ -504,7 +597,7 @@ class SubCategory {
     _id = id;
     _slug = slug;
     _v = v;
-}
+  }
 
   SubCategory.fromJson(dynamic json) {
     _name = json['name'];
@@ -520,11 +613,13 @@ class SubCategory {
     _seoDescription = json['seo_description'];
     _seoKeywords = json['seo_keywords'];
     _additionalCost = json['additional_cost'];
-    _slugHistory = json['slug_history'] != null ? json['slug_history'].cast<String>() : [];
+    _slugHistory =
+        json['slug_history'] != null ? json['slug_history'].cast<String>() : [];
     _id = json['_id'];
     _slug = json['slug'];
     _v = json['__v'];
   }
+
   String? _name;
   String? _description;
   String? _descriptionAfterContent;
@@ -542,57 +637,79 @@ class SubCategory {
   String? _id;
   String? _slug;
   num? _v;
-SubCategory copyWith({  String? name,
-  String? description,
-  String? descriptionAfterContent,
-  String? parent,
-  String? file,
-  String? createdDate,
-  String? updateDate,
-  num? active,
-  num? deleted,
-  String? seoTitle,
-  String? seoDescription,
-  String? seoKeywords,
-  String? additionalCost,
-  List<String>? slugHistory,
-  String? id,
-  String? slug,
-  num? v,
-}) => SubCategory(  name: name ?? _name,
-  description: description ?? _description,
-  descriptionAfterContent: descriptionAfterContent ?? _descriptionAfterContent,
-  parent: parent ?? _parent,
-  file: file ?? _file,
-  createdDate: createdDate ?? _createdDate,
-  updateDate: updateDate ?? _updateDate,
-  active: active ?? _active,
-  deleted: deleted ?? _deleted,
-  seoTitle: seoTitle ?? _seoTitle,
-  seoDescription: seoDescription ?? _seoDescription,
-  seoKeywords: seoKeywords ?? _seoKeywords,
-  additionalCost: additionalCost ?? _additionalCost,
-  slugHistory: slugHistory ?? _slugHistory,
-  id: id ?? _id,
-  slug: slug ?? _slug,
-  v: v ?? _v,
-);
+
+  SubCategory copyWith({
+    String? name,
+    String? description,
+    String? descriptionAfterContent,
+    String? parent,
+    String? file,
+    String? createdDate,
+    String? updateDate,
+    num? active,
+    num? deleted,
+    String? seoTitle,
+    String? seoDescription,
+    String? seoKeywords,
+    String? additionalCost,
+    List<String>? slugHistory,
+    String? id,
+    String? slug,
+    num? v,
+  }) =>
+      SubCategory(
+        name: name ?? _name,
+        description: description ?? _description,
+        descriptionAfterContent:
+            descriptionAfterContent ?? _descriptionAfterContent,
+        parent: parent ?? _parent,
+        file: file ?? _file,
+        createdDate: createdDate ?? _createdDate,
+        updateDate: updateDate ?? _updateDate,
+        active: active ?? _active,
+        deleted: deleted ?? _deleted,
+        seoTitle: seoTitle ?? _seoTitle,
+        seoDescription: seoDescription ?? _seoDescription,
+        seoKeywords: seoKeywords ?? _seoKeywords,
+        additionalCost: additionalCost ?? _additionalCost,
+        slugHistory: slugHistory ?? _slugHistory,
+        id: id ?? _id,
+        slug: slug ?? _slug,
+        v: v ?? _v,
+      );
+
   String? get name => _name;
+
   String? get description => _description;
+
   String? get descriptionAfterContent => _descriptionAfterContent;
+
   String? get parent => _parent;
+
   String? get file => _file;
+
   String? get createdDate => _createdDate;
+
   String? get updateDate => _updateDate;
+
   num? get active => _active;
+
   num? get deleted => _deleted;
+
   String? get seoTitle => _seoTitle;
+
   String? get seoDescription => _seoDescription;
+
   String? get seoKeywords => _seoKeywords;
+
   String? get additionalCost => _additionalCost;
+
   List<String>? get slugHistory => _slugHistory;
+
   String? get id => _id;
+
   String? get slug => _slug;
+
   num? get v => _v;
 
   Map<String, dynamic> toJson() {
@@ -616,30 +733,32 @@ SubCategory copyWith({  String? name,
     map['__v'] = _v;
     return map;
   }
-
 }
 
 Category categoryFromJson(String str) => Category.fromJson(json.decode(str));
+
 String categoryToJson(Category data) => json.encode(data.toJson());
+
 class Category {
   Category({
-      String? name, 
-      String? description, 
-      String? descriptionAfterContent, 
-      dynamic parent, 
-      String? file, 
-      String? createdDate, 
-      String? updateDate, 
-      num? active, 
-      num? deleted, 
-      String? seoTitle, 
-      String? seoDescription, 
-      String? seoKeywords, 
-      String? additionalCost, 
-      List<String>? slugHistory, 
-      String? id, 
-      String? slug, 
-      num? v,}){
+    String? name,
+    String? description,
+    String? descriptionAfterContent,
+    dynamic parent,
+    String? file,
+    String? createdDate,
+    String? updateDate,
+    num? active,
+    num? deleted,
+    String? seoTitle,
+    String? seoDescription,
+    String? seoKeywords,
+    String? additionalCost,
+    List<String>? slugHistory,
+    String? id,
+    String? slug,
+    num? v,
+  }) {
     _name = name;
     _description = description;
     _descriptionAfterContent = descriptionAfterContent;
@@ -657,7 +776,7 @@ class Category {
     _id = id;
     _slug = slug;
     _v = v;
-}
+  }
 
   Category.fromJson(dynamic json) {
     _name = json['name'];
@@ -673,11 +792,13 @@ class Category {
     _seoDescription = json['seo_description'];
     _seoKeywords = json['seo_keywords'];
     _additionalCost = json['additional_cost'];
-    _slugHistory = json['slug_history'] != null ? json['slug_history'].cast<String>() : [];
+    _slugHistory =
+        json['slug_history'] != null ? json['slug_history'].cast<String>() : [];
     _id = json['_id'];
     _slug = json['slug'];
     _v = json['__v'];
   }
+
   String? _name;
   String? _description;
   String? _descriptionAfterContent;
@@ -695,57 +816,79 @@ class Category {
   String? _id;
   String? _slug;
   num? _v;
-Category copyWith({  String? name,
-  String? description,
-  String? descriptionAfterContent,
-  dynamic parent,
-  String? file,
-  String? createdDate,
-  String? updateDate,
-  num? active,
-  num? deleted,
-  String? seoTitle,
-  String? seoDescription,
-  String? seoKeywords,
-  String? additionalCost,
-  List<String>? slugHistory,
-  String? id,
-  String? slug,
-  num? v,
-}) => Category(  name: name ?? _name,
-  description: description ?? _description,
-  descriptionAfterContent: descriptionAfterContent ?? _descriptionAfterContent,
-  parent: parent ?? _parent,
-  file: file ?? _file,
-  createdDate: createdDate ?? _createdDate,
-  updateDate: updateDate ?? _updateDate,
-  active: active ?? _active,
-  deleted: deleted ?? _deleted,
-  seoTitle: seoTitle ?? _seoTitle,
-  seoDescription: seoDescription ?? _seoDescription,
-  seoKeywords: seoKeywords ?? _seoKeywords,
-  additionalCost: additionalCost ?? _additionalCost,
-  slugHistory: slugHistory ?? _slugHistory,
-  id: id ?? _id,
-  slug: slug ?? _slug,
-  v: v ?? _v,
-);
+
+  Category copyWith({
+    String? name,
+    String? description,
+    String? descriptionAfterContent,
+    dynamic parent,
+    String? file,
+    String? createdDate,
+    String? updateDate,
+    num? active,
+    num? deleted,
+    String? seoTitle,
+    String? seoDescription,
+    String? seoKeywords,
+    String? additionalCost,
+    List<String>? slugHistory,
+    String? id,
+    String? slug,
+    num? v,
+  }) =>
+      Category(
+        name: name ?? _name,
+        description: description ?? _description,
+        descriptionAfterContent:
+            descriptionAfterContent ?? _descriptionAfterContent,
+        parent: parent ?? _parent,
+        file: file ?? _file,
+        createdDate: createdDate ?? _createdDate,
+        updateDate: updateDate ?? _updateDate,
+        active: active ?? _active,
+        deleted: deleted ?? _deleted,
+        seoTitle: seoTitle ?? _seoTitle,
+        seoDescription: seoDescription ?? _seoDescription,
+        seoKeywords: seoKeywords ?? _seoKeywords,
+        additionalCost: additionalCost ?? _additionalCost,
+        slugHistory: slugHistory ?? _slugHistory,
+        id: id ?? _id,
+        slug: slug ?? _slug,
+        v: v ?? _v,
+      );
+
   String? get name => _name;
+
   String? get description => _description;
+
   String? get descriptionAfterContent => _descriptionAfterContent;
+
   dynamic get parent => _parent;
+
   String? get file => _file;
+
   String? get createdDate => _createdDate;
+
   String? get updateDate => _updateDate;
+
   num? get active => _active;
+
   num? get deleted => _deleted;
+
   String? get seoTitle => _seoTitle;
+
   String? get seoDescription => _seoDescription;
+
   String? get seoKeywords => _seoKeywords;
+
   String? get additionalCost => _additionalCost;
+
   List<String>? get slugHistory => _slugHistory;
+
   String? get id => _id;
+
   String? get slug => _slug;
+
   num? get v => _v;
 
   Map<String, dynamic> toJson() {
@@ -769,7 +912,6 @@ Category copyWith({  String? name,
     map['__v'] = _v;
     return map;
   }
-
 }
 /*
 

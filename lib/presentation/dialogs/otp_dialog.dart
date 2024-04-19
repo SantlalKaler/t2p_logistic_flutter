@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:t2p_logistic/domain/enums/other.dart';
 import 'package:t2p_logistic/presentation/controllers/user_controller.dart';
 import 'package:t2p_logistic/presentation/screens/order_list/order_controller.dart';
+import 'package:t2p_logistic/presentation/theme/resource/dimens.dart';
 import 'package:t2p_logistic/presentation/widgets/circular_loadings.dart';
 
 import 'default_dialog.dart';
@@ -40,6 +42,20 @@ class _OTPDialogState extends State<OTPDialog> {
                     return null;
                   },
                 ),
+                Gap(DimensConstants.spaceBetweenViews),
+                if (controller.t2pOrderType == T2POrderType.AF2AP)
+                  TextFormField(
+                    controller: controller.paidAmountController,
+                    keyboardType: TextInputType.phone,
+                    decoration:
+                        const InputDecoration(label: Text("Paid Amount")),
+                    validator: (value) {
+                      if (value!.isEmpty) {
+                        return "Enter amount that customer pays.";
+                      }
+                      return null;
+                    },
+                  ),
                 TextButton(
                     onPressed: () async {
                       (controller.t2pOrderType == T2POrderType.T2P &&

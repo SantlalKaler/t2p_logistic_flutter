@@ -80,6 +80,8 @@ extension AF2APOrderExtension on af2apResponse.AF2APOrder {
           paymentMode: "COD",
           deliveryDate: deliveryDate?.toDate() ?? "",
           deliveryTime: deliveryTimeslot ?? "",
+          pickupDate: pickupDate?.toDate() ?? "",
+          pickupTime: pickupTime ?? "",
           orderStatus: status?.toUpperCase() ?? "",
           pickupBoy: pickupBoy?.fullName ?? "Unassigned",
           deliveryBoy: deliveryBoy?.fullName ?? "Unassigned",
@@ -112,6 +114,8 @@ class CommonOrder {
   String? paymentMode;
   String? deliveryDate;
   String? deliveryTime;
+  String? pickupDate;
+  String? pickupTime;
   String? orderStatus;
   String? pickupBoy;
   String? deliveryBoy;
@@ -131,6 +135,8 @@ class CommonOrder {
     required this.price,
     this.duesAmount,
     this.paidAmount,
+    this.pickupDate,
+    this.pickupTime,
     required this.pickupWeight,
     required this.deliveryWeight,
     required this.deliveryZipcode,

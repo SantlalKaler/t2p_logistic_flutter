@@ -24,7 +24,8 @@ class SingleOrderItem extends StatelessWidget {
   Widget build(BuildContext context) {
     OrderController controller = Get.find();
     UserController userController = Get.find();
-    return AppContainer(child: Column(
+    return AppContainer(
+        child: Column(
       mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -80,7 +81,7 @@ class SingleOrderItem extends StatelessWidget {
                 Gap(DimensConstants.spaceBetweenViews),
                 Container(
                   padding:
-                  const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                      const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
                   decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(10),
                       color: Colors.green.shade50),
@@ -100,7 +101,8 @@ class SingleOrderItem extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             SingleOrderInfoItem(
-                title: "Pickup Weight : ${order.pickupWeight?.toFixString()} KG",
+                title:
+                    "Pickup Weight : ${order.pickupWeight?.toFixString()} KG",
                 height: 5,
                 width: 5,
                 color: Colors.red),
@@ -140,7 +142,11 @@ class SingleOrderItem extends StatelessWidget {
             width: 5,
             color: Colors.red),
         Text(
-          "${controller.t2pOrderType == T2POrderType.T2P ? order.customerAddress : controller.orderType == OrderType.pickup ? "${order.pickupAddress?.contactName}, \n${order.pickupAddress?.address}, \n${order.pickupAddress?.city?.name}, ${order.pickupAddress?.state?.name}\n${order.pickupAddress?.pincode}" : "${order.pickupAddress?.contactName}, \n${order.deliveryAddress?.address}, \n${order.deliveryAddress?.city?.name}, ${order.deliveryAddress?.state?.name}\n${order.deliveryAddress?.pincode}"}",
+          "${controller.t2pOrderType == T2POrderType.T2P
+              ? order.customerAddress
+              : controller.orderType == OrderType.pickup
+              ? "${order.pickupAddress?.contactName}, \n${order.pickupAddress?.address}, \n${order.pickupAddress?.city?.name}, ${order.pickupAddress?.state?.name}\n${order.pickupAddress?.pincode}"
+              : "${order.deliveryAddress?.contactName}, \n${order.deliveryAddress?.address}, \n${order.deliveryAddress?.city?.name}, ${order.deliveryAddress?.state?.name}\n${order.deliveryAddress?.pincode}"}",
           maxLines: 20,
           softWrap: true,
           overflow: TextOverflow.ellipsis,
@@ -149,16 +155,25 @@ class SingleOrderItem extends StatelessWidget {
         singleAddressItem(
             title: "Payment Mode : ", height: 5, width: 5, color: Colors.red),*/
         Gap(DimensConstants.spaceBetweenViews),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            SingleOrderInfoItem(
-                title: "Delivery Date : ${order.deliveryDate}",
-                height: 5,
-                width: 5,
-                color: Colors.red),
-          ],
-        ),
+        if (order.pickupDate?.isNotEmpty == true)
+          SingleOrderInfoItem(
+              title: "Pickup Date : ${order.pickupDate}",
+              height: 5,
+              width: 5,
+              color: Colors.red),
+        Gap(DimensConstants.spaceBetweenViews),
+        if (order.pickupTime?.isNotEmpty == true)
+          SingleOrderInfoItem(
+              title: "Pickup Time : ${order.pickupTime}",
+              height: 5,
+              width: 5,
+              color: Colors.red),
+        Gap(DimensConstants.spaceBetweenViews),
+        SingleOrderInfoItem(
+            title: "Delivery Date : ${order.deliveryDate}",
+            height: 5,
+            width: 5,
+            color: Colors.red),
         Gap(DimensConstants.spaceBetweenViews),
         SingleOrderInfoItem(
             title: "Delivery Time : ${order.deliveryTime}",
@@ -203,24 +218,24 @@ class SingleOrderItem extends StatelessWidget {
               Expanded(
                   child: controller.updateButtonLoading.isTrue
                       ? Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [circularloadingRedSmall()],
-                  )
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [circularloadingRedSmall()],
+                        )
                       : TextButton(
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (context) {
-                            return controller.t2pOrderType ==
-                                T2POrderType.T2P
-                                ? t2pWeightUpdateDialog(order.id!)
-                                : AF2APProductDialog(
-                              order: order,
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) {
+                                return controller.t2pOrderType ==
+                                        T2POrderType.T2P
+                                    ? t2pWeightUpdateDialog(order.id!)
+                                    : AF2APProductDialog(
+                                        order: order,
+                                      );
+                              },
                             );
                           },
-                        );
-                      },
-                      child: const Text("Update"))),
+                          child: const Text("Update"))),
 
             // if af2ap pickup boy take payment when he pick food from user
             /*if (userController.userType == UserType.delivery_boy.name &&
@@ -303,7 +318,6 @@ class SingleOrderItem extends StatelessWidget {
       color: Colors.grey,
     );
   }
-
 
   void launchDialer(String phoneNumer) async {
     String url = "tel:$phoneNumer";

@@ -1141,6 +1141,7 @@ class OrderController extends GetxController {
   }
 
   TextEditingController otpController = TextEditingController();
+  TextEditingController paidAmountController = TextEditingController();
 
   Future startOrder() async {
     setButtonLoading();
@@ -1198,15 +1199,14 @@ class OrderController extends GetxController {
       if (response != null &&
           response.data[StringConstants.status] == Status.success.name) {
         var order = getExactOrderByOrderId(orderToBeAssign[0]);
-        if (orderType == OrderType.pickup) {
-          // if (!userController.orderAlreadyStarted) {
-          // get boy current location after he start his order
-          var currentPosition =
-              await mapLocationController.getCurrentLocation();
-          userController.saveStartedOrderInfo(
-              order, currentPosition, t2pOrderType, orderType);
-          // }
-        }
+        // if (orderType == OrderType.pickup) {
+        // if (!userController.orderAlreadyStarted) {
+        // get boy current location after he start his order
+        var currentPosition = await mapLocationController.getCurrentLocation();
+        userController.saveStartedOrderInfo(
+            order, currentPosition, t2pOrderType, orderType);
+        // }
+        // }
         await sendOTPToCustomerAF2AP();
       }
     } finally {
@@ -1267,8 +1267,10 @@ class OrderController extends GetxController {
       var path = URIConstants.deliveredToCustomerAF2AP;
       var data = {
         "id": orderToBeAssign[0].toString(),
-        /* "otp": otpController.text.toString(),
-        "gateway": getPaymentType(),*/
+        "otp": otpController.text.toString(),
+        "gateway": getPaymentType(),
+        "paid_amount": paidAmountController.text,
+        "transactionid": txnId
       };
 
       var response = await _apiService.post(path, data);
@@ -1293,6 +1295,10 @@ class OrderController extends GetxController {
       var path = URIConstants.pickupFromCustomerAF2AP;
       var data = {
         "id": userController.orderId!,
+        "otp": otpController.text.toString(),
+        "gateway": getPaymentType(),
+        "paid_amount": paidAmountController.text,
+        "transactionid": txnId
       };
 
       var response = await _apiService.post(path, data);

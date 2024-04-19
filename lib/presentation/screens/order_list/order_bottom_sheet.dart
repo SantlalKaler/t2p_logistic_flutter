@@ -165,13 +165,26 @@ class _OrderBottomSheetState extends State<OrderBottomSheet> {
                                   userController.orderAlreadyStarted) ||
                               (controller.t2pOrderType == T2POrderType.AF2AP &&
                                   controller.orderType == OrderType.pickup &&
+                                  userController.orderAlreadyStarted) ||
+                              (controller.t2pOrderType == T2POrderType.AF2AP &&
+                                  controller.orderType == OrderType.deliver &&
                                   userController.orderAlreadyStarted)
                           ? Expanded(
                               child: ElevatedButton(
                               onPressed: () async {
-                                mapLocationController.openGoogleMap(
-                                    userController.deliveryLat!,
-                                    userController.deliveryLng!);
+                                var lat = (controller.t2pOrderType ==
+                                            T2POrderType.AF2AP &&
+                                        controller.orderType ==
+                                            OrderType.pickup)
+                                    ? userController.pickupLat
+                                    : userController.deliveryLat;
+                                var lng = (controller.t2pOrderType ==
+                                            T2POrderType.AF2AP &&
+                                        controller.orderType ==
+                                            OrderType.pickup)
+                                    ? userController.pickupLng
+                                    : userController.deliveryLng;
+                                mapLocationController.openGoogleMap(lat!, lng!);
                               },
                               child: const Text("View Map"),
                             ))
@@ -194,71 +207,69 @@ class _OrderBottomSheetState extends State<OrderBottomSheet> {
                                   : circularloadingWhiteSmall(),
                             )),
                       Gap(DimensConstants.spaceBetweenViews),
-                      (controller.t2pOrderType ==
-                          T2POrderType.AF2AP &&
-                          controller.orderType ==
-                              OrderType.pickup)
+                      (controller.t2pOrderType == T2POrderType.AF2AP &&
+                              controller.orderType == OrderType.pickup)
                           ? Expanded(
-                          child: ElevatedButton(
-                              onPressed: () {
-                                if (controller.buttonLoading.isFalse) {
-                                  if (controller.anyOrderSelected()) {
-                                    // in these 2 cases boy have to first start order then only he can end order
-                                    // 1. AF2AP pickup order
-                                    if (!userController.orderAlreadyStarted) {
-                                         CustomSnackBar.showSnackBar(
-                                          CustomSnackBar.error,
-                                          "First start order.",
-                                          CustomSnackBar.error);
-                                    } else {
-                                      takePayment(context);
+                              child: ElevatedButton(
+                                  onPressed: () {
+                                    if (controller.buttonLoading.isFalse) {
+                                      if (controller.anyOrderSelected()) {
+                                        // in these 2 cases boy have to first start order then only he can end order
+                                        // 1. AF2AP pickup order
+                                        if (!userController
+                                            .orderAlreadyStarted) {
+                                          CustomSnackBar.showSnackBar(
+                                              CustomSnackBar.error,
+                                              "First start order.",
+                                              CustomSnackBar.error);
+                                        } else {
+                                          takePayment(context);
+                                        }
+                                      } else {
+                                        CustomSnackBar.showSnackBar(
+                                            CustomSnackBar.error,
+                                            "Select order.",
+                                            CustomSnackBar.error);
+                                      }
                                     }
-                                  } else {
-                                    CustomSnackBar.showSnackBar(
-                                        CustomSnackBar.error,
-                                        "Select order.",
-                                        CustomSnackBar.error);
-                                  }
-                                }
-                              },
-                              child: controller.buttonLoading.isTrue
-                                  ? circularloadingWhiteSmall()
-                                  : const Text("Picked Up")))
-                          :Expanded(
-                          child: ElevatedButton(
-                              onPressed: () {
-                                if (controller.buttonLoading.isFalse) {
-                                  if (controller.anyOrderSelected()) {
-                                    // in these 2 cases boy have to first start order then only he can end order
-                                    // 1. T2P delivery order
-                                    // 2. AF2AP pickup order
-                                    if (((controller.t2pOrderType ==
-                                                    T2POrderType.T2P &&
-                                                controller.orderType ==
-                                                    OrderType.deliver)) &&
-                                        (!userController.orderAlreadyStarted)) {
-                                      printValue(
-                                          "Order already started : ${userController.orderAlreadyStarted}\n"
-                                          "${(controller.t2pOrderType == T2POrderType.T2P && controller.orderType == OrderType.deliver)}\n"
-                                          "${(controller.t2pOrderType == T2POrderType.AF2AP && controller.orderType == OrderType.pickup)}");
-                                      CustomSnackBar.showSnackBar(
-                                          CustomSnackBar.error,
-                                          "First start order.",
-                                          CustomSnackBar.error);
-                                    } else {
-                                      takePayment(context);
+                                  },
+                                  child: controller.buttonLoading.isTrue
+                                      ? circularloadingWhiteSmall()
+                                      : const Text("Picked Up")))
+                          : Expanded(
+                              child: ElevatedButton(
+                                  onPressed: () {
+                                    if (controller.buttonLoading.isFalse) {
+                                      if (controller.anyOrderSelected()) {
+                                        // in these 2 cases boy have to first start order then only he can end order
+                                        // 1. T2P delivery order
+                                        // 2. AF2AP pickup order
+                                        if (controller.orderType ==
+                                                OrderType.deliver &&
+                                            (!userController
+                                                .orderAlreadyStarted)) {
+                                          printValue(
+                                              "Order already started : ${userController.orderAlreadyStarted}\n"
+                                              "${(controller.t2pOrderType == T2POrderType.T2P && controller.orderType == OrderType.deliver)}\n"
+                                              "${(controller.t2pOrderType == T2POrderType.AF2AP && controller.orderType == OrderType.pickup)}");
+                                          CustomSnackBar.showSnackBar(
+                                              CustomSnackBar.error,
+                                              "First start order.",
+                                              CustomSnackBar.error);
+                                        } else {
+                                          takePayment(context);
+                                        }
+                                      } else {
+                                        CustomSnackBar.showSnackBar(
+                                            CustomSnackBar.error,
+                                            "Select order.",
+                                            CustomSnackBar.error);
+                                      }
                                     }
-                                  } else {
-                                    CustomSnackBar.showSnackBar(
-                                        CustomSnackBar.error,
-                                        "Select order.",
-                                        CustomSnackBar.error);
-                                  }
-                                }
-                              },
-                              child: controller.buttonLoading.isTrue
-                                  ? circularloadingWhiteSmall()
-                                  : const Text("End Order"))),
+                                  },
+                                  child: controller.buttonLoading.isTrue
+                                      ? circularloadingWhiteSmall()
+                                      : const Text("End Order"))),
                     ],
                   )),
           );
@@ -304,7 +315,10 @@ takePayment(BuildContext context) {
                   userController.paymentMode == PaymentType.COD.name) ||
               (controller.t2pOrderType == T2POrderType.AF2AP &&
                   controller.orderType == OrderType.pickup &&
-                  userController.paymentMode == PaymentType.COD.name)
+                  userController.paymentMode == PaymentType.COD.name) ||
+              (controller.t2pOrderType == T2POrderType.AF2AP &&
+                  controller.orderType == OrderType.deliver &&
+                  double.parse(userController.orderPrice!) > 0)
           ? const CODDialog()
           : const OTPDialog();
     },

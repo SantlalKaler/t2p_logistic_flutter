@@ -13,7 +13,7 @@ class URIConstants {
   static String boyPickupOrderT2P = "app/pickup-boy-order-list";
   static String boyDeliveryOrderT2P = "app/delivery-boy-order-list";
   static String boyPickupOrderAF2AP = "app/gharkakhana-pickup-boy-list";
-  static String boyDeliveryOrderAF2AP = "app/gharkakhana-pickup-boy-list";
+  static String boyDeliveryOrderAF2AP = "app/gharkakhana-delivery-boy-list";
   static String deliveryOrderStart = "app/delivery-boy-order-start";
   static String pickupOrderStart = "app/pickup-boy-order-start";
   static String pickupOrderStartAF2AP =
