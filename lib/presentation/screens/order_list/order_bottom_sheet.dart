@@ -172,18 +172,18 @@ class _OrderBottomSheetState extends State<OrderBottomSheet> {
                           ? Expanded(
                               child: ElevatedButton(
                               onPressed: () async {
-                                var lat = (controller.t2pOrderType ==
+                                var lat =/* (controller.t2pOrderType ==
                                             T2POrderType.AF2AP &&
                                         controller.orderType ==
                                             OrderType.pickup)
                                     ? userController.pickupLat
-                                    : userController.deliveryLat;
-                                var lng = (controller.t2pOrderType ==
+                                    : */userController.deliveryLat;
+                                var lng =/* (controller.t2pOrderType ==
                                             T2POrderType.AF2AP &&
                                         controller.orderType ==
                                             OrderType.pickup)
                                     ? userController.pickupLng
-                                    : userController.deliveryLng;
+                                    : */userController.deliveryLng;
                                 mapLocationController.openGoogleMap(lat!, lng!);
                               },
                               child: const Text("View Map"),

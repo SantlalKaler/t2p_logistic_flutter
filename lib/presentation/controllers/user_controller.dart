@@ -86,9 +86,13 @@ class UserController extends GetxController {
     final Map<String, dynamic> orderMpa = {
       GetStorageKeys.orderAlreadyStarted: true,
       GetStorageKeys.deliveryLat:
-          order?.deliveryAddress?.position?.coordinates?[0],
+          (t2pOrderType == T2POrderType.AF2AP && orderType == OrderType.pickup)
+              ? order?.pickupAddress?.position?.coordinates![0]
+              : order?.deliveryAddress?.position?.coordinates?[0],
       GetStorageKeys.deliveryLng:
-          order?.deliveryAddress?.position?.coordinates?[1],
+      (t2pOrderType == T2POrderType.AF2AP && orderType == OrderType.pickup)
+          ? order?.pickupAddress?.position?.coordinates![1]
+          : order?.deliveryAddress?.position?.coordinates?[1],
       GetStorageKeys.pickupLat: position.latitude,
       GetStorageKeys.pickupLng: position.longitude,
       GetStorageKeys.orderId: order!.id!,
