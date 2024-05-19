@@ -322,7 +322,7 @@ class SingleOrderItem extends StatelessWidget {
   void launchDialer(String phoneNumer) async {
     String url = "tel:$phoneNumer";
     if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl(Uri.parse(url));
+      await launchUrl(Uri.parse(url,));
     } else {
       throw 'Could not launch $url';
     }

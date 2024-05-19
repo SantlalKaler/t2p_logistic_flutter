@@ -30,7 +30,6 @@ class LightTheme {
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
       textTheme: TextTheme(
-       
           labelMedium: GoogleFonts.oswald(
               fontSize: 14, color: const Color(0xFF725B2E), letterSpacing: 1),
           labelSmall: GoogleFonts.oswald(

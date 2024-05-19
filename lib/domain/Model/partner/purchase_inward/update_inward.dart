@@ -1,16 +1,12 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
 import 'package:t2p_logistic/domain/Model/partner/purchase_inward/SingleInwardResponse.dart';
-import 'package:t2p_logistic/presentation/screens/partners/cod/cod_collection_controller.dart';
 import 'package:t2p_logistic/presentation/screens/partners/purchase_inward/purchase_inward_controller.dart';
 import 'package:t2p_logistic/presentation/theme/resource/dimens.dart';
 import 'package:t2p_logistic/presentation/widgets/app_bar.dart';
 import 'package:t2p_logistic/presentation/widgets/app_scaffold.dart';
 import 'package:t2p_logistic/presentation/widgets/circular_loadings.dart';
-import 'package:t2p_logistic/presentation/widgets/custom_snackbar.dart';
 
 import '../../../../presentation/widgets/app_container.dart';
 
@@ -136,6 +132,8 @@ class _UpdateInwardScreenState extends State<UpdateInwardScreen> {
               Text("Vendor : ${product.vendor?.fullName}\n"),
               Text(
                   "Total Price : Rs.${product.product?.price} * ${product.qty} = ${(product.qty ?? 1) * (product.product?.price ?? 10)}\n"),
+              Text("Purchase Price : Rs.${product.purchasePrice}"),
+              Gap(DimensConstants.spaceBetweenViews),
               Row(
                 children: [
                   Expanded(

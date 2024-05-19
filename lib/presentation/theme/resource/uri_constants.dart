@@ -98,6 +98,7 @@ class URIConstants {
   static String cityList = "app/city-list-by-state";
   static String allCities= "app/all-cities";
   static String zipList = "app/zipcode-by-city";
+  static String isDeactivateUser = "app/is-deactive-user";
 
   //payment
   static String getQr = "v3/qr/init";

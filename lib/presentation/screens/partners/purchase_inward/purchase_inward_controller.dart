@@ -125,6 +125,7 @@ class PurchaseInwardController extends GetxController {
           response!.data[StringConstants.status] == Status.success.name) {
         CustomSnackBar.showSnackBar(
             "", response.data[StringConstants.message], "");
+        getSingleInward(singleInwardResponse.value!.inward!.id!);
       }
     } finally {
       setUpdatePriceLoading();
