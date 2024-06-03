@@ -1356,6 +1356,18 @@ class OrderController extends GetxController {
           userPaymentInfo = userController.paymentMode ?? "";
         }
       }
+    }else{
+      if (userController.paymentMode == PaymentType.COD.name) {
+        if (paymentType == PaymentType.COD) {
+          userPaymentInfo = "cod";
+        } else if (paymentType == PaymentType.Link) {
+          userPaymentInfo = "online";
+        } else {
+          userPaymentInfo = "PhonePe";
+        }
+      } else {
+        userPaymentInfo = userController.paymentMode ?? "";
+      }
     }
     return userPaymentInfo;
   }

@@ -1,7 +1,7 @@
 class URIConstants {
   static String baseURI = 'https://webapi.tastes2plate.com/';
   static String phonePeBaseURI = 'https://mercury-t2.phonepe.com/';
-  static String pdfBaseURI = "http://64.227.164.141:2001/app/";
+  static String pdfBaseURI = "https://pdf.tastes2plate.com/app/";
   static String amazonBaseURI =
       'https://omst5afyma.execute-api.ap-south-1.amazonaws.com/production/app/';
 
