@@ -71,7 +71,11 @@ class AuthController extends GetxController {
     try {
       var mobile = phoneTextController.value.text;
       var otp = otpTextController.value;
-      var data = {"mobile": mobile, 'otp': otp};
+      var data = {
+        "mobile": mobile,
+        'otp': otp,
+        'device': GetPlatform.isAndroid ? 'android' : 'ios'
+      };
 
       dio.Response? response =
           await _apiService.post(URIConstants.verify, data);
@@ -80,8 +84,8 @@ class AuthController extends GetxController {
         User user = User.fromJson(response.data['result']);
 
         OfficeData? officeData;
-        if(response.data['office_data'] != null){
-            officeData = OfficeData.fromJson(response.data['office_data']);
+        if (response.data['office_data'] != null) {
+          officeData = OfficeData.fromJson(response.data['office_data']);
         }
 
         //move to next screen

@@ -33,7 +33,7 @@ class DeliveryBoyController extends GetxController {
         "master": lpManagerId ?? userController.userId,
         "user_type": userType
       };
-      var response = await _apiService.post(URIConstants.listLogisticBoy, data);
+      var response = await _apiService.post(URIConstants.listLogisticBoy+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App", data);
 
       if (response != null) {
         LogisticBoyListResponse boyListResponse =
@@ -54,7 +54,8 @@ class DeliveryBoyController extends GetxController {
 
     try {
       var response = await _apiService.get(
-        "${URIConstants.lpManagerDeliveryPartner}?id=$userId",
+
+        "${URIConstants.lpManagerDeliveryPartner}?id=$userId&user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App",
       );
 
       if (response != null) {
@@ -76,7 +77,7 @@ class DeliveryBoyController extends GetxController {
 
     try {
       var response = await _apiService.get(
-        "${URIConstants.lpManagerList}?id=${userController.userId}",
+        "${URIConstants.lpManagerList}?id=${userController.userId}&user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App",
       );
 
       if (response != null) {
@@ -99,7 +100,7 @@ class DeliveryBoyController extends GetxController {
     try {
       var data = {"id": id};
       var response =
-          await _apiService.post(URIConstants.employeeStatusChange, data);
+          await _apiService.post(URIConstants.employeeStatusChange+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App", data);
 
       if (response != null && response.data['status'] == Status.success.name) {
         getListLogisticBoy();

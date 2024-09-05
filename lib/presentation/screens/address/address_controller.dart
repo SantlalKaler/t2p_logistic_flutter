@@ -42,7 +42,7 @@ class AddressController extends GetxController {
   Future getAddressList() async {
     setLoading();
     try {
-      var url = "${URIConstants.allAddress}?id=${userController.userId}";
+      var url = "${URIConstants.allAddress}?id=${userController.userId}&user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App";
       var response = await _apiService.get(url);
       if (response != null &&
           response.data[StringConstants.status] == Status.success.name) {
@@ -66,7 +66,7 @@ class AddressController extends GetxController {
   Future<void> getAllStates() async {
     isLoadingAllStates.value = true;
     try {
-      await _apiService.get(URIConstants.stateList).then((response) {
+      await _apiService.get(URIConstants.stateList+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App").then((response) {
         if (response != null) {
           stateList.clear();
           List result = response.data['result'];
@@ -85,7 +85,7 @@ class AddressController extends GetxController {
 
     try {
       await _apiService
-          .get("${URIConstants.cityList}?state=$stateId")
+          .get("${URIConstants.cityList}?state=$stateId&user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App")
           .then((response) {
         if (response != null) {
           cityList.clear();
@@ -104,7 +104,7 @@ class AddressController extends GetxController {
 
     try {
       await _apiService
-          .get("${URIConstants.zipList}?city=$cityId")
+          .get("${URIConstants.zipList}?city=$cityId&user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App")
           .then((response) {
         if (response != null) {
           zipList.clear();
@@ -156,7 +156,7 @@ class AddressController extends GetxController {
 
     try {
       await _apiService
-          .post(URIConstants.addAddress, payLoad)
+          .post(URIConstants.addAddress+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App", payLoad)
           .then((response) async {
         if (response != null &&
             response.data[StringConstants.status] == Status.success.name) {
@@ -215,7 +215,7 @@ class AddressController extends GetxController {
     };
     try {
       await _apiService
-          .post(URIConstants.editAddress, payLoad)
+          .post(URIConstants.editAddress+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App", payLoad)
           .then((response) async {
         if (response != null && response.data['status'] == 'success') {
           Get.back();
@@ -239,7 +239,7 @@ class AddressController extends GetxController {
   Future<void> deleteAddress(addressId) async {
     try {
       await _apiService
-          .get(URIConstants.deleteAddress + addressId)
+          .get(URIConstants.deleteAddress + addressId+"&user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App")
           .then((response) {
         if (response != null) {
           if (response.data['status'] == 'success') {
@@ -259,7 +259,7 @@ class AddressController extends GetxController {
   Future<void> getAllCities() async {
     allCities.clear();
     try {
-      await _apiService.get(URIConstants.allCities).then((response) {
+      await _apiService.get(URIConstants.allCities+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App").then((response) {
         if (response != null) {
           if (response.data['status'] == 'success' &&
               response.data['result'].isNotEmpty) {

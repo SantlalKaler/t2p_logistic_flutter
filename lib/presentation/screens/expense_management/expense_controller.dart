@@ -48,7 +48,7 @@ class ExpenseController extends GetxController {
         "start_date": "",
         "end_date": ""
       };
-      var res = await apiService.post(URIConstants.expenseList, {},
+      var res = await apiService.post(URIConstants.expenseList+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App", {},
           hasQueryParam: true, queryParam: data);
       if (res != null) {
         ExpenseListResponse expenseListResponse =
@@ -67,7 +67,7 @@ class ExpenseController extends GetxController {
   Future getCategories() async {
     try {
       setLoading();
-      var res = await apiService.post(URIConstants.expenseCategory, {});
+      var res = await apiService.post(URIConstants.expenseCategory+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App", {});
       if (res != null) {
         ExpenseCatSubCatListResponse expenseCatSubCatListResponse =
             ExpenseCatSubCatListResponse.fromJson(res.data);
@@ -87,7 +87,7 @@ class ExpenseController extends GetxController {
   Future getSubCategories(String categoryId) async {
     try {
       setLoading();
-      var res = await apiService.post(URIConstants.expenseSubCategory, {},
+      var res = await apiService.post(URIConstants.expenseSubCategory+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App", {},
           queryParam: {"parent": categoryId}, hasQueryParam: true);
 
       if (res != null) {
@@ -145,7 +145,7 @@ class ExpenseController extends GetxController {
               )
       });
 
-      var res = await apiService.post(URIConstants.addExpense, uploadData,
+      var res = await apiService.post(URIConstants.addExpense+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App", uploadData,
           queryParam: data, hasQueryParam: true);
 
       if (res != null && res.data['status'] == Status.success.name) {
@@ -199,7 +199,7 @@ class ExpenseController extends GetxController {
               )
       });
 
-      var res = await apiService.post(URIConstants.updateExpense, uploadData,
+      var res = await apiService.post(URIConstants.updateExpense+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App", uploadData,
           queryParam: data, hasQueryParam: true);
 
       if (res != null && res.data['status'] == Status.success.name) {

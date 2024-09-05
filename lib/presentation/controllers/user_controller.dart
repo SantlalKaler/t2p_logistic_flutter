@@ -1,7 +1,6 @@
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:t2p_logistic/domain/Model/user/VerifyOtpResponse.dart';
 import 'package:t2p_logistic/domain/Model/user/office_data.dart';
 import 'package:t2p_logistic/domain/enums/other.dart';
 import 'package:t2p_logistic/domain/mapper/order_mapper.dart';
@@ -17,6 +16,8 @@ class UserController extends GetxController {
 
   //user info
   String get userId => box.read(GetStorageKeys.userId);
+
+  String get ip => box.read(GetStorageKeys.ip);
 
   bool get isLoggedIn => box.read(GetStorageKeys.isLoggedIn) ?? false;
 
@@ -81,6 +82,10 @@ class UserController extends GetxController {
     printValue("$userType\n$userId\n$officeId");
   }
 
+  saveIpAddress(String ipAddress){
+    box.write(GetStorageKeys.ip, ipAddress);
+  }
+
   saveStartedOrderInfo(CommonOrder? order, Position position,
       T2POrderType t2pOrderType, OrderType orderType) {
     final Map<String, dynamic> orderMpa = {
@@ -90,9 +95,9 @@ class UserController extends GetxController {
               ? order?.pickupAddress?.position?.coordinates![0]
               : order?.deliveryAddress?.position?.coordinates?[0],
       GetStorageKeys.deliveryLng:
-      (t2pOrderType == T2POrderType.AF2AP && orderType == OrderType.pickup)
-          ? order?.pickupAddress?.position?.coordinates![1]
-          : order?.deliveryAddress?.position?.coordinates?[1],
+          (t2pOrderType == T2POrderType.AF2AP && orderType == OrderType.pickup)
+              ? order?.pickupAddress?.position?.coordinates![1]
+              : order?.deliveryAddress?.position?.coordinates?[1],
       GetStorageKeys.pickupLat: position.latitude,
       GetStorageKeys.pickupLng: position.longitude,
       GetStorageKeys.orderId: order!.id!,

@@ -56,7 +56,7 @@ class PurchaseInwardController extends GetxController {
         "page": "",
         "limit": "",
       };
-      var response = await apiService.post(URIConstants.purchaseInwardList, {},
+      var response = await apiService.post(URIConstants.purchaseInwardList+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App", {},
           queryParam: data, hasQueryParam: true);
 
       if (response?.data != null) {
@@ -79,7 +79,7 @@ class PurchaseInwardController extends GetxController {
     setLoading();
     try {
       var data = {"id": id};
-      var response = await apiService.post(URIConstants.singleInward, {},
+      var response = await apiService.post(URIConstants.singleInward+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App", {},
           queryParam: data, hasQueryParam: true);
 
       if (response?.data != null) {
@@ -119,7 +119,7 @@ class PurchaseInwardController extends GetxController {
         "price": price,
       };
       var response = await apiService.post(
-          URIConstants.updateInwardProductPurchasePrice, data);
+          URIConstants.updateInwardProductPurchasePrice+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App", data);
 
       if (response?.data != null &&
           response!.data[StringConstants.status] == Status.success.name) {

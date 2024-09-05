@@ -19,6 +19,7 @@ class AddDeliveryBoyController extends GetxController {
   RxBool aadharLoading = false.obs;
   RxBool panLoading = false.obs;
   RxBool deliveryBoyAdded = false.obs;
+  UserController userController = Get.find();
 
   String? profileImagePath;
   String? profileImageName;
@@ -81,7 +82,7 @@ class AddDeliveryBoyController extends GetxController {
         //Todo : Don't send user type here
         "user_type": "delivery_boy"
       };
-      var response = await _apiService.post(URIConstants.addLogisticBoy, data);
+      var response = await _apiService.post(URIConstants.addLogisticBoy+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App", data);
       if (response != null &&
           response.data[StringConstants.status] == Status.success.name) {
         CustomSnackBar.showSnackBar(CustomSnackBar.error,
@@ -119,7 +120,7 @@ class AddDeliveryBoyController extends GetxController {
         "id": boyId,
       };
       var response =
-          await _apiService.post(URIConstants.updateLogisticBoy, data);
+          await _apiService.post(URIConstants.updateLogisticBoy+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App", data);
 
       // todo: Getting update profile error
       if (response != null &&

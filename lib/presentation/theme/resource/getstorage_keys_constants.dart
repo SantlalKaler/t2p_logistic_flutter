@@ -2,6 +2,7 @@ class GetStorageKeys {
   static String isLoggedIn = 'isLoggedIn';
 
   static String userId = 'userId';
+  static String ip = 'ip';
   static String userName = 'userName';
   static String userEmail = 'userEmail';
   static String userMobile = 'userMobile';

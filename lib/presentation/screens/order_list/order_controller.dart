@@ -453,23 +453,23 @@ class OrderController extends GetxController {
       {T2POrderType t2pOrderType = T2POrderType.T2P,
       OrderType orderType = OrderType.pickup}) {
     String userType = userController.userType;
-    var path = URIConstants.partnerPickupOrder;
+    var path = URIConstants.partnerPickupOrder+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App";
 
     //if user type is partner and t2p order type is t2p and order type is pickup
     if (userType == UserType.delivery_partner.name) {
       if (t2pOrderType == T2POrderType.T2P) {
         if (orderType == OrderType.pickup) {
-          path = URIConstants.partnerPickupOrder;
+          path = URIConstants.partnerPickupOrder+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App";
         } else {
-          path = URIConstants.partnerDeliveryOrder;
+          path = URIConstants.partnerDeliveryOrder+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App";
         }
       }
       // if t2p order type is af2ap(ghar ka khana)
       else {
         if (orderType == OrderType.pickup) {
-          path = URIConstants.partnerPickupOrderAF2AP;
+          path = URIConstants.partnerPickupOrderAF2AP+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App";
         } else {
-          path = URIConstants.partnerDeliveryOrderAF2AP;
+          path = URIConstants.partnerDeliveryOrderAF2AP+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App";
         }
       }
     }
@@ -477,17 +477,17 @@ class OrderController extends GetxController {
     else if (userController.userType == UserType.delivery_boy.name) {
       if (t2pOrderType == T2POrderType.T2P) {
         if (orderType == OrderType.pickup) {
-          path = URIConstants.boyPickupOrderT2P;
+          path = "${URIConstants.boyPickupOrderT2P}?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App";
         } else {
-          path = URIConstants.boyDeliveryOrderT2P;
+          path = "${URIConstants.boyDeliveryOrderT2P}?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App";
         }
       }
       // if t2p order type is af2ap(ghar ka khana)
       else {
         if (orderType == OrderType.pickup) {
-          path = URIConstants.boyPickupOrderAF2AP;
+          path = "${URIConstants.boyPickupOrderAF2AP}?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App";
         } else {
-          path = URIConstants.boyDeliveryOrderAF2AP;
+          path = "${URIConstants.boyDeliveryOrderAF2AP}?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App";
         }
       }
     }
@@ -496,15 +496,15 @@ class OrderController extends GetxController {
     else if (userController.userType == UserType.lp_manager.name) {
       if (t2pOrderType == T2POrderType.T2P) {
         if (orderType == OrderType.pickup) {
-          path = URIConstants.lpManagerT2PPickupOrder;
+          path = URIConstants.lpManagerT2PPickupOrder+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App";
         } else {
-          path = URIConstants.lpManagerT2PDeliveryOrder;
+          path = URIConstants.lpManagerT2PDeliveryOrder+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App";
         }
       } else {
         if (orderType == OrderType.pickup) {
-          path = URIConstants.lpManagerAF2APPickupOrder;
+          path = URIConstants.lpManagerAF2APPickupOrder+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App";
         } else {
-          path = URIConstants.lpManagerAF2APDeliveryOrder;
+          path = URIConstants.lpManagerAF2APDeliveryOrder+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App";
         }
       }
     }
@@ -513,15 +513,15 @@ class OrderController extends GetxController {
     else if (userController.userType == UserType.lp_head.name) {
       if (t2pOrderType == T2POrderType.T2P) {
         if (orderType == OrderType.pickup) {
-          path = URIConstants.lpHeadT2PPickupOrder;
+          path = URIConstants.lpHeadT2PPickupOrder+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App";
         } else {
-          path = URIConstants.lpHeadT2PDeliveryOrder;
+          path = URIConstants.lpHeadT2PDeliveryOrder+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App";
         }
       } else {
         if (orderType == OrderType.pickup) {
-          path = URIConstants.lpHeadAF2APPickupOrder;
+          path = URIConstants.lpHeadAF2APPickupOrder+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App";
         } else {
-          path = URIConstants.lpHeadAF2APDeliveryOrder;
+          path = URIConstants.lpHeadAF2APDeliveryOrder+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App";
         }
       }
     }
@@ -550,10 +550,10 @@ class OrderController extends GetxController {
       if (userController.userType == UserType.lp_head.name) {
         if (orderType == OrderType.pickup) {
           path +=
-              "?lp_head=$userId&pickup_partner=${getPartnerId()}&lp_manager=${getSelectedManagerId()}&order_city=${getSelectedCityId()}";
+              "&lp_head=$userId&pickup_partner=${getPartnerId()}&lp_manager=${getSelectedManagerId()}&order_city=${getSelectedCityId()}";
         } else {
           path +=
-              "?lp_head=$userId&delivery_partner=${getPartnerId()}&lp_manager=${getSelectedManagerId()}&order_city=${getSelectedCityId()}";
+              "&lp_head=$userId&delivery_partner=${getPartnerId()}&lp_manager=${getSelectedManagerId()}&order_city=${getSelectedCityId()}";
         }
       }
 
@@ -749,10 +749,10 @@ class OrderController extends GetxController {
       } else if (userType == UserType.lp_head.name) {
         if (orderType == OrderType.pickup) {
           path +=
-              "?lp_head=$userId&pickup_partner=${getPartnerId()}&lp_manager=${getSelectedManagerId()}&order_city=${getSelectedCityId()}";
+              "&lp_head=$userId&pickup_partner=${getPartnerId()}&lp_manager=${getSelectedManagerId()}&order_city=${getSelectedCityId()}";
         } else {
           path +=
-              "?lp_head=$userId&delivery_partner=${getPartnerId()}&lp_manager=${getSelectedManagerId()}&order_city=${getSelectedCityId()}";
+              "&lp_head=$userId&delivery_partner=${getPartnerId()}&lp_manager=${getSelectedManagerId()}&order_city=${getSelectedCityId()}";
         }
       }
 
@@ -826,7 +826,7 @@ class OrderController extends GetxController {
 
   Future allDeliveryStatus() async {
     try {
-      var response = await _apiService.get(URIConstants.allDeliveryStatus);
+      var response = await _apiService.get(URIConstants.allDeliveryStatus+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App");
 
       if (response != null) {
         allDeliveryStatusResponse.value =
@@ -872,7 +872,7 @@ class OrderController extends GetxController {
         "status": getSameLengthInfoAsSelectedOrderHas(status)
       };
       var response =
-          await _apiService.post(URIConstants.partnerStatusChange, data);
+          await _apiService.post(URIConstants.partnerStatusChange+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App", data);
 
       CustomSnackBar.showSnackBar(CustomSnackBar.error,
           response?.data[StringConstants.message], CustomSnackBar.error);
@@ -980,22 +980,22 @@ class OrderController extends GetxController {
       if (t2pOrderType == T2POrderType.T2P) {
         if (orderType == OrderType.pickup) {
           data["pickup_boy"] = boyList;
-          path = URIConstants.assignT2PPickupOrder;
+          path = URIConstants.assignT2PPickupOrder+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App";
         } else {
           data["delivery_boy"] = boyList;
           data["user_id"] =
               userController.userType == UserType.delivery_partner.name
                   ? getSameLengthInfoAsSelectedOrderHas(userController.userId)
                   : getSameLengthInfoAsSelectedOrderHas(getPartnerId());
-          path = URIConstants.assignT2PDeliveryOrder;
+          path = URIConstants.assignT2PDeliveryOrder+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App";
         }
       } else {
         if (orderType == OrderType.pickup) {
           data["pickup_boy"] = boyList;
-          path = URIConstants.assignAF2APPickupOrder;
+          path = URIConstants.assignAF2APPickupOrder+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App";
         } else {
           data["delivery_boy"] = boyList;
-          path = URIConstants.assignAF2APDeliveryOrder;
+          path = URIConstants.assignAF2APDeliveryOrder+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App";
         }
       }
 
@@ -1026,7 +1026,7 @@ class OrderController extends GetxController {
             selectedPartner == null ? userController.userId : getPartnerId()
       };
 
-      var response = await _apiService.post(URIConstants.changeOrderStatus, {},
+      var response = await _apiService.post(URIConstants.changeOrderStatus+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App", {},
           hasQueryParam: true, queryParam: data);
 
       CustomSnackBar.showSnackBar(CustomSnackBar.error,
@@ -1051,8 +1051,8 @@ class OrderController extends GetxController {
 
       var response = await _apiService.post(
           userController.userType == UserType.delivery_partner.name
-              ? URIConstants.updatePickupOrderWeight
-              : URIConstants.updateDeliveryOrderWeight,
+              ? URIConstants.updatePickupOrderWeight+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App"
+              : URIConstants.updateDeliveryOrderWeight+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App",
           data);
 
       CustomSnackBar.showSnackBar(CustomSnackBar.error,
@@ -1080,7 +1080,7 @@ class OrderController extends GetxController {
       //var data = dio.FormData.fromMap({"orderId": orderId, "products": productList});
 
       var response =
-          await _apiService.post(URIConstants.updateAF2APOrder, updatedProduct);
+          await _apiService.post(URIConstants.updateAF2APOrder+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App", updatedProduct);
 
       CustomSnackBar.showSnackBar(CustomSnackBar.error,
           response?.data[StringConstants.message], CustomSnackBar.error);
@@ -1147,12 +1147,12 @@ class OrderController extends GetxController {
     setButtonLoading();
     try {
       var data = {"id": orderToBeAssign[0].toString()};
-      var path = URIConstants.pickupOrderStart;
+      var path = "${URIConstants.pickupOrderStart}?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App";
 
       // need to send user id of boy in t2p delivery orders
       if (orderType == OrderType.deliver) {
         data["user_id"] = userController.userId;
-        path = URIConstants.deliveryOrderStart;
+        path = "${URIConstants.deliveryOrderStart}?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App";
       }
 
       var response = await _apiService.post(path, data);
@@ -1186,10 +1186,10 @@ class OrderController extends GetxController {
     setButtonLoading();
     try {
       var data = {"id": orderToBeAssign[0].toString()};
-      var path = URIConstants.pickupOrderStartAF2AP;
+      var path = URIConstants.pickupOrderStartAF2AP+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App";
 
       if (orderType == OrderType.deliver) {
-        path = URIConstants.deliveryOrderStartAF2AP;
+        path = URIConstants.deliveryOrderStartAF2AP+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App";
       }
 
       var response = await _apiService.post(path, data);
@@ -1220,7 +1220,7 @@ class OrderController extends GetxController {
     setButtonLoading();
 
     try {
-      var path = URIConstants.deliveredToCargo;
+      var path = URIConstants.deliveredToCargo+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App";
       var data = {
         "id": orderType == OrderType.pickup
             ? orderToBeAssign[0].toString()
@@ -1237,7 +1237,7 @@ class OrderController extends GetxController {
             userController.deliveryLat ?? 0.0,
             userController.deliveryLng ?? 0.0);
         data["distance"] = distance;
-        path = URIConstants.deliveredToCustomer;
+        path = URIConstants.deliveredToCustomer+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App";
       }
 
       var response = await _apiService.post(path, data);
@@ -1264,7 +1264,7 @@ class OrderController extends GetxController {
     setButtonLoading();
 
     try {
-      var path = URIConstants.deliveredToCustomerAF2AP;
+      var path = URIConstants.deliveredToCustomerAF2AP+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App";
       var data = {
         "id": orderToBeAssign[0].toString(),
         "otp": otpController.text.toString(),
@@ -1292,7 +1292,7 @@ class OrderController extends GetxController {
     setButtonLoading();
 
     try {
-      var path = URIConstants.pickupFromCustomerAF2AP;
+      var path = URIConstants.pickupFromCustomerAF2AP+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App";
       var data = {
         "id": userController.orderId!,
         "otp": otpController.text.toString(),
@@ -1330,7 +1330,7 @@ class OrderController extends GetxController {
       };
 
       var response =
-          await _apiService.post(URIConstants.updateDeliveryDistance, data);
+          await _apiService.post(URIConstants.updateDeliveryDistance+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App", data);
     } finally {}
   }
 
@@ -1432,7 +1432,7 @@ class OrderController extends GetxController {
         "id": orderToBeAssign[0].toString(),
       };
 
-      var response = await _apiService.post(URIConstants.sendOTPToCargo, data);
+      var response = await _apiService.post(URIConstants.sendOTPToCargo+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App", data);
       CustomSnackBar.showSnackBar(CustomSnackBar.error,
           response?.data[StringConstants.message], CustomSnackBar.error);
     } finally {
@@ -1448,7 +1448,7 @@ class OrderController extends GetxController {
       };
 
       var response =
-          await _apiService.post(URIConstants.sendOTPToCustomer, data);
+          await _apiService.post(URIConstants.sendOTPToCustomer+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App", data);
       CustomSnackBar.showSnackBar(CustomSnackBar.error,
           response?.data[StringConstants.message], CustomSnackBar.error);
     } finally {
@@ -1470,7 +1470,7 @@ class OrderController extends GetxController {
       };
 
       var response =
-          await _apiService.post(URIConstants.sendOTPToCustomerAF2AP, data);
+          await _apiService.post(URIConstants.sendOTPToCustomerAF2AP+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App", data);
       CustomSnackBar.showSnackBar(CustomSnackBar.error,
           response?.data[StringConstants.message], CustomSnackBar.error);
     } finally {

@@ -20,7 +20,7 @@ class FinancialLogController extends GetxController {
     setLoading();
     try {
       var url =
-          "${URIConstants.financialLog}?type=${userController.userType}&id=${userController.userId}";
+          "${URIConstants.financialLog}?type=${userController.userType}&id=${userController.userId}&user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App";
       var response = await _apiService.get(url);
       if (response != null &&
           response.data[StringConstants.status] == Status.success.name) {

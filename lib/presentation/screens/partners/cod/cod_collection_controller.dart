@@ -134,7 +134,7 @@ class CodCollectionController extends GetxController {
             ? ""
             : selectedEndDate.value.toString().toDate(),
       };
-      var response = await apiService.post(URIConstants.codExpenseList, {},
+      var response = await apiService.post(URIConstants.codExpenseList+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App", {},
           queryParam: data, hasQueryParam: true);
 
       if (response?.data != null) {
@@ -168,7 +168,7 @@ class CodCollectionController extends GetxController {
       var userType = UserType.delivery_boy.name;
 
       var data = {"master": userController.userId, "user_type": userType};
-      var response = await apiService.post(URIConstants.listLogisticBoy, data);
+      var response = await apiService.post(URIConstants.listLogisticBoy+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App", data);
 
       if (response != null) {
         LogisticBoyListResponse boyListResponse =
@@ -208,7 +208,7 @@ class CodCollectionController extends GetxController {
               ),
       };
 
-      var response = await apiService.post(URIConstants.updateCodExpense, {},
+      var response = await apiService.post(URIConstants.updateCodExpense+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App", {},
           queryParam: formData, hasQueryParam: true);
 
       CustomSnackBar.showSnackBar(CustomSnackBar.error,
