@@ -44,12 +44,13 @@ class AuthController extends GetxController {
   }
 
   Future sendOtp() async {
+    UserController userController = Get.find();
     setLoading();
     try {
       var mobile = phoneTextController.value.text;
       var data = {"mobile": mobile};
 
-      dio.Response? response = await _apiService.post(URIConstants.login, data);
+      dio.Response? response = await _apiService.post("${URIConstants.login}?ip=${userController.ip}&type=Logistic App", data);
 
       if (response != null && response.data['status'] == Status.success.name) {
         isOTPSent.value = true;

@@ -1023,10 +1023,12 @@ class OrderController extends GetxController {
       var data = {
         "id": orderToBeAssign.last,
         "user_id":
-            selectedPartner == null ? userController.userId : getPartnerId()
+            selectedPartner == null ? userController.userId : getPartnerId(),
+        "ip":userController.ip,
+        "type":"Logistic App"
       };
 
-      var response = await _apiService.post(URIConstants.changeOrderStatus+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App", {},
+      var response = await _apiService.post(URIConstants.changeOrderStatus, {},
           hasQueryParam: true, queryParam: data);
 
       CustomSnackBar.showSnackBar(CustomSnackBar.error,
