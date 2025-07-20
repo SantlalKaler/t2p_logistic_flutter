@@ -1,4 +1,5 @@
 class URIConstants {
+  // static String baseURI = 'https://testapi.tastes2plate.com/';
   static String baseURI = 'https://webapi.tastes2plate.com/';
   static String phonePeBaseURI = 'https://mercury-t2.phonepe.com/';
   static String pdfBaseURI = "https://pdf.tastes2plate.com/app/";
