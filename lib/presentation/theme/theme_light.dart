@@ -18,7 +18,7 @@ class LightTheme {
           backgroundColor: Colors.red.shade900,
           iconTheme: IconThemeData(color: Colors.blueGrey.shade50)),
       cardColor: Colors.grey.shade50,
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
           color: Colors.grey.shade50,
           elevation: 2,
           shape:
@@ -103,9 +103,11 @@ class LightTheme {
         }),
       ),
       drawerTheme: DrawerThemeData(backgroundColor: Colors.blueGrey.shade50),
-      dialogTheme: DialogTheme(
+      dialogTheme: DialogThemeData(
           contentTextStyle:
-              GoogleFonts.poppins(color: Colors.grey.shade700, fontSize: 13),shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
+              GoogleFonts.poppins(color: Colors.grey.shade700, fontSize: 13),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
       listTileTheme: ListTileThemeData(
         titleTextStyle: GoogleFonts.lato(
             fontWeight: FontWeight.w600, fontSize: 14.5, color: Colors.black87),
@@ -115,5 +117,3 @@ class LightTheme {
     );
   }
 }
-
-

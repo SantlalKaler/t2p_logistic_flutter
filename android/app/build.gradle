@@ -26,16 +26,16 @@ if (flutterVersionName == null) {
 android {
     //namespace "tastes2plate.app.logistic.t2p_logistic"
     namespace "taste2plates.app.logistic"
-    compileSdkVersion flutter.compileSdkVersion
-    ndkVersion flutter.ndkVersion
+    compileSdkVersion 35
+    ndkVersion "27.0.12077973"
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = '17'
     }
 
     sourceSets {
@@ -68,3 +68,47 @@ flutter {
 }
 
 dependencies {}
+
+
+subprojects {
+    // Workaround for override compileSdkVersion
+    // And force to use Java 17
+    afterEvaluate { project ->
+        if (project.hasProperty('android')) {
+            android {
+                compileSdkVersion 35
+
+                compileOptions {
+                    sourceCompatibility JavaVersion.VERSION_17
+                    targetCompatibility JavaVersion.VERSION_17
+                }
+            }
+        }
+
+        tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+            kotlinOptions {
+                jvmTarget = JavaVersion.VERSION_17.toString()
+            }
+        }
+
+        // Workaround for add namespace for android library for using Gradle 8+
+        if (project.plugins.hasPlugin('com.android.library')) {
+            android {
+                defaultConfig {
+                    def androidManifest = android.sourceSets.main.manifest.srcFile
+                    if (androidManifest.exists()) {
+                        def parsedManifest = new XmlParser().parse(androidManifest)
+                        def packageName = parsedManifest.attribute('package')
+
+                        if (packageName) {
+                            namespace = packageName
+                        } else {
+                            namespace = "com.kbtg.neobank.${project.name}"
+                        }
+                    }
+                }
+            }
+        }
+    }
+    project.evaluationDependsOn(':app')
+}
