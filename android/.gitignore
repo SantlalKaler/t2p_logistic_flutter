@@ -11,3 +11,9 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+
+# Local Gradle distribution
+/gradle-dist/
+
+# Gradle diagnostics and generated reports
+/build/

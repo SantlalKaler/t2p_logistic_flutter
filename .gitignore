@@ -30,6 +30,7 @@ migrate_working_dir/
 .packages
 .pub-cache/
 .pub/
+.codex
 /build/
 
 # Symbolication related
@@ -42,3 +43,6 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# FVM SDK cache (keep .fvmrc in version control)
+.fvm/

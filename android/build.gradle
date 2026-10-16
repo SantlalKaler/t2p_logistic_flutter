@@ -8,11 +8,39 @@ allprojects {
 rootProject.buildDir = '../build'
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
+
+    // Older plugins declare compile SDKs below their AndroidX requirements.
+    // Configure plugin modules here, since :app has no child projects.
+    afterEvaluate { pluginProject ->
+        if (pluginProject.plugins.hasPlugin('com.android.library')) {
+            def androidExtension = pluginProject.extensions.getByName('android')
+            def flutterCompileSdk = rootProject.project(':app').android.compileSdkVersion.replace('android-', '').tokenize('.')[0].toInteger()
+            def declaredCompileSdk = androidExtension.compileSdkVersion?.replace('android-', '')?.tokenize('.')?.getAt(0)
+            if (declaredCompileSdk == null || (declaredCompileSdk.isInteger() && declaredCompileSdk.toInteger() < flutterCompileSdk)) {
+                androidExtension.compileSdkVersion flutterCompileSdk
+            }
+            androidExtension.compileOptions {
+                sourceCompatibility JavaVersion.VERSION_17
+                targetCompatibility JavaVersion.VERSION_17
+            }
+            if (!androidExtension.namespace) {
+                def manifestFile = androidExtension.sourceSets.main.manifest.srcFile
+                if (manifestFile.exists()) {
+                    androidExtension.namespace = new groovy.xml.XmlParser().parse(manifestFile).attribute('package')
+                }
+            }
+            pluginProject.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+                compilerOptions {
+                    jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+                }
+            }
+        }
+    }
 }
 subprojects {
     project.evaluationDependsOn(':app')
 }
 
-tasks.register("clean", Delete) {
+tasks.register('clean', Delete) {
     delete rootProject.buildDir
 }

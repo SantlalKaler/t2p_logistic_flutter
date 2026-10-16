@@ -38,9 +38,11 @@ class EnterPhoneWidget extends StatelessWidget {
                   padding: const EdgeInsets.all(8.0),
                   child: CountryFlag.fromCountryCode(
                     'IN',
-                    height: 20,
-                    width: 20,
-                    borderRadius: 8,
+                    theme: const ImageTheme(
+                      height: 20,
+                      width: 20,
+                      shape: RoundedRectangle(8),
+                    ),
                   ),
                 ),
               ),

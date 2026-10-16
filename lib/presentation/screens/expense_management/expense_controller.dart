@@ -1,215 +1,252 @@
-import 'package:get/get.dart';
-import 'package:t2p_logistic/data/api_services.dart';
-import 'package:t2p_logistic/data/status.dart';
-import 'package:t2p_logistic/presentation/constants/extension.dart';
-import 'package:t2p_logistic/presentation/controllers/user_controller.dart';
-import 'package:t2p_logistic/presentation/theme/resource/custom_constants.dart';
-import 'package:t2p_logistic/presentation/theme/resource/uri_constants.dart';
-import 'package:t2p_logistic/presentation/widgets/custom_snackbar.dart';
 import 'package:dio/dio.dart' as dio;
+import 'package:get/get.dart';
 
-import '../../../domain/Model/expense/ExpenseCategoryListResponse.dart';
-import '../../../domain/Model/expense/ExpenseListResponse.dart';
+import '../../../data/api_services.dart';
+import '../../../domain/Model/expense/expense_v1.dart';
+import '../../theme/resource/uri_constants.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class ExpenseController extends GetxController {
-  RxBool isLoading = false.obs;
+  final ApiService apiService;
+  ExpenseController({ApiService? apiService})
+    : apiService = apiService ?? ApiService();
+  static const base = URIConstants.expensesV1;
+  bool isLoading = false;
+  bool isSaving = false;
+  String error = '';
+  int? lastStatusCode;
+  Map<String, dynamic> meta = {};
+  List<ExpenseRecord> expenses = [];
+  Map<String, dynamic> totals = {};
+  Map<String, dynamic> ledger = {};
+  Map<String, String> fieldErrors = {};
+  int page = 1, pages = 1;
+  String status = '', category = '', search = '', from = '', to = '';
+  DateTime? retryAt;
+  int _generation = 0;
+  final changeRevision = 0.obs;
+  String changedExpenseId = '';
+  void notifyChanged(String id) {
+    changedExpenseId = id;
+    changeRevision.value++;
+  }
 
-  RxList<CatSubCatCommon> categories = RxList<CatSubCatCommon>();
-  RxList<CatSubCatCommon> subCategories = RxList<CatSubCatCommon>();
-  RxList<Expense> expenses = RxList<Expense>();
-
-  ApiService apiService = ApiService();
-
-  setLoading() => isLoading.value = !isLoading.value;
-
-  UserController userController = Get.find();
-
-  String? documentImagePath;
-  String? documentImageName;
-
-  setDocumentImages(path, name) {
-    documentImagePath = path;
-    documentImageName = name;
+  void resetSession() {
+    _generation++;
+    meta = {};
+    expenses = [];
+    totals = {};
+    ledger = {};
+    fieldErrors = {};
+    error = '';
+    status = '';
+    category = '';
+    search = '';
+    from = '';
+    to = '';
+    page = 1;
+    pages = 1;
+    retryAt = null;
+    isLoading = false;
+    isSaving = false;
     update();
   }
 
-  Future getExpenseList() async {
+  Future<Map<String, dynamic>> request(
+    String path, {
+    String method = 'GET',
+    dynamic data,
+    Map<String, dynamic>? query,
+  }) async {
+    if (retryAt != null && DateTime.now().isBefore(retryAt!)) {
+      throw ExpenseApiException(
+        429,
+        'Please wait ${retryAt!.difference(DateTime.now()).inSeconds + 1} seconds and retry.',
+      );
+    }
     try {
-      setLoading();
-      var data = {
-        "added_by": userController.userId,
-        "expense_type": "1",
-        "active": "",
-        "office": "",
-        "city": "",
-        "category": "",
-        "sub_category": "",
-        "office_type": "",
-        "start_date": "",
-        "end_date": ""
-      };
-      var res = await apiService.post(URIConstants.expenseList+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App", {},
-          hasQueryParam: true, queryParam: data);
-      if (res != null) {
-        ExpenseListResponse expenseListResponse =
-            ExpenseListResponse.fromJson(res.data);
-        if (expenseListResponse.status == Status.success.name &&
-            expenseListResponse.expense!.isNotEmpty) {
-          expenses.value = expenseListResponse.expense!;
-        }
+      return expenseMap(
+        (await apiService.expenseRequest(
+          path,
+          method: method,
+          data: data,
+          query: query,
+        )).data,
+      );
+    } on ExpenseApiException catch (e) {
+      if (e.statusCode == 429) {
+        retryAt = DateTime.now().add(Duration(seconds: e.retryAfter ?? 30));
       }
+      rethrow;
+    }
+  }
+
+  void showError(Object e) {
+    error = '$e';
+    lastStatusCode = e is ExpenseApiException ? e.statusCode : null;
+    if (e is ExpenseApiException) fieldErrors = e.fields;
+    if (Get.context != null) CustomSnackBar.showSnackBar('Error', error, '');
+    update();
+  }
+
+  Future<void> initialize() async {
+    isLoading = true;
+    error = '';
+    update();
+    final generation = _generation;
+    try {
+      if (meta.isEmpty) {
+        final response = await request('$base/meta');
+        if (generation != _generation) return;
+        meta = expenseMap(response['data']);
+      }
+      await getExpenseList();
+      await loadLedger();
+    } catch (e) {
+      if (generation == _generation) showError(e);
     } finally {
-      setLoading();
+      if (generation == _generation) {
+        isLoading = false;
+        update();
+      }
+    }
+  }
+
+  Future<void> getExpenseList({int nextPage = 1}) async {
+    final generation = _generation;
+    isLoading = true;
+    error = '';
+    update();
+    try {
+      final response = await request(
+        base,
+        query: {
+          'page': nextPage,
+          'limit': 20,
+          if (status.isNotEmpty) 'status': status,
+          if (category.isNotEmpty) 'category': category,
+          if (search.isNotEmpty) 'q': search,
+          if (from.isNotEmpty) 'from': from,
+          if (to.isNotEmpty) 'to': to,
+          'sort': 'expense_date',
+          'dir': 'desc',
+        },
+      );
+      if (generation != _generation) return;
+      expenses = expenseMaps(response['data'])
+          .map(ExpenseRecord.fromJson)
+          .toList();
+      totals = expenseMap(response['totals']);
+      final pagination = expenseMap(response['pagination']);
+      page = expenseNumber(pagination['page']).toInt();
+      pages = expenseNumber(pagination['pages']).toInt();
+    } catch (e) {
+      if (generation == _generation) showError(e);
+    } finally {
+      if (generation == _generation) {
+        isLoading = false;
+        update();
+      }
+    }
+  }
+
+  Future<void> loadLedger({
+    int nextPage = 1,
+    String from = '',
+    String to = '',
+    String type = '',
+  }) async {
+    final generation = _generation;
+    final response = await request(
+      URIConstants.cashLedgerV1,
+      query: {
+        'page': nextPage,
+        'limit': 50,
+        if (from.isNotEmpty) 'from': from,
+        if (to.isNotEmpty) 'to': to,
+        if (type.isNotEmpty) 'type': type,
+      },
+    );
+    if (generation != _generation) return;
+    ledger = expenseMap(response['data']);
+    update();
+  }
+
+  Future<ExpenseDetail> getDetail(String id) async =>
+      ExpenseDetail.fromJson((await request('$base/$id'))['data']);
+
+  Future<List<Map<String, dynamic>>> lookup(
+    String name, {
+    Map<String, dynamic>? query,
+  }) async =>
+      expenseMaps((await request('$base/lookups/$name', query: query))['data']);
+
+  Future<Map<String, dynamic>> lookupData(
+    String name, {
+    Map<String, dynamic>? query,
+  }) async =>
+      expenseMap((await request('$base/lookups/$name', query: query))['data']);
+
+  Future<ExpenseDetail?> save(Map<String, dynamic> body, {String? id}) async {
+    if (isSaving) return null;
+    isSaving = true;
+    fieldErrors = {};
+    lastStatusCode = null;
+    update();
+    try {
+      final response = await request(
+        id == null ? base : '$base/$id',
+        method: id == null ? 'POST' : 'PATCH',
+        data: body,
+      );
+      final result = ExpenseDetail.fromJson(response['data']);
+      _notice(response);
+      return result;
+    } catch (e) {
+      showError(e);
+      return null;
+    } finally {
+      isSaving = false;
       update();
     }
   }
 
-  Future getCategories() async {
-    try {
-      setLoading();
-      var res = await apiService.post(URIConstants.expenseCategory+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App", {});
-      if (res != null) {
-        ExpenseCatSubCatListResponse expenseCatSubCatListResponse =
-            ExpenseCatSubCatListResponse.fromJson(res.data);
+  Future<ExpenseDetail> action(
+    ExpenseDetail detail,
+    String action, {
+    String? reason,
+  }) async {
+    final response = await request(
+      '$base/${detail.expense.id}/$action',
+      method: 'POST',
+      data: {
+        if (action != 'approve' && detail.expense.version != null)
+          'version': detail.expense.version,
+        'reason': ?reason,
+      },
+    );
+    _notice(response);
+    return ExpenseDetail.fromJson(response['data']);
+  }
 
-        if (expenseCatSubCatListResponse.status == Status.success.name &&
-            expenseCatSubCatListResponse.result != null &&
-            expenseCatSubCatListResponse.result!.isNotEmpty) {
-          categories.value = expenseCatSubCatListResponse.result!;
-        }
-      }
-    } finally {
-      setLoading();
-      update();
+  void _notice(Map<String, dynamic> response) {
+    final message = [
+      response['message'],
+      response['warning'],
+    ].where((e) => e != null && '$e'.isNotEmpty).join('\n');
+    if (message.isNotEmpty && Get.context != null) {
+      CustomSnackBar.showSnackBar('', message, '');
     }
   }
 
-  Future getSubCategories(String categoryId) async {
-    try {
-      setLoading();
-      var res = await apiService.post(URIConstants.expenseSubCategory+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App", {},
-          queryParam: {"parent": categoryId}, hasQueryParam: true);
-
-      if (res != null) {
-        ExpenseCatSubCatListResponse expenseCatSubCatListResponse =
-            ExpenseCatSubCatListResponse.fromJson(res.data);
-
-        if (expenseCatSubCatListResponse.status == Status.success.name &&
-            expenseCatSubCatListResponse.result != null &&
-            expenseCatSubCatListResponse.result!.isNotEmpty) {
-          subCategories.value = expenseCatSubCatListResponse.result!;
-        }
-      }
-    } finally {
-      setLoading();
-      update();
+  Future<void> upload(String id, List<dio.MultipartFile> files) async {
+    final data = dio.FormData();
+    for (final file in files) {
+      data.files.add(MapEntry('files', file));
     }
+    await request('$base/$id/documents', method: 'POST', data: data);
   }
 
-  Future addExpense(
-    String category,
-    String subCategory,
-    String addedBy,
-    String name,
-    String city,
-    String amount,
-    String dateOfPayment,
-    String comment,
-    String office,
-    String officeType,
-  ) async {
-    try {
-      setLoading();
-      var data = {
-        "category": category,
-        "added_by": addedBy,
-        "name": name,
-        "city": city,
-        "sub_category": subCategory,
-        "amount": amount,
-        "date_of_payment": "2024-03-27",
-        "comment": comment,
-        "office": office,
-        "office_type": officeType,
-        "expense_type": "1",
-        "platform": "app",
-      };
-
-      // printValue(data);
-      var uploadData = dio.FormData.fromMap({
-        'upload': documentImagePath == null
-            ? ""
-            : await dio.MultipartFile.fromFile(
-                documentImagePath!,
-                filename: documentImageName,
-              )
-      });
-
-      var res = await apiService.post(URIConstants.addExpense+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App", uploadData,
-          queryParam: data, hasQueryParam: true);
-
-      if (res != null && res.data['status'] == Status.success.name) {
-        CustomSnackBar.showSnackBar("", res.data['message'], "");
-        getExpenseList();
-        Get.back();
-      }
-    } finally {
-      setLoading();
-      update();
-    }
-  }
-
-  Future editExpense(
-    String id,
-    String category,
-    String subCategory,
-    String addedBy,
-    String name,
-    String city,
-    String amount,
-    String dateOfPayment,
-    String comment,
-    String office,
-    String officeType,
-  ) async {
-    try {
-      setLoading();
-      var data = {
-        "id": id,
-        "category": category,
-        "added_by": addedBy,
-        "name": name,
-        "city": city,
-        "sub_category": subCategory,
-        "amount": amount,
-        "date_of_payment": dateOfPayment.toServerDate(),
-        "comment": comment,
-        "office": office,
-        "office_type": officeType,
-        "expense_type": "1",
-        "platform": "app",
-      };
-
-      var uploadData = dio.FormData.fromMap({
-        'upload': documentImagePath == null
-            ? ""
-            : await dio.MultipartFile.fromFile(
-                documentImagePath!,
-                filename: documentImageName,
-              )
-      });
-
-      var res = await apiService.post(URIConstants.updateExpense+"?user_id=${userController.userId}&ip=${userController.ip}&type=Logistic App", uploadData,
-          queryParam: data, hasQueryParam: true);
-
-      if (res != null && res.data['status'] == Status.success.name) {
-        CustomSnackBar.showSnackBar("", res.data['message'], "");
-        getExpenseList();
-        Get.back();
-      }
-    } finally {
-      setLoading();
-      update();
-    }
-  }
+  Future<void> removeDocument(String id, String docId) async =>
+      request('$base/$id/documents/$docId', method: 'DELETE');
 }

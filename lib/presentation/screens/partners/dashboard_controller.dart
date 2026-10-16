@@ -5,48 +5,99 @@ import '../../../domain/dashboard_item.dart';
 
 class DashboardController extends GetxController {
   List<DashboardItem> partnerDashboardItems = [
-    DashboardItem("Add Delivery Boy", ImageConstants.category1,
-        DashboardItemId.addUser),
-    DashboardItem("Manage Delivery Boy", ImageConstants.category2,
-        DashboardItemId.manageDeliveryBoy),
     DashboardItem(
-        "My Orders", ImageConstants.category4, DashboardItemId.myOrders),
-    DashboardItem("Financial Logs", ImageConstants.category5,
-        DashboardItemId.financialLogs),
+      "Add Delivery Boy",
+      ImageConstants.category1,
+      DashboardItemId.addUser,
+    ),
+    DashboardItem(
+      "Manage Delivery Boy",
+      ImageConstants.category2,
+      DashboardItemId.manageDeliveryBoy,
+    ),
+    DashboardItem(
+      "My Orders",
+      ImageConstants.category4,
+      DashboardItemId.myOrders,
+    ),
+    DashboardItem(
+      "Financial Logs",
+      ImageConstants.category5,
+      DashboardItemId.financialLogs,
+    ),
     //DashboardItem("Reports", ImageConstants.category6, DashboardItemId.reports),
     DashboardItem(
-        "My Profile", ImageConstants.category7, DashboardItemId.myProfile),
+      "My Profile",
+      ImageConstants.category7,
+      DashboardItemId.myProfile,
+    ),
     DashboardItem(
-        "My Trips", ImageConstants.category8, DashboardItemId.myTrips),
-    DashboardItem("Cod Collection", ImageConstants.category9,
-        DashboardItemId.codCollection),
-    DashboardItem("Purchase Inward", ImageConstants.category11,
-        DashboardItemId.purchaseInward),
-    DashboardItem("Expense Management", ImageConstants.category10,
-        DashboardItemId.expenseManagement),
+      "My Trips",
+      ImageConstants.category8,
+      DashboardItemId.myTrips,
+    ),
+    DashboardItem(
+      "Cod Collection",
+      ImageConstants.category9,
+      DashboardItemId.codCollection,
+    ),
+    DashboardItem(
+      "Purchase Inward",
+      ImageConstants.category11,
+      DashboardItemId.purchaseInward,
+    ),
+    DashboardItem(
+      "Expense Management",
+      ImageConstants.category10,
+      DashboardItemId.expenseManagement,
+    ),
   ];
 
   List<DashboardItem> boyDashboardItems = [
     DashboardItem(
-        "My Orders", ImageConstants.category4, DashboardItemId.myOrders),
-    DashboardItem("Financial Logs", ImageConstants.category5,
-        DashboardItemId.financialLogs),
+      "My Orders",
+      ImageConstants.category4,
+      DashboardItemId.myOrders,
+    ),
     DashboardItem(
-        "My Profile", ImageConstants.category7, DashboardItemId.myProfile),
+      "Financial Logs",
+      ImageConstants.category5,
+      DashboardItemId.financialLogs,
+    ),
     DashboardItem(
-        "My Trips", ImageConstants.category8, DashboardItemId.myTrips),
-   /* DashboardItem("Expense Management", ImageConstants.category10,
-        DashboardItemId.expenseManagement),*/
+      "My Profile",
+      ImageConstants.category7,
+      DashboardItemId.myProfile,
+    ),
+    DashboardItem(
+      "My Trips",
+      ImageConstants.category8,
+      DashboardItemId.myTrips,
+    ),
+    DashboardItem(
+      "Expense Management",
+      ImageConstants.category10,
+      DashboardItemId.expenseManagement,
+    ),
   ];
 
   List<DashboardItem> headDashboardItems = [
     DashboardItem(
-        "My Orders", ImageConstants.category4, DashboardItemId.myOrders),
+      "My Orders",
+      ImageConstants.category4,
+      DashboardItemId.myOrders,
+    ),
     /*DashboardItem("Manage LP Manager", ImageConstants.category2,
         DashboardItemId.manageDeliveryBoy),*/
     DashboardItem(
-        "My Profile", ImageConstants.category7, DashboardItemId.myProfile),
-   /* DashboardItem("Expense Management", ImageConstants.category10,
-        DashboardItemId.expenseManagement),*/
+      "My Profile",
+      ImageConstants.category7,
+      DashboardItemId.myProfile,
+    ),
+    DashboardItem(
+      "Expense Management",
+      ImageConstants.category10,
+      DashboardItemId.expenseManagement,
+    ),
   ];
 }

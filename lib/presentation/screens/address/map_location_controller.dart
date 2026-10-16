@@ -20,11 +20,12 @@ class MapLocationController extends GetxController {
   RxDouble lat = 28.6139.obs; // Delhi
   RxDouble lng = 77.2090.obs; // Delhi
   final ApiService _apiService = ApiService();
+  late final Geocoding _geocoding = Geocoding();
 
   Future<Placemark> getAdderessFromLatLng(double lat, double lng) async {
     isLoading.value = true;
     try {
-      List<Placemark> placemarks = await placemarkFromCoordinates(lat, lng);
+      List<Placemark> placemarks = await _geocoding.placemarkFromCoordinates(lat, lng);
       if (kDebugMode) {
         print('--------ADDRESS FROM CORDINATES BELLOW--------');
         print(placemarks[0]);
@@ -38,7 +39,7 @@ class MapLocationController extends GetxController {
   getCordinatesFromAddress(String address) async {
     isLoading.value = true;
     try {
-      List<Location> locations = await locationFromAddress(address);
+      List<Location> locations = await _geocoding.locationFromAddress(address);
       if (kDebugMode) {
         print('--------CORDINATES FROM ADDRESS BELLOW--------');
         print(locations[0]);

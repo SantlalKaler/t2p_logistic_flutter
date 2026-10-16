@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:get_storage/get_storage.dart';
+
+import 'presentation/controllers/expense_notification_controller.dart';
+
 import 'package:get/get.dart';
 import 'package:t2p_logistic/presentation/conectivity_controller.dart';
 import 'package:t2p_logistic/presentation/controllers/user_controller.dart';
@@ -20,9 +26,18 @@ import 'package:t2p_logistic/presentation/theme/theme_light.dart';
 
 import 'presentation/theme/resource/strings_constants.dart';
 
-void main() async{
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  //await Firebase.initializeApp();
+  await GetStorage.init();
+  if (!kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS)) {
+    try {
+      await Firebase.initializeApp();
+    } catch (e) {
+      debugPrint('Firebase configuration unavailable: $e');
+    }
+  }
   runApp(const MyApp());
 }
 
@@ -51,6 +66,7 @@ class InitialBindings extends Bindings {
     Get.put(AuthController());
     Get.put(ConnectivityController());
     Get.put(ExpenseController());
+    Get.put(ExpenseNotificationController());
     Get.put(DashboardController());
     Get.put(AddDeliveryBoyController());
     Get.put(DeliveryBoyController());

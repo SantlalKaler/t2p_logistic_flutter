@@ -1,0 +1,5 @@
+﻿simulation: t2p-expenses-local
+routing: path
+mocks:
+  - routeKey: expenses
+    path: ../mocks/expenses/config.yaml

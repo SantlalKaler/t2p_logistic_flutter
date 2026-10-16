@@ -9,6 +9,8 @@ import 'package:t2p_logistic/presentation/theme/resource/getstorage_keys_constan
 
 import '../../domain/Model/user/user.dart';
 import '../screens/auth/auth_screen.dart';
+import 'expense_notification_controller.dart';
+import '../screens/expense_management/expense_controller.dart';
 import '../theme/resource/custom_constants.dart';
 
 class UserController extends GetxController {
@@ -69,10 +71,11 @@ class UserController extends GetxController {
       GetStorageKeys.userEmail: user.email,
       GetStorageKeys.userType: user.userType,
       GetStorageKeys.officeId: officeData?.id ?? "",
-      GetStorageKeys.userCity: (user.customerSupportCity!.isNotEmpty &&
-              user.customerSupportCity != null)
+      GetStorageKeys.userCity:
+          (user.customerSupportCity != null &&
+              user.customerSupportCity!.isNotEmpty)
           ? user.customerSupportCity![0].toString()
-          : ""
+          : "",
     };
 
     userMap.forEach((key, value) {
@@ -82,28 +85,33 @@ class UserController extends GetxController {
     printValue("$userType\n$userId\n$officeId");
   }
 
-  saveIpAddress(String ipAddress){
+  saveIpAddress(String ipAddress) {
     box.write(GetStorageKeys.ip, ipAddress);
   }
 
-  saveStartedOrderInfo(CommonOrder? order, Position position,
-      T2POrderType t2pOrderType, OrderType orderType) {
+  saveStartedOrderInfo(
+    CommonOrder? order,
+    Position position,
+    T2POrderType t2pOrderType,
+    OrderType orderType,
+  ) {
     final Map<String, dynamic> orderMpa = {
       GetStorageKeys.orderAlreadyStarted: true,
       GetStorageKeys.deliveryLat:
           (t2pOrderType == T2POrderType.AF2AP && orderType == OrderType.pickup)
-              ? order?.pickupAddress?.position?.coordinates![0]
-              : order?.deliveryAddress?.position?.coordinates?[0],
+          ? order?.pickupAddress?.position?.coordinates![0]
+          : order?.deliveryAddress?.position?.coordinates?[0],
       GetStorageKeys.deliveryLng:
           (t2pOrderType == T2POrderType.AF2AP && orderType == OrderType.pickup)
-              ? order?.pickupAddress?.position?.coordinates![1]
-              : order?.deliveryAddress?.position?.coordinates?[1],
+          ? order?.pickupAddress?.position?.coordinates![1]
+          : order?.deliveryAddress?.position?.coordinates?[1],
       GetStorageKeys.pickupLat: position.latitude,
       GetStorageKeys.pickupLng: position.longitude,
       GetStorageKeys.orderId: order!.id!,
       GetStorageKeys.paymentMode: order.paymentMode!,
-      GetStorageKeys.orderPrice:
-          t2pOrderType == T2POrderType.AF2AP ? order.duesAmount : order.price!,
+      GetStorageKeys.orderPrice: t2pOrderType == T2POrderType.AF2AP
+          ? order.duesAmount
+          : order.price!,
       GetStorageKeys.orderCustomerMobile: order.customerNumber!,
       GetStorageKeys.t2pOrderType: t2pOrderType.name,
       GetStorageKeys.orderType: orderType.name,
@@ -131,10 +139,18 @@ class UserController extends GetxController {
 
   getSavedUserInfo() {
     printValue(
-        "User Id : $userId\nUser Type : $userType\nUser Name : $userName\n");
+      "User Id : $userId\nUser Type : $userType\nUser Name : $userName\n",
+    );
   }
 
-  clearUser() {
+  Future<void> clearUser() async {
+    await Get.find<AuthController>().clearAccessToken();
+    if (Get.isRegistered<ExpenseNotificationController>()) {
+      Get.find<ExpenseNotificationController>().resetSession();
+    }
+    if (Get.isRegistered<ExpenseController>()) {
+      Get.find<ExpenseController>().resetSession();
+    }
     box.remove(GetStorageKeys.userId);
     box.remove(GetStorageKeys.userName);
     box.remove(GetStorageKeys.userEmail);

@@ -24,7 +24,8 @@ class URIConstants {
   static String deliveredToCargo = "app/delivered-to-cargo";
   static String deliveredToCustomer = "app/delivered-to-customer";
   static String deliveredToCustomerAF2AP = "app/gharkakhana-delivered-order";
-  static String pickupFromCustomerAF2AP = "app/gharkakhana-pickup-boy-picked-order";
+  static String pickupFromCustomerAF2AP =
+      "app/gharkakhana-pickup-boy-picked-order";
   static String sendOTPToCargo = "app/send-otp-to-cargo";
   static String sendOTPToCustomer = "app/send-otp-to-customer";
   static String sendOTPToCustomerAF2AP = "app/gharkakhana-send-otp-to-customer";
@@ -85,7 +86,8 @@ class URIConstants {
   // purchase inward
   static String purchaseInwardList = "admin/inward-list2";
   static String singleInward = "admin/singel-inward-list";
-  static String updateInwardProductPurchasePrice = "admin/update-inward-product-purchase-price";
+  static String updateInwardProductPurchasePrice =
+      "admin/update-inward-product-purchase-price";
 
   // ---------------------------------------------------------------->
 
@@ -97,12 +99,15 @@ class URIConstants {
   static String deleteAddress = 'app/delete-address?id=';
   static String stateList = "app/state-list";
   static String cityList = "app/city-list-by-state";
-  static String allCities= "app/all-cities";
+  static String allCities = "app/all-cities";
   static String zipList = "app/zipcode-by-city";
   static String isDeactivateUser = "app/is-deactive-user";
 
   //payment
   static String getQr = "v3/qr/init";
+
+  static const expensesV1 = "v1/expenses";
+  static const cashLedgerV1 = "v1/cash-ledger/me";
 
   // expense
   static String expenseCategory = "admin/all-expense-category";
@@ -111,5 +116,5 @@ class URIConstants {
   static String addExpense = "admin/add-other-expense";
   static String updateExpense = "admin/update-other-expense";
 
-//---------------------------------------------------------------------->
+  //---------------------------------------------------------------------->
 }
