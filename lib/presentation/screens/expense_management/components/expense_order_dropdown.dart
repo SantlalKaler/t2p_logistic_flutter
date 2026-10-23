@@ -10,6 +10,8 @@ class ExpenseOrderDropdown extends StatefulWidget {
   final List<Map<String, dynamic>> orders;
   final Set<String> selected;
   final bool enabled;
+  final String? currentExpenseId;
+  final ValueChanged<String>? onOpenExpense;
   final String? errorText;
   final Future<void> Function(String) onSearch;
   final ValueChanged<Set<String>> onApply;
@@ -20,6 +22,8 @@ class ExpenseOrderDropdown extends StatefulWidget {
     required this.onSearch,
     required this.onApply,
     this.enabled = true,
+    this.currentExpenseId,
+    this.onOpenExpense,
     this.errorText,
   });
   @override
@@ -121,6 +125,24 @@ class _ExpenseOrderDropdownState extends State<ExpenseOrderDropdown> {
                           itemBuilder: (context, index) {
                             final order = widget.orders[index],
                                 id = expenseId(widget.orders[index]);
+                            final linked = expenseMap(order['expense']);
+                            final linkedId = expenseId(linked);
+                            if (linkedId.isNotEmpty &&
+                                linkedId != widget.currentExpenseId) {
+                              return ListTile(
+                                title: Text('${order['orderid'] ?? id}'),
+                                subtitle: Text(
+                                  '${linked['expense_no'] ?? ''} ? ${expenseStatusLabel('${linked['status'] ?? ''}')}',
+                                ),
+                                trailing: const Icon(Icons.open_in_new),
+                                onTap: widget.onOpenExpense == null
+                                    ? null
+                                    : () {
+                                        menu.close();
+                                        widget.onOpenExpense!(linkedId);
+                                      },
+                              );
+                            }
                             final selected = selection.contains(id);
                             return CheckboxListTile(
                               dense: true,

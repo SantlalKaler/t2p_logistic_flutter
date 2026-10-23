@@ -171,6 +171,17 @@ class SingleExpenseItem extends StatelessWidget {
                     ),
                   ],
                 ),
+                if (expense.incomplete.isNotEmpty)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 8),
+                    child: Text(
+                      'Incomplete',
+                      style: TextStyle(
+                        color: Color(0xFFB42318),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                 if (expense.status == 'rejected' && reason.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 12),

@@ -29,6 +29,7 @@ String expenseStatusLabel(String status) =>
       'approved': 'Approved',
       'rejected': 'Rejected',
       'cancelled': 'Cancelled',
+      'deleted': 'Deleted',
     }[status] ??
     status;
 
@@ -43,6 +44,7 @@ class ExpenseRecord {
   String get date => expenseDay(json['business_date'] ?? json['expense_date']);
   Map<String, dynamic> get details => expenseMap(json['details']);
   num get total => expenseNumber(expenseMap(json['amount'])['total']);
+  List<Map<String, dynamic>> get incomplete => expenseMaps(json['incomplete']);
   int? get version => int.tryParse('${json['version']}');
 }
 

@@ -1,4 +1,4 @@
-﻿# Expense module (API guide v1.1)
+﻿# Expense module (API guide v1.2)
 
 The existing dashboard entry now opens the `/v1` expense flow. It keeps the
 project's GetX controller / Dio ApiService / domain models / shared widget layout.
@@ -62,3 +62,31 @@ It writes `.codex/tmp/expense-petrol-form.png`.
   for the cancelled-order form to be selectable.
 - Delivery expenses remain zero-valued, and pickup default distance may be absent,
   as described by the guide. The server's returned amounts remain authoritative.
+
+## Version 1.2 app updates
+
+- Save draft and edit allow empty category fields while validating entered numeric
+  values. Order references remain required for order-based categories.
+- List/detail show Incomplete and editing highlights the server's missing fields;
+  submit/approve validation messages include individual missing-field errors.
+- Food Purchase supports purchase-wide GST, defaults from meta, percentage
+  validation, estimated totals, saved GST restoration and legacy item-rate fallback.
+  Missing rates remain blank when reopening a draft.
+- Food orders linked to another expense open that record instead of being ticked.
+  Delivery reuses an existing expense for the chosen side and displays delivery
+  date/time slot. Date eligibility and search remain controlled by the server.
+- Missing/deleted expenses refresh the list and cash balance. Deleted ledger rows
+  display Deleted and do not open a missing record.
+
+The new contract still needs verification against a deployed v1.2 backend,
+including partial-draft persistence, GST rounding, order eligibility and deletion
+cash reversals. Widget regression checks use an in-memory recording controller.
+
+## Fixed GST and product cost UI
+
+Food Purchase now displays unit rate multiplied by final quantity on each product.
+A Yes (5%)/No GST dropdown appears before the discount fields. The API still has
+one GST setting per purchase, so changing it updates every product. Yes sends
+`gst_percent: "5"`; the editable percentage input has been removed. GST is
+calculated after discount, consistently with the API contract. Editing older
+purchases with another percentage now uses the requested fixed 5% on save.

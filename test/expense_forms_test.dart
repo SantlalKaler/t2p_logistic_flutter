@@ -10,7 +10,43 @@ import 'package:get_storage/get_storage.dart';
 import 'package:t2p_logistic/domain/Model/expense/expense_v1.dart';
 import 'package:t2p_logistic/presentation/screens/expense_management/add_edit_expense_screen.dart';
 import 'package:t2p_logistic/presentation/screens/expense_management/expense_controller.dart';
+import 'package:t2p_logistic/presentation/screens/expense_management/expense_detail.dart';
 import 'package:t2p_logistic/presentation/screens/expense_management/components/expense_order_dropdown.dart';
+
+class RecordingExpenseController extends ExpenseController {
+  Map<String, dynamic>? saved;
+  List<Map<String, dynamic>> lookupOrders = [];
+  String? openedId;
+  @override
+  Future<List<Map<String, dynamic>>> lookup(
+    String name, {
+    Map<String, dynamic>? query,
+  }) async => lookupOrders;
+  @override
+  Future<Map<String, dynamic>> lookupData(
+    String name, {
+    Map<String, dynamic>? query,
+  }) async => {'km': null, 'message': 'Not available'};
+  @override
+  Future<ExpenseDetail> getDetail(String id) async {
+    openedId = id;
+    return ExpenseDetail.fromJson({
+      'expense': {
+        '_id': id,
+        'category': 'DELIVERY',
+        'status': 'draft',
+        'details': {},
+      },
+      'actions': {},
+    });
+  }
+
+  @override
+  Future<ExpenseDetail?> save(Map<String, dynamic> body, {String? id}) async {
+    saved = body;
+    return null;
+  }
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -72,6 +108,7 @@ void main() {
     String category,
     Map<String, dynamic> details, {
     GlobalKey? capture,
+    List<Map<String, dynamic>> incomplete = const [],
   }) async {
     tester.view.reset();
     await tester.binding.setSurfaceSize(const Size(390, 844));
@@ -84,6 +121,7 @@ void main() {
           'status': 'draft',
           'details': details,
           'version': 2,
+          'incomplete': incomplete,
         },
         'actions': {'edit': true},
       }),
@@ -96,6 +134,198 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
   }
+
+  Future<RecordingExpenseController> recordSaves() async {
+    final meta = Get.find<ExpenseController>().meta;
+    await Get.delete<ExpenseController>();
+    final c = RecordingExpenseController()..meta = meta;
+    Get.put<ExpenseController>(c);
+    return c;
+  }
+
+  testWidgets(
+    'half-filled petrol edit saves but invalid entered numbers do not',
+    (tester) async {
+      final c = await recordSaves();
+      await open(tester, 'PETROL', {});
+      await tester.tap(find.byKey(const ValueKey('expense-save-draft')));
+      await tester.pumpAndSettle();
+      expect(c.saved?['details'], isEmpty);
+      c.saved = null;
+      final rate = find.widgetWithText(
+        TextFormField,
+        'Rate per litre (\u20b9)',
+      );
+      await tester.ensureVisible(rate);
+      await tester.enterText(rate, '-5');
+      await tester.tap(find.byKey(const ValueKey('expense-save-draft')));
+      await tester.pumpAndSettle();
+      expect(c.saved, isNull);
+      expect(find.text('Enter a positive number'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.binding.setSurfaceSize(null);
+    },
+  );
+
+  testWidgets('new petrol draft saves empty details but Submit requires them', (
+    tester,
+  ) async {
+    final c = await recordSaves();
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    await tester.pumpWidget(GetMaterialApp(home: const AddEditExpenseScreen()));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Expense type'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Petrol Filling').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('expense-save-draft')));
+    await tester.pumpAndSettle();
+    expect(c.saved?['submit'], false);
+    expect(c.saved?['details'], isEmpty);
+    c.saved = null;
+    await tester.tap(find.byKey(const ValueKey('expense-save-submit')));
+    await tester.pumpAndSettle();
+    expect(c.saved, isNull);
+    expect(find.text('Required'), findsWidgets);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.binding.setSurfaceSize(null);
+  });
+
+  testWidgets(
+    'incomplete Food Purchase keeps blank rate and uses fixed 5 percent GST',
+    (tester) async {
+      final c = await recordSaves();
+      await open(tester, 'FOOD_PURCHASE', {
+        'orders': ['order-1'],
+        'gst_applicable': true,
+        'gst_rate_bp': 1200,
+        'items': [
+          {
+            'product': 'product-1',
+            'product_name': 'Biryani',
+            'rate': null,
+            'order_quantity': 2,
+          },
+        ],
+      });
+      expect(find.widgetWithText(TextFormField, 'GST (%)'), findsNothing);
+      await tester.tap(find.byKey(const ValueKey('expense-save-draft')));
+      await tester.pumpAndSettle();
+      final details = expenseMap(c.saved?['details']);
+      expect(details['gst_applicable'], true);
+      expect(details['gst_percent'], '5');
+      expect(expenseMaps(details['items']).single.containsKey('rate'), false);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.binding.setSurfaceSize(null);
+    },
+  );
+
+  testWidgets('food GST preview updates and GST No sends zero tax choice', (
+    tester,
+  ) async {
+    final c = await recordSaves();
+    await open(tester, 'FOOD_PURCHASE', {
+      'orders': ['order-1'],
+      'gst_applicable': true,
+      'gst_rate_bp': 500,
+      'items': [
+        {
+          'product': 'product-1',
+          'product_name': 'Biryani',
+          'rate': 10000,
+          'order_quantity': 2,
+        },
+      ],
+    });
+    expect(find.text('Estimated total: \u20b9210.00'), findsOneWidget);
+    expect(
+      find.text('Unit rate \u20b9100.00 x 2 = \u20b9200.00'),
+      findsOneWidget,
+    );
+    final gst = find.byType(DropdownButtonFormField<bool>);
+    await tester.ensureVisible(gst);
+    await tester.pumpAndSettle();
+    await tester.tap(gst);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('No').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Estimated total: \u20b9200.00'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('expense-save-draft')));
+    await tester.pumpAndSettle();
+    expect(expenseMap(c.saved?['details'])['gst_applicable'], false);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.binding.setSurfaceSize(null);
+  });
+
+  testWidgets('Delivery opens the expense for the side the user chooses', (
+    tester,
+  ) async {
+    final c = await recordSaves();
+    c.lookupOrders = [
+      {
+        '_id': 'order-1',
+        'orderid': 'T2P-1001',
+        'side': 'delivery',
+        'sides': ['pickup', 'delivery'],
+        'delivery_date': expenseToday(),
+        'timeslot': 'Evening',
+        'expenses': [
+          {'_id': 'pickup-expense', 'side': 'pickup', 'status': 'draft'},
+        ],
+      },
+    ];
+    await open(tester, 'DELIVERY', {'order': 'order-1', 'side': 'delivery'});
+    expect(c.openedId, isNull);
+    final side = find.widgetWithText(DropdownButtonFormField<String>, 'Side');
+    await tester.ensureVisible(side);
+    await tester.tap(side);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('pickup').last);
+    await tester.pumpAndSettle();
+    expect(c.openedId, 'pickup-expense');
+    expect(find.byType(ExpenseDetailScreen), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.binding.setSurfaceSize(null);
+  });
+
+  testWidgets('linked food order opens its expense instead of being selected', (
+    tester,
+  ) async {
+    String? opened;
+    Set<String>? applied;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ExpenseOrderDropdown(
+            orders: const [
+              {
+                '_id': 'order-1',
+                'orderid': 'T2P-1001',
+                'expense': {
+                  '_id': 'expense-1',
+                  'expense_no': 'FP-1',
+                  'status': 'draft',
+                },
+              },
+            ],
+            selected: const {},
+            onSearch: (_) async {},
+            onApply: (v) => applied = v,
+            onOpenExpense: (v) => opened = v,
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(const ValueKey('expense-order-dropdown')));
+    await tester.pumpAndSettle();
+    expect(find.byType(CheckboxListTile), findsNothing);
+    await tester.tap(find.text('T2P-1001'));
+    await tester.pumpAndSettle();
+    expect(opened, 'expense-1');
+    expect(applied, isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
 
   testWidgets('petrol edit converts paise to rupees and preserves odometer', (
     tester,

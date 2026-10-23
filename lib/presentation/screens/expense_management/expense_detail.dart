@@ -74,7 +74,13 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen>
     } catch (e) {
       if (mounted) setState(() => error = '$e');
       if (e is ExpenseApiException && e.statusCode == 404) {
-        c.showError(e);
+        c.showError(
+          ExpenseApiException(
+            404,
+            'This expense was deleted or is no longer available.',
+          ),
+        );
+        await c.refreshAfterDeletion();
         if (mounted) Get.back();
       }
     } finally {
@@ -168,7 +174,12 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen>
           (e.statusCode == 409 || e.statusCode == 404)) {
         await load();
       } else if (mounted) {
-        setState(() => error = '$e');
+        setState(
+          () => error = [
+            '$e',
+            if (e is ExpenseApiException) ...e.fields.values,
+          ].join('\n'),
+        );
       }
     } finally {
       if (mounted) setState(() => busy = false);
@@ -406,6 +417,10 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen>
 
   Widget content(BuildContext context, ExpenseDetail d) {
     final e = d.expense, details = d.expense.details;
+    final gstRateBp = details.containsKey('gst_rate_bp')
+        ? details['gst_rate_bp']
+        : (expenseMaps(details['items']).firstOrNull?['gst_rate_bp'] ??
+              expenseNumber(c.meta['gst_rate_percent'] ?? 5) * 100);
     final statusColor = switch (e.status) {
       'approved' => const Color(0xFF067647),
       'submitted' => const Color(0xFF175CD3),
@@ -417,6 +432,19 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen>
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
         children: [
+          if (e.incomplete.isNotEmpty) ...[
+            messageBox('Incomplete'),
+            for (final missing in e.incomplete)
+              messageBox('${missing['message']}'),
+          ],
+          if (e.category == 'FOOD_PURCHASE')
+            Text(
+              details['gst_applicable'] == false
+                  ? 'GST: No'
+                  : gstRateBp == null
+                  ? 'GST: Yes (percentage missing)'
+                  : 'GST: ${expenseNumber(gstRateBp) / 100}%',
+            ),
           if (loading)
             const Padding(
               padding: EdgeInsets.only(bottom: 16),

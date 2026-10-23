@@ -36,6 +36,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
   String error = '', lookupQuery = '';
   Map<String, String> serverErrors = {};
   Map<String, dynamic>? distance;
+  bool validatingSubmit = false, gstApplicable = true;
   int lookupGeneration = 0;
   ExpenseDetail? currentExpense;
   bool get editing => currentExpense != null;
@@ -70,6 +71,10 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
         );
       }
       if (editing) {
+        serverErrors = {
+          for (final e in currentExpense!.expense.incomplete)
+            '${e['field']}': '${e['message']}',
+        };
         category = currentExpense!.expense.category;
         date = currentExpense!.expense.date;
         field('notes').text = '${currentExpense!.expense.json['notes'] ?? ''}';
@@ -100,8 +105,11 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
               .map(expenseId)
               .toSet();
           lines = expenseMaps(jsonDecode(jsonEncode(original['items'])));
+          gstApplicable = original['gst_applicable'] != false;
           for (final line in lines) {
-            line['rate'] = expenseRupees(line['rate']);
+            line['rate'] = line['rate'] == null
+                ? ''
+                : expenseRupees(line['rate']);
             line['discount_value'] =
                 (expenseNumber(line['discount_value']) / 100).toString();
           }
@@ -138,6 +146,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
       }
     });
     try {
+      gstApplicable = true;
       await loadCategory();
     } catch (e) {
       error = '$e';
@@ -223,9 +232,14 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
     });
     try {
       final selected = orders.firstWhere((e) => expenseId(e) == id);
-      side = '${selected['side'] ?? ''}';
+      final sides = selected['sides'] as List? ?? [];
+      side = category == 'DELIVERY' && sides.length > 1
+          ? ''
+          : '${selected['side'] ?? ''}';
       if (category == 'DELIVERY') {
-        await loadDistance();
+        if (side.isNotEmpty && !await openDeliveryExpense()) {
+          await loadDistance();
+        }
       } else {
         lines = expenseMaps(jsonDecode(jsonEncode(selected['products'])));
         for (final line in lines) {
@@ -237,6 +251,56 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
     } finally {
       if (mounted) setState(() => loading = false);
     }
+  }
+
+  Future<void> openExistingExpense(String id) async {
+    await Get.to(() => ExpenseDetailScreen(id: id));
+    if (!mounted) return;
+    await findOrders();
+    if (mounted) setState(() {});
+  }
+
+  Future<bool> openDeliveryExpense() async {
+    final selected = orders.where((e) => expenseId(e) == order).firstOrNull;
+    final existing = expenseMaps(selected?['expenses'])
+        .where(
+          (e) =>
+              e['side'] == side && expenseId(e) != currentExpense?.expense.id,
+        )
+        .firstOrNull;
+    if (existing == null) return false;
+    await openExistingExpense(expenseId(existing));
+    if (mounted) {
+      setState(() {
+        order = '';
+        side = '';
+        distance = null;
+      });
+    }
+    return true;
+  }
+
+  num foodLineTaxPaise(Map<String, dynamic> line) {
+    final subtotal = expenseNumber(line['rate']) * finalQuantity(line);
+    final discount = line['discount_type'] == 'percent'
+        ? subtotal * expenseNumber(line['discount_value']) / 100
+        : expenseNumber(line['discount_value']);
+    return gstApplicable
+        ? (subtotal - discount).clamp(0, double.infinity) * 5
+        : 0;
+  }
+
+  int foodPreviewPaise() {
+    num total = 0;
+    for (final line in lines) {
+      final subtotal = expenseNumber(line['rate']) * finalQuantity(line);
+      final discount = line['discount_type'] == 'percent'
+          ? subtotal * expenseNumber(line['discount_value']) / 100
+          : expenseNumber(line['discount_value']);
+      final taxable = (subtotal - discount).clamp(0, double.infinity);
+      total += taxable + (gstApplicable ? taxable * 5 / 100 : 0);
+    }
+    return (total * 100).round();
   }
 
   Future<void> foodLines() async {
@@ -286,7 +350,9 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
     bool required = true,
     bool zero = false,
   }) {
-    if ((value ?? '').trim().isEmpty) return required ? 'Required' : null;
+    if ((value ?? '').trim().isEmpty) {
+      return required && validatingSubmit ? 'Required' : null;
+    }
     final number = num.tryParse(value!);
     if (number == null ||
         !number.isFinite ||
@@ -313,6 +379,9 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
     padding: const EdgeInsets.only(bottom: 14),
     child: TextFormField(
       controller: field(name),
+      onChanged: (_) {
+        setState(() => serverErrors.remove('details.$name'));
+      },
       maxLines: lines,
       maxLength: maxLength,
       keyboardType: decimals == null
@@ -325,7 +394,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
       ),
       validator: (v) => decimals != null
           ? validateNumber(v, decimals, required: required, zero: zero)
-          : required && (v ?? '').trim().isEmpty
+          : validatingSubmit && required && (v ?? '').trim().isEmpty
           ? 'Required'
           : null,
     ),
@@ -336,6 +405,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
     List<MapEntry<String, String>> options,
     ValueChanged<String> changed, {
     String? errorKey,
+    bool requiredForDraft = false,
   }) {
     final unique = <String, String>{for (final e in options) e.key: e.value};
     return Padding(
@@ -361,7 +431,10 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
             : (v) {
                 if (v != null) changed(v);
               },
-        validator: (v) => (v ?? '').isEmpty ? 'Required' : null,
+        validator: (v) =>
+            (validatingSubmit || requiredForDraft) && (v ?? '').isEmpty
+            ? 'Required'
+            : null,
       ),
     );
   }
@@ -653,6 +726,14 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
                   ],
                 ),
                 if (category.isNotEmpty) ...[
+                  if (serverErrors.isNotEmpty) ...[
+                    const Text(
+                      'Please check these fields',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                    for (final message in serverErrors.values.toSet())
+                      Text(message, style: const TextStyle(color: Colors.red)),
+                  ],
                   section(
                     title: categoryTitle,
                     icon: categoryIcon,
@@ -905,34 +986,54 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
           dropdown(
             'Order',
             order,
-            [for (final e in orders) MapEntry(expenseId(e), '${e['orderid']}')],
+            [
+              for (final e in orders)
+                MapEntry(
+                  expenseId(e),
+                  '${e['orderid']} ${expenseDay(e['delivery_date'])} ${e['timeslot'] ?? ''}',
+                ),
+            ],
             selectOrder,
             errorKey: 'details.order',
+            requiredForDraft: true,
           ),
           if (sides.length > 1)
-            dropdown('Side', side, [for (final s in sides) MapEntry(s, s)], (
-              v,
-            ) async {
-              setState(() {
-                side = v;
-                distance = null;
-                loading = true;
-              });
-              try {
-                await loadDistance();
-              } catch (e) {
-                error = '$e';
-              } finally {
-                if (mounted) setState(() => loading = false);
-              }
-            }, errorKey: 'details.side'),
+            dropdown(
+              'Side',
+              side,
+              [for (final s in sides) MapEntry(s, s)],
+              (v) async {
+                setState(() {
+                  side = v;
+                  distance = null;
+                  loading = true;
+                });
+                try {
+                  if (!await openDeliveryExpense()) await loadDistance();
+                } catch (e) {
+                  error = '$e';
+                } finally {
+                  if (mounted) setState(() => loading = false);
+                }
+              },
+              errorKey: 'details.side',
+              requiredForDraft: true,
+            ),
+          if (selected != null)
+            Text(
+              '${expenseDay(selected['delivery_date'])} ${selected['timeslot'] ?? ''}'
+                  .trim(),
+            ),
           if (distance != null)
-            ListTile(
-              title: Text(
-                'Default distance: ${distance!['km'] == null ? 'Not available' : '${distance!['km']} km'}',
-              ),
-              subtitle: Text(
-                '${distance!['message'] ?? distance!['source'] ?? ''}',
+            Material(
+              color: Colors.transparent,
+              child: ListTile(
+                title: Text(
+                  'Default distance: ${distance!['km'] == null ? 'Not available' : '${distance!['km']} km'}',
+                ),
+                subtitle: Text(
+                  '${distance!['message'] ?? distance!['source'] ?? ''}',
+                ),
               ),
             ),
           text(
@@ -947,8 +1048,12 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
         ];
       case 'FOOD_PURCHASE':
         return [
+          Text('Estimated total: ${expenseMoney(foodPreviewPaise())}'),
+          const Text('Final totals are calculated by the server.'),
           ExpenseOrderDropdown(
             orders: orders,
+            currentExpenseId: currentExpense?.expense.id,
+            onOpenExpense: openExistingExpense,
             selected: selectedOrders,
             enabled: !loading && !saving,
             errorText: serverErrors['details.orders'],
@@ -1033,6 +1138,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
             ],
             selectOrder,
             errorKey: 'details.order',
+            requiredForDraft: true,
           ),
           text(
             'cancel_reason',
@@ -1101,7 +1207,10 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
         errorText: serverErrors['$path.$key'],
       ),
       onChanged: (v) {
-        line[key] = v;
+        setState(() {
+          line[key] = v;
+          serverErrors.remove('$path.$key');
+        });
         changed?.call();
       },
       validator: (v) =>
@@ -1184,6 +1293,30 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
               required: false,
               zero: true,
             ),
+            Text(
+              'Unit rate ${expenseMoney(expenseNumber(line['rate']) * 100)} x $finalQty = ${expenseMoney(expenseNumber(line['rate']) * finalQty * 100)}',
+              key: ValueKey('$path.product-cost'),
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<bool>(
+              key: ValueKey('$path.gst:$gstApplicable'),
+              initialValue: gstApplicable,
+              decoration: const InputDecoration(
+                labelText: 'GST (all products)',
+              ),
+              items: const [
+                DropdownMenuItem(value: true, child: Text('Yes (5%)')),
+                DropdownMenuItem(value: false, child: Text('No')),
+              ],
+              onChanged: saving || loading
+                  ? null
+                  : (value) {
+                      if (value != null) setState(() => gstApplicable = value);
+                    },
+            ),
+            const SizedBox(height: 8),
+            Text('GST: ${expenseMoney(foodLineTaxPaise(line))}'),
+            const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               key: ValueKey('$path.discount:${line['discount_type']}'),
               initialValue: '${line['discount_type'] ?? 'amount'}',
@@ -1210,6 +1343,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
   }
 
   Future<void> addAdjustment(int i) async {
+    validatingSubmit = false;
     final line = lines[i];
     final quantity = TextEditingController(),
         note = TextEditingController(),
@@ -1259,7 +1393,9 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
                     controller: note,
                     maxLength: 1000,
                     decoration: const InputDecoration(labelText: 'Reason'),
-                    validator: (v) => (v ?? '').trim().length < 3
+                    validator: (v) =>
+                        (v ?? '').trim().isNotEmpty &&
+                            (v ?? '').trim().length < 3
                         ? 'Enter at least 3 characters'
                         : null,
                   ),
@@ -1287,7 +1423,9 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
         () => line['adjustments'] = [
           ...expenseMaps(line['adjustments']),
           {
-            'quantity': '${add ? '+' : '-'}${quantity.text}',
+            'quantity': quantity.text.trim().isEmpty
+                ? ''
+                : '${add ? '+' : '-'}${quantity.text.trim()}',
             'note': note.text.trim(),
             if (orderNumber.text.trim().isNotEmpty)
               'orderid': orderNumber.text.trim(),
@@ -1352,6 +1490,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
       context: context,
       builder: (context) => FoodUsageDialog(
         available: left,
+        allowIncomplete: true,
         backdateDays: expenseNumber(c.meta['backdate_days'] ?? 7).toInt(),
         productName: '${lines[i]['product_name'] ?? ''}',
       ),
@@ -1431,7 +1570,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
           item['adjustments'] = expenseMaps(line['adjustments'])
               .map(
                 (a) => {
-                  'quantity': '${a['quantity']}',
+                  'quantity': '${a['quantity'] ?? ''}',
                   'note': a['note'],
                   if ('${a['orderid'] ?? ''}'.isNotEmpty)
                     'orderid': a['orderid'],
@@ -1443,6 +1582,8 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
         return {
           if (!editing || ordersChanged) 'orders': selectedOrders.toList(),
           'items': foodItems,
+          'gst_applicable': gstApplicable,
+          if (gstApplicable) 'gst_percent': '5',
         };
       case 'CANCELLED_ORDER':
         final items = <Map<String, dynamic>>[];
@@ -1451,7 +1592,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
           for (final disposition in expenseMaps(line['dispositions'])) {
             dispositions.add({
               'type': disposition['type'],
-              'quantity': '${disposition['quantity']}',
+              'quantity': '${disposition['quantity'] ?? ''}',
               if (disposition['date'] != null)
                 'date': expenseDay(disposition['date']),
               if (disposition['orderid'] != null)
@@ -1475,7 +1616,9 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
   }
 
   Future<void> save(bool submit) async {
-    if (saving || !form.currentState!.validate()) return;
+    if (saving) return;
+    validatingSubmit = submit;
+    if (!form.currentState!.validate()) return;
     if (category == 'FOOD_PURCHASE' &&
         (selectedOrders.isEmpty || lines.isEmpty)) {
       setState(() => error = 'Select orders and load product lines first.');
@@ -1554,7 +1697,8 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
             );
           }
         } else if (editing && c.lastStatusCode == 404) {
-          Get.back(result: true);
+          await c.refreshAfterDeletion();
+          if (mounted) Get.back(result: true);
         }
       }
     } catch (e) {

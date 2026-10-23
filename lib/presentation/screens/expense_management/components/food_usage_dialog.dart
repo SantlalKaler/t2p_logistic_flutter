@@ -5,11 +5,13 @@ import 'expense_design.dart';
 
 class FoodUsageDialog extends StatefulWidget {
   final num available;
+  final bool allowIncomplete;
   final int backdateDays;
   final String productName;
   const FoodUsageDialog({
     super.key,
     required this.available,
+    this.allowIncomplete = false,
     required this.backdateDays,
     required this.productName,
   });
@@ -33,6 +35,7 @@ class _FoodUsageDialogState extends State<FoodUsageDialog> {
 
   String? validateQuantity(String? input) {
     final value = (input ?? '').trim();
+    if (value.isEmpty && widget.allowIncomplete) return null;
     final number = num.tryParse(value);
     if (number == null || !number.isFinite || number <= 0) {
       return 'Enter a positive quantity';
@@ -216,7 +219,9 @@ class _FoodUsageDialogState extends State<FoodUsageDialog> {
                             hintText: 'T2P-...',
                           ),
                           textInputAction: TextInputAction.next,
-                          validator: (value) => (value ?? '').trim().isEmpty
+                          validator: (value) =>
+                              !widget.allowIncomplete &&
+                                  (value ?? '').trim().isEmpty
                               ? 'Enter an order number'
                               : null,
                         ),
@@ -238,7 +243,9 @@ class _FoodUsageDialogState extends State<FoodUsageDialog> {
                           counterText: '',
                         ),
                         validator: (value) =>
-                            type == 'consumed' && (value ?? '').trim().isEmpty
+                            !widget.allowIncomplete &&
+                                type == 'consumed' &&
+                                (value ?? '').trim().isEmpty
                             ? 'Enter who consumed the food'
                             : null,
                       ),

@@ -524,7 +524,7 @@ class _ExpenseLedgerScreenState extends State<ExpenseLedgerScreen> {
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: expense.isEmpty
+          onTap: expense.isEmpty || status == 'deleted'
               ? null
               : () => Get.to(() => ExpenseDetailScreen(id: expense)),
           child: Padding(

@@ -172,6 +172,15 @@ class ExpenseController extends GetxController {
     update();
   }
 
+  Future<void> refreshAfterDeletion() async {
+    await getExpenseList();
+    try {
+      await loadLedger();
+    } catch (e) {
+      showError(e);
+    }
+  }
+
   Future<ExpenseDetail> getDetail(String id) async =>
       ExpenseDetail.fromJson((await request('$base/$id'))['data']);
 
