@@ -90,3 +90,41 @@ one GST setting per purchase, so changing it updates every product. Yes sends
 `gst_percent: "5"`; the editable percentage input has been removed. GST is
 calculated after discount, consistently with the API contract. Editing older
 purchases with another percentage now uses the requested fixed 5% on save.
+
+## Order cities, delivery dates and calendar (October 2026)
+
+Reviewed `T2P_Expenses_API_Guide.pdf` v1.2 before implementing these updates.
+Sections 6.1 and 6.3 already document `vendor_city`, `order_city`,
+`delivery_date` and `timeslot` on both expense order lookups.
+
+- Delivery's order dropdown and selected-order summary show Purchase city
+  (`vendor_city`), Delivery date and time slot for each order.
+- Food Purchase's order dropdown (including orders linked to another expense)
+  and selected-order summaries show Delivery city (`order_city`), Delivery date
+  and time slot. Purchase city remains visible where supplied.
+- Missing city names or dates show "Not available". No city is inferred from the
+  user's profile, and city IDs are not displayed as names. Selected-order metadata
+  is retained when searching for another order.
+- Delivery dates are read-only order information. The existing calendar dropdown
+  selects the expense date, with no future dates and the `meta.backdate_days`
+  limit from section 3.3. Selecting a new expense date clears its previous server
+  error; date inputs are disabled while loading or saving.
+- Existing create/edit payloads are unchanged. The v1.2 saved expense examples
+  only guarantee order IDs/numbers in `order_refs`; historical orders excluded
+  from the lookups may therefore show unavailable city/date information when
+  reopened for editing. Persisted metadata needs backend support.
+
+Deferred until a revised backend contract is deployed: Intercity extra expenses
+and revised totals; Delivery start/end addresses, routing, rate/km and payable
+cost; multiple journey entries. The current contract still defines Intercity as
+rate/kg times weight and Delivery as zero-valued (sections 6.2, 6.3 and 12).
+
+Widget coverage verifies the per-order city/date mapping, missing metadata,
+linked-order behavior, selection retention across searches, unchanged Delivery
+save details, and calendar bounds/date persistence on a 390px-wide form.
+
+Food Purchase dropdown items use bordered cards with spaced order details.
+Selectable cards have a checkbox and a selected border; existing purchases show
+a status badge, expense reference and an explicit Open expense button. Tapping
+an existing order's title no longer navigates. The menu has more vertical room
+while search and Apply remain fixed above and below the scrolling order list.

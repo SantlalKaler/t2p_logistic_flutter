@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../../../domain/Model/expense/expense_v1.dart';
+import 'expense_order_info.dart';
+import 'expense_design.dart';
 
 /// A compact multi-select dropdown. Selection is applied as one batch so product
 /// lookups run once after the user has finished choosing orders.
@@ -59,6 +61,157 @@ class _ExpenseOrderDropdownState extends State<ExpenseOrderDropdown> {
     }
   }
 
+  Widget orderCard(Map<String, dynamic> order) {
+    final id = expenseId(order);
+    final linked = expenseMap(order['expense']);
+    final linkedId = expenseId(linked);
+    final hasExpense =
+        linkedId.isNotEmpty && linkedId != widget.currentExpenseId;
+    final selected = selection.contains(id);
+    final canSelect = !searching && (selected || selection.length < 50);
+    void toggle() => setState(() {
+      if (selected) {
+        selection.remove(id);
+      } else {
+        selection.add(id);
+      }
+    });
+    final status = '${linked['status'] ?? ''}';
+    final statusColor = switch (status) {
+      'submitted' => const Color(0xFF175CD3),
+      'approved' => const Color(0xFF067647),
+      'rejected' => ExpenseDesign.accent,
+      _ => ExpenseDesign.muted,
+    };
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Material(
+        color: selected && !hasExpense ? const Color(0xFFFFF7F7) : Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(
+            color: selected && !hasExpense
+                ? ExpenseDesign.accent
+                : const Color(0xFFE4E7EC),
+          ),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: hasExpense || !canSelect ? null : toggle,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '${order['orderid'] ?? id}',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: ExpenseDesign.ink,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    if (hasExpense)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: statusColor.withValues(alpha: .08),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          expenseStatusLabel(status),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: statusColor,
+                          ),
+                        ),
+                      )
+                    else
+                      SizedBox(
+                        width: 32,
+                        height: 32,
+                        child: Checkbox(
+                          value: selected,
+                          activeColor: ExpenseDesign.accent,
+                          onChanged: canSelect ? (_) => toggle() : null,
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                DefaultTextStyle.merge(
+                  style: const TextStyle(
+                    color: ExpenseDesign.muted,
+                    height: 1.6,
+                  ),
+                  child: ExpenseOrderInfo(order: order, purchase: true),
+                ),
+                if (hasExpense) ...[
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 10),
+                    child: Divider(height: 1, color: Color(0xFFEAECF0)),
+                  ),
+                  const Text(
+                    'Purchase already recorded',
+                    style: TextStyle(fontSize: 11, color: ExpenseDesign.muted),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${linked['expense_no'] ?? 'Existing expense'}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: ExpenseDesign.ink,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      TextButton.icon(
+                        onPressed: searching || widget.onOpenExpense == null
+                            ? null
+                            : () {
+                                menu.close();
+                                widget.onOpenExpense!(linkedId);
+                              },
+                        style: TextButton.styleFrom(
+                          foregroundColor: ExpenseDesign.accent,
+                          backgroundColor: const Color(0xFFFDF0F1),
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                          textStyle: const TextStyle(
+                            fontFamily: 'Roboto',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        icon: const Icon(Icons.open_in_new_rounded, size: 14),
+                        label: const Text('Open expense'),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
@@ -86,7 +239,7 @@ class _ExpenseOrderDropdownState extends State<ExpenseOrderDropdown> {
         menuChildren: [
           SizedBox(
             width: width,
-            height: math.min(390, MediaQuery.sizeOf(context).height * .48),
+            height: math.min(520, MediaQuery.sizeOf(context).height * .62),
             child: Column(
               children: [
                 Padding(
@@ -120,65 +273,10 @@ class _ExpenseOrderDropdownState extends State<ExpenseOrderDropdown> {
                       : ListView.builder(
                           controller: ordersScroll,
                           primary: false,
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          padding: const EdgeInsets.fromLTRB(12, 0, 12, 2),
                           itemCount: widget.orders.length,
                           itemBuilder: (context, index) {
-                            final order = widget.orders[index],
-                                id = expenseId(widget.orders[index]);
-                            final linked = expenseMap(order['expense']);
-                            final linkedId = expenseId(linked);
-                            if (linkedId.isNotEmpty &&
-                                linkedId != widget.currentExpenseId) {
-                              return ListTile(
-                                title: Text('${order['orderid'] ?? id}'),
-                                subtitle: Text(
-                                  '${linked['expense_no'] ?? ''} ? ${expenseStatusLabel('${linked['status'] ?? ''}')}',
-                                ),
-                                trailing: const Icon(Icons.open_in_new),
-                                onTap: widget.onOpenExpense == null
-                                    ? null
-                                    : () {
-                                        menu.close();
-                                        widget.onOpenExpense!(linkedId);
-                                      },
-                              );
-                            }
-                            final selected = selection.contains(id);
-                            return CheckboxListTile(
-                              dense: true,
-                              controlAffinity: ListTileControlAffinity.leading,
-                              value: selected,
-                              activeColor: scheme.primary,
-                              title: Text(
-                                '${order['orderid'] ?? id}',
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              subtitle:
-                                  expenseMap(order['vendor_city'])['name'] ==
-                                      null
-                                  ? null
-                                  : Text(
-                                      '${expenseMap(order['vendor_city'])['name']}',
-                                      style: const TextStyle(fontSize: 12),
-                                    ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              onChanged:
-                                  searching ||
-                                      !selected && selection.length >= 50
-                                  ? null
-                                  : (v) => setState(() {
-                                      if (v == true) {
-                                        selection.add(id);
-                                      } else {
-                                        selection.remove(id);
-                                      }
-                                    }),
-                            );
+                            return orderCard(widget.orders[index]);
                           },
                         ),
                 ),

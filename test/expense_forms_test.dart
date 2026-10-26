@@ -12,6 +12,7 @@ import 'package:t2p_logistic/presentation/screens/expense_management/add_edit_ex
 import 'package:t2p_logistic/presentation/screens/expense_management/expense_controller.dart';
 import 'package:t2p_logistic/presentation/screens/expense_management/expense_detail.dart';
 import 'package:t2p_logistic/presentation/screens/expense_management/components/expense_order_dropdown.dart';
+import 'package:t2p_logistic/presentation/screens/expense_management/components/expense_design.dart';
 
 class RecordingExpenseController extends ExpenseController {
   Map<String, dynamic>? saved;
@@ -58,7 +59,8 @@ void main() {
           (_) async => dir.path,
         );
     await GetStorage.init();
-    if (const bool.fromEnvironment('EXPENSE_CAPTURE')) {
+    if (const bool.fromEnvironment('EXPENSE_CAPTURE') ||
+        const bool.fromEnvironment('EXPENSE_DROPDOWN_CAPTURE')) {
       final loader = FontLoader('Roboto');
       for (final name in ['regular', 'medium', 'bold']) {
         final file = File(
@@ -142,6 +144,123 @@ void main() {
     Get.put<ExpenseController>(c);
     return c;
   }
+
+  testWidgets('Delivery shows purchase city and date for every order', (
+    tester,
+  ) async {
+    final c = await recordSaves();
+    c.lookupOrders = [
+      {
+        '_id': 'order-1',
+        'orderid': 'T2P-1001',
+        'vendor_city': {'name': 'KOLKATA'},
+        'order_city': {'name': 'DELHI'},
+        'delivery_date': '2026-10-27',
+        'timeslot': 'Evening',
+        'sides': ['delivery'],
+      },
+      {
+        '_id': 'order-2',
+        'orderid': 'T2P-1002',
+        'vendor_city': {'name': 'MUMBAI'},
+        'delivery_date': '2026-10-28',
+      },
+    ];
+    await open(tester, 'DELIVERY', {'order': 'order-1', 'side': 'delivery'});
+    expect(find.text('Purchase city: KOLKATA'), findsOneWidget);
+    expect(find.text('Delivery date: 2026-10-27'), findsOneWidget);
+    expect(find.text('Purchase city: DELHI'), findsNothing);
+    final orders = find.widgetWithText(
+      DropdownButtonFormField<String>,
+      'Order',
+    );
+    await tester.ensureVisible(orders);
+    await tester.tap(orders);
+    await tester.pumpAndSettle();
+    expect(find.text('Purchase city: MUMBAI'), findsOneWidget);
+    expect(find.text('Delivery date: 2026-10-28'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.tap(find.text('T2P-1002').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('expense-save-draft')));
+    await tester.pumpAndSettle();
+    expect(c.saved?['details'], {'order': 'order-2'});
+    c.lookupOrders = [];
+    final search = find.widgetWithText(TextFormField, 'Find order by number');
+    await tester.ensureVisible(search);
+    await tester.enterText(search, 'other-order');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    expect(find.text('Purchase city: MUMBAI'), findsOneWidget);
+    expect(find.text('Delivery date: 2026-10-28'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.binding.setSurfaceSize(null);
+  });
+
+  testWidgets('Purchase shows each selected order delivery city and date', (
+    tester,
+  ) async {
+    final c = await recordSaves();
+    c.lookupOrders = [
+      {
+        '_id': 'order-1',
+        'orderid': 'T2P-1001',
+        'vendor_city': {'name': 'KOLKATA'},
+        'order_city': {'name': 'DELHI'},
+        'delivery_date': '2026-10-27',
+      },
+      {'_id': 'order-2', 'orderid': 'T2P-1002'},
+    ];
+    await open(tester, 'FOOD_PURCHASE', {
+      'orders': ['order-1', 'order-2'],
+      'items': [],
+    });
+    expect(find.text('Delivery city: DELHI'), findsOneWidget);
+    expect(find.text('Delivery date: 2026-10-27'), findsOneWidget);
+    expect(find.text('Delivery city: KOLKATA'), findsNothing);
+    expect(find.text('Delivery city: Not available'), findsOneWidget);
+    expect(find.text('Delivery date: Not available'), findsOneWidget);
+    final dropdown = find.byKey(const ValueKey('expense-order-dropdown'));
+    await tester.ensureVisible(dropdown);
+    await tester.tap(dropdown);
+    await tester.pumpAndSettle();
+    expect(find.text('Delivery city: DELHI'), findsNWidgets(2));
+    expect(find.text('Delivery date: 2026-10-27'), findsNWidgets(2));
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.binding.setSurfaceSize(null);
+  });
+
+  testWidgets(
+    'Expense calendar respects backdating rules and saves selected date',
+    (tester) async {
+      final c = await recordSaves();
+      c.meta['backdate_days'] = 3;
+      await open(tester, 'PETROL', {});
+      final date = find.byKey(const ValueKey('expense-date:Expense date'));
+      await tester.ensureVisible(date);
+      await tester.tap(date);
+      await tester.pumpAndSettle();
+      final picker = tester.widget<CalendarDatePicker>(
+        find.byType(CalendarDatePicker),
+      );
+      final today = DateTime.parse(expenseToday());
+      final yesterday = today.subtract(const Duration(days: 1));
+      expect(picker.firstDate, today.subtract(const Duration(days: 3)));
+      expect(picker.lastDate, today);
+      picker.onDateChanged(yesterday);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+      expect(find.text(expenseDay(yesterday)), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('expense-save-draft')));
+      await tester.pumpAndSettle();
+      expect(c.saved?['expense_date'], expenseDay(yesterday));
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.binding.setSurfaceSize(null);
+    },
+  );
 
   testWidgets(
     'half-filled petrol edit saves but invalid entered numbers do not',
@@ -294,19 +413,36 @@ void main() {
   ) async {
     String? opened;
     Set<String>? applied;
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: ExpenseOrderDropdown(
+    final capture = GlobalKey();
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    final preview = MaterialApp(
+      debugShowCheckedModeBanner: false,
+      builder: (context, child) =>
+          Theme(data: ExpenseDesign.theme(context), child: child!),
+      home: Scaffold(
+        body: Padding(
+          padding: const EdgeInsets.all(16),
+          child: ExpenseOrderDropdown(
             orders: const [
               {
                 '_id': 'order-1',
                 'orderid': 'T2P-1001',
+                'vendor_city': {'name': 'KOLKATA'},
+                'timeslot': 'After Noon (12:00 PM - 04:00 PM)',
+                'order_city': {'name': 'PUNE'},
+                'delivery_date': '2026-10-28',
                 'expense': {
                   '_id': 'expense-1',
-                  'expense_no': 'FP-1',
+                  'expense_no': 'FP-2627-000012',
                   'status': 'draft',
                 },
+              },
+              {
+                '_id': 'order-2',
+                'orderid': 'T2P-1002',
+                'vendor_city': {'name': 'KOLKATA'},
+                'order_city': {'name': 'DELHI'},
+                'delivery_date': '2026-10-29',
               },
             ],
             selected: const {},
@@ -317,14 +453,32 @@ void main() {
         ),
       ),
     );
+    await tester.pumpWidget(RepaintBoundary(key: capture, child: preview));
     await tester.tap(find.byKey(const ValueKey('expense-order-dropdown')));
     await tester.pumpAndSettle();
     expect(find.byType(CheckboxListTile), findsNothing);
+    expect(find.text('Delivery city: PUNE'), findsOneWidget);
+    expect(find.text('Delivery date: 2026-10-28'), findsOneWidget);
+    if (const bool.fromEnvironment('EXPENSE_DROPDOWN_CAPTURE')) {
+      final boundary =
+          capture.currentContext!.findRenderObject()! as RenderRepaintBoundary;
+      await tester.runAsync(() async {
+        final image = await boundary.toImage(pixelRatio: 2);
+        final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+        await Directory('tmp').create(recursive: true);
+        await File('tmp/expense-order-dropdown.png')
+            .writeAsBytes(bytes!.buffer.asUint8List());
+      });
+    }
     await tester.tap(find.text('T2P-1001'));
+    await tester.pumpAndSettle();
+    expect(opened, isNull);
+    await tester.tap(find.text('Open expense'));
     await tester.pumpAndSettle();
     expect(opened, 'expense-1');
     expect(applied, isNull);
     await tester.pumpWidget(const SizedBox.shrink());
+    await tester.binding.setSurfaceSize(null);
   });
 
   testWidgets('petrol edit converts paise to rupees and preserves odometer', (

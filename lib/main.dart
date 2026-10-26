@@ -1,11 +1,8 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:get_storage/get_storage.dart';
-
-import 'presentation/controllers/expense_notification_controller.dart';
-
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:t2p_logistic/presentation/conectivity_controller.dart';
 import 'package:t2p_logistic/presentation/controllers/user_controller.dart';
 import 'package:t2p_logistic/presentation/screens/address/address_controller.dart';
@@ -24,6 +21,7 @@ import 'package:t2p_logistic/presentation/screens/splash/splash_screen.dart';
 import 'package:t2p_logistic/presentation/screens/trip/trip_controller.dart';
 import 'package:t2p_logistic/presentation/theme/theme_light.dart';
 
+import 'presentation/controllers/expense_notification_controller.dart';
 import 'presentation/theme/resource/strings_constants.dart';
 
 void main() async {

@@ -8,6 +8,7 @@ import '../../../domain/Model/expense/expense_v1.dart';
 import 'expense_controller.dart';
 import 'expense_detail.dart';
 import 'components/expense_order_dropdown.dart';
+import 'components/expense_order_info.dart';
 import 'components/expense_design.dart';
 import 'components/food_usage_dialog.dart';
 
@@ -185,7 +186,9 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
       orderCatalog[expenseId(item)] = item;
     }
     final retained = orders
-        .where((e) => selectedOrders.contains(expenseId(e)))
+        .where(
+          (e) => selectedOrders.contains(expenseId(e)) || expenseId(e) == order,
+        )
         .toList();
     orders = [
       ...result,
@@ -406,6 +409,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
     ValueChanged<String> changed, {
     String? errorKey,
     bool requiredForDraft = false,
+    Map<String, Widget>? optionWidgets,
   }) {
     final unique = <String, String>{for (final e in options) e.key: e.value};
     return Padding(
@@ -414,6 +418,16 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
         key: ValueKey('$label:$value:${unique.keys.join(',')}'),
         initialValue: unique.containsKey(value) ? value : null,
         isExpanded: true,
+        itemHeight: optionWidgets == null ? kMinInteractiveDimension : null,
+        selectedItemBuilder: optionWidgets == null
+            ? null
+            : (context) => [
+                for (final label in unique.values)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(label, overflow: TextOverflow.ellipsis),
+                  ),
+              ],
         decoration: InputDecoration(
           labelText: label,
           errorText: serverErrors[errorKey],
@@ -422,7 +436,9 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
             .map(
               (e) => DropdownMenuItem(
                 value: e.key,
-                child: Text(e.value, overflow: TextOverflow.ellipsis),
+                child:
+                    optionWidgets?[e.key] ??
+                    Text(e.value, overflow: TextOverflow.ellipsis),
               ),
             )
             .toList(),
@@ -443,8 +459,9 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
       Padding(
         padding: const EdgeInsets.only(bottom: 14),
         child: InkWell(
+          key: ValueKey('expense-date:$label'),
           borderRadius: BorderRadius.circular(12),
-          onTap: saving
+          onTap: saving || loading
               ? null
               : () async {
                   final today = DateTime.parse(expenseToday());
@@ -714,7 +731,10 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
                           ],
                         ),
                       ),
-                    dateInput('Expense date', date, (v) => date = v),
+                    dateInput('Expense date', date, (v) {
+                      date = v;
+                      serverErrors.remove('expense_date');
+                    }),
                     if (serverErrors['expense_date'] != null)
                       Text(
                         serverErrors['expense_date']!,
@@ -988,14 +1008,25 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
             order,
             [
               for (final e in orders)
-                MapEntry(
-                  expenseId(e),
-                  '${e['orderid']} ${expenseDay(e['delivery_date'])} ${e['timeslot'] ?? ''}',
-                ),
+                MapEntry(expenseId(e), '${e['orderid'] ?? expenseId(e)}'),
             ],
             selectOrder,
             errorKey: 'details.order',
             requiredForDraft: true,
+            optionWidgets: {
+              for (final e in orders)
+                expenseId(e): Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('${e['orderid'] ?? expenseId(e)}'),
+                      ExpenseOrderInfo(order: e, purchase: false),
+                    ],
+                  ),
+                ),
+            },
           ),
           if (sides.length > 1)
             dropdown(
@@ -1020,9 +1051,9 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
               requiredForDraft: true,
             ),
           if (selected != null)
-            Text(
-              '${expenseDay(selected['delivery_date'])} ${selected['timeslot'] ?? ''}'
-                  .trim(),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: ExpenseOrderInfo(order: selected, purchase: false),
             ),
           if (distance != null)
             Material(
@@ -1091,22 +1122,24 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
           ),
           if (selectedOrders.isNotEmpty) ...[
             const SizedBox(height: 12),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
+            Column(
               children: [
                 for (final id in selectedOrders)
-                  Chip(
-                    visualDensity: VisualDensity.compact,
-                    side: BorderSide.none,
-                    backgroundColor: const Color(0xFFFDF0F1),
-                    label: Text(
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
                       '${orders.where((o) => expenseId(o) == id).firstOrNull?['orderid'] ?? id}',
                       style: const TextStyle(
                         fontFamily: 'Roboto',
                         color: accent,
                         fontSize: 11,
                       ),
+                    ),
+                    subtitle: ExpenseOrderInfo(
+                      order:
+                          orders.where((o) => expenseId(o) == id).firstOrNull ??
+                          {},
+                      purchase: true,
                     ),
                   ),
               ],
