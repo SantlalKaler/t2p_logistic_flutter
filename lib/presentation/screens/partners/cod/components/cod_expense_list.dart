@@ -18,16 +18,16 @@ class CodExpenseList extends StatelessWidget {
   Widget build(BuildContext context) {
     CodCollectionController controller = Get.find();
     return ListView.separated(
-        itemBuilder: (context, index) {
-          return SingleCodCollectionItem(
-              expense: controller.filterCodExpenseList[index]);
-        },
-        separatorBuilder: (context, index) {
-          return SizedBox(
-            height: DimensConstants.spaceBetweenViews,
-          );
-        },
-        itemCount: controller.filterCodExpenseList.length);
+      itemBuilder: (context, index) {
+        return SingleCodCollectionItem(
+          expense: controller.filterCodExpenseList[index],
+        );
+      },
+      separatorBuilder: (context, index) {
+        return SizedBox(height: DimensConstants.spaceBetweenViews);
+      },
+      itemCount: controller.filterCodExpenseList.length,
+    );
   }
 }
 
@@ -45,69 +45,93 @@ class SingleCodCollectionItem extends StatelessWidget {
         status = statu;
       }
     }
-    return AppContainer(child: Padding(
-      padding: EdgeInsets.all(DimensConstants.cardInnerPadding),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              datePickerView(expense.createdDate!.toDate()),
-              datePickerView(expense.createdDate!.toDate(outputDate: "HH:mm")),
-            ],
-          ),
-          Text("${expense.addedBy?.fullName}\n"),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(expense.orderId?.deliveryDate?.toDate() ?? ""),
-              Text("${expense.orderId?.timeslot}\n")
-            ],
-          ),
-          //const Text("\nAction by\n"),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(expense.number ?? ""),
-              Text(
-                expense.orderId?.status ?? "",
-                style: const TextStyle(color: Colors.green),
-              )
-            ],
-          ),
-          Text("\nRs. ${expense.amount}\n"),
-          Text("${expense.city?.name}\n"),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {},
-                  style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all(status.color),
-                      elevation: MaterialStateProperty.all(0)),
-                  child: Text(
-                    status.name ?? "",
-                    style: const TextStyle(color: Colors.grey),
-                  ),
+    return AppContainer(
+      child: Padding(
+        padding: const EdgeInsets.all(0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                datePickerView(expense.createdDate!.toDate()),
+                const SizedBox(width: 8),
+                datePickerView(
+                  expense.createdDate!.toDate(outputDate: "HH:mm"),
                 ),
+              ],
+            ),
+            Text("${expense.addedBy?.fullName}\n"),
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              spacing: 16,
+              runSpacing: 4,
+              children: [
+                Text(expense.orderId?.deliveryDate?.toDate() ?? ""),
+                Text("${expense.orderId?.timeslot}\n"),
+              ],
+            ),
+            //const Text("\nAction by\n"),
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              spacing: 16,
+              runSpacing: 4,
+              children: [
+                Text(expense.number ?? ""),
+                Text(
+                  expense.orderId?.status ?? "",
+                  style: const TextStyle(color: Colors.green),
+                ),
+              ],
+            ),
+            Text(
+              "\nRs. ${expense.amount}\n",
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF182230),
               ),
-              Gap(DimensConstants.spaceBetweenViews),
-              if (expense.active != 4)
+            ),
+            Text("${expense.city?.name}\n"),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
                 Expanded(
                   child: ElevatedButton(
-                      onPressed: () {
-                        Get.to(AddCodScreen(expense: expense,));
-                      },
-                      child: const Text("Edit")),
+                    onPressed: () {},
+                    style: ButtonStyle(
+                      backgroundColor: MaterialStateProperty.all(
+                        status.color?.withValues(alpha: 0.12),
+                      ),
+                      elevation: MaterialStateProperty.all(0),
+                    ),
+                    child: Text(
+                      status.name ?? "",
+                      style: const TextStyle(
+                        color: Color(0xFF182230),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                 ),
-            ],
-          )
-        ],
+                Gap(DimensConstants.spaceBetweenViews),
+                if (expense.active != 4)
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Get.to(AddCodScreen(expense: expense));
+                      },
+                      child: const Text("Edit"),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
       ),
-    ));
+    );
   }
 }

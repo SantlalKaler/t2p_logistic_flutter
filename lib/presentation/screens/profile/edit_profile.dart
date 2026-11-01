@@ -33,64 +33,80 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return appScaffold(
-        appBar(
-            title: "Edit Profile",
-            leading: IconButton(
-                onPressed: () {
-                  Get.back();
-                },
-                icon: const Icon(Icons.arrow_back_ios))),
-        Padding(
-          padding: EdgeInsets.all(DimensConstants.screePadding),
-          child: Column(
-            children: [
-              AppContainer(child: Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      TextFormField(
-                        controller: nameController,
-                        decoration:
-                            const InputDecoration(label: Text("Full Name")),
-                        validator: (value) {
-                          if (value!.isEmpty) {
-                            return "Enter first name";
-                          }
-                          return null;
-                        },
+      appBar(
+        title: "Edit Profile",
+        leading: IconButton(
+          onPressed: () {
+            Get.back();
+          },
+          icon: const Icon(Icons.arrow_back_ios),
+        ),
+      ),
+      SingleChildScrollView(
+        padding: EdgeInsets.all(DimensConstants.screePadding),
+        child: Column(
+          children: [
+            AppContainer(
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: nameController,
+                      decoration: const InputDecoration(
+                        label: Text("Full Name"),
+                        prefixIcon: Icon(Icons.person_outline_rounded),
                       ),
-                      Gap(DimensConstants.spaceBetweenViews),
-                      TextFormField(
-                        controller: emailController,
-                        decoration: const InputDecoration(label: Text("Email")),
-                        validator: (value) {
-                          if (value!.isEmpty) {
-                            return "Enter email";
-                          }
-                          return null;
-                        },
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return "Enter first name";
+                        }
+                        return null;
+                      },
+                    ),
+                    Gap(DimensConstants.spaceBetweenViews),
+                    TextFormField(
+                      controller: emailController,
+                      decoration: const InputDecoration(
+                        label: Text("Email"),
+                        prefixIcon: Icon(Icons.mail_outline_rounded),
                       ),
-                      Gap(DimensConstants.spaceBetweenViews),
-                      TextFormField(
-                        controller: mobileController,
-                        decoration:
-                            const InputDecoration(label: Text("Mobile")),
-                        validator: (value) {
-                          if (value!.isEmpty) {
-                            return "Enter mobile";
-                          }
-                          return null;
-                        },
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return "Enter email";
+                        }
+                        return null;
+                      },
+                    ),
+                    Gap(DimensConstants.spaceBetweenViews),
+                    TextFormField(
+                      controller: mobileController,
+                      decoration: const InputDecoration(
+                        label: Text("Mobile"),
+                        prefixIcon: Icon(Icons.phone_outlined),
                       ),
-                      Gap(DimensConstants.highSpacing),
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return "Enter mobile";
+                        }
+                        return null;
+                      },
+                    ),
+                    Gap(DimensConstants.highSpacing),
 
-                      ElevatedButton(onPressed: () {
+                    ElevatedButton(
+                      onPressed: () {
                         Get.back();
-                      }, child: const Text("Save Details"))
-                    ],
-                  ))),
-            ],
-          ),
-        ));
+                      },
+                      child: const Text("Save Details"),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

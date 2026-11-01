@@ -34,60 +34,41 @@ class _OrderBottomSheetState extends State<OrderBottomSheet> {
   @override
   Widget build(BuildContext context) {
     return GetBuilder(
-        init: OrderController(),
-        builder: (controller) {
-          return /*(userController.userType == UserType.lp_manager.name ||
+      init: OrderController(),
+      builder: (controller) {
+        return /*(userController.userType == UserType.lp_manager.name ||
               userController.userType == UserType.lp_head.name)
               ? const SizedBox.shrink()
-              : */
-              Container(
-            padding:
-                EdgeInsets.symmetric(horizontal: DimensConstants.screePadding),
-            child: Obx(() => (userController.userType ==
-                        UserType.delivery_partner.name ||
+              : */ Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            border: Border(top: BorderSide(color: Color(0xFFEAECF0))),
+          ),
+          padding: EdgeInsets.fromLTRB(
+            DimensConstants.screePadding,
+            12,
+            DimensConstants.screePadding,
+            MediaQuery.paddingOf(context).bottom + 12,
+          ),
+          child: Obx(
+            () =>
+                (userController.userType == UserType.delivery_partner.name ||
                     userController.userType == UserType.lp_manager.name ||
                     userController.userType == UserType.lp_head.name)
                 ?
-                // delivery partner, lp manager, lp head buttons
-                Row(
+                  // delivery partner, lp manager, lp head buttons
+                  Row(
                     mainAxisSize: MainAxisSize.max,
                     children: [
                       Expanded(
-                          child: ElevatedButton(
-                        onPressed: () {
-                          if (controller.buttonLoading.isFalse) {
-                            if (controller.anyOrderSelected()) {
-                              // in case of delivery partner we only need delivery boy
-                              if (userController.userType ==
-                                  UserType.delivery_partner.name) {
-                                deliveryBoyController.getListLogisticBoy();
-                                showModalBottomSheet(
-                                  context: context,
-                                  builder: (context) {
-                                    return deliveryBoyList();
-                                  },
-                                );
-                              }
-
-                              /*but in case of lp manager and lp head ->
-                              lp manager -> first manager have to select delivery partner
-                              then he can see delivery boy list of that delivery partner
-                              after that lp manager can assign
-                              lp head -> first select lp manager then delivery partner then
-                              delivery boy after that lp head can assign order
-                              */
-                              if (userController.userType ==
-                                      UserType.lp_manager.name ||
-                                  userController.userType ==
-                                      UserType.lp_head.name) {
-                                if (controller.selectedPartner == null) {
-                                  CustomSnackBar.showSnackBar(
-                                      CustomSnackBar.error,
-                                      "Please select any delivery partner.",
-                                      CustomSnackBar.error);
-                                } else {
-                                  deliveryBoyController.getListLogisticBoy(
-                                      lpManagerId: controller.getPartnerId());
+                        child: ElevatedButton(
+                          onPressed: () {
+                            if (controller.buttonLoading.isFalse) {
+                              if (controller.anyOrderSelected()) {
+                                // in case of delivery partner we only need delivery boy
+                                if (userController.userType ==
+                                    UserType.delivery_partner.name) {
+                                  deliveryBoyController.getListLogisticBoy();
                                   showModalBottomSheet(
                                     context: context,
                                     builder: (context) {
@@ -95,17 +76,50 @@ class _OrderBottomSheetState extends State<OrderBottomSheet> {
                                     },
                                   );
                                 }
+
+                                /*but in case of lp manager and lp head ->
+                              lp manager -> first manager have to select delivery partner
+                              then he can see delivery boy list of that delivery partner
+                              after that lp manager can assign
+                              lp head -> first select lp manager then delivery partner then
+                              delivery boy after that lp head can assign order
+                              */
+                                if (userController.userType ==
+                                        UserType.lp_manager.name ||
+                                    userController.userType ==
+                                        UserType.lp_head.name) {
+                                  if (controller.selectedPartner == null) {
+                                    CustomSnackBar.showSnackBar(
+                                      CustomSnackBar.error,
+                                      "Please select any delivery partner.",
+                                      CustomSnackBar.error,
+                                    );
+                                  } else {
+                                    deliveryBoyController.getListLogisticBoy(
+                                      lpManagerId: controller.getPartnerId(),
+                                    );
+                                    showModalBottomSheet(
+                                      context: context,
+                                      builder: (context) {
+                                        return deliveryBoyList();
+                                      },
+                                    );
+                                  }
+                                }
+                              } else {
+                                CustomSnackBar.showSnackBar(
+                                  CustomSnackBar.error,
+                                  "Select order.",
+                                  CustomSnackBar.error,
+                                );
                               }
-                            } else {
-                              CustomSnackBar.showSnackBar(CustomSnackBar.error,
-                                  "Select order.", CustomSnackBar.error);
                             }
-                          }
-                        },
-                        child: controller.buttonLoading.isFalse
-                            ? const Text("Assign Order")
-                            : circularloadingWhiteSmall(),
-                      )),
+                          },
+                          child: controller.buttonLoading.isFalse
+                              ? const Text("Assign Order")
+                              : circularloadingWhiteSmall(),
+                        ),
+                      ),
                       Gap(DimensConstants.spaceBetweenViews),
 
                       // this button shows only for delivery partner, delivery orders(T2P and AF2AP both)
@@ -117,46 +131,50 @@ class _OrderBottomSheetState extends State<OrderBottomSheet> {
                                   UserType.lp_head.name) &&
                           controller.orderType == OrderType.deliver)
                         Expanded(
-                            child: ElevatedButton(
-                                onPressed: () {
-                                  if (controller.buttonLoading.isFalse) {
-                                    if (controller.anyOrderSelected()) {
-                                      if (userController.userType ==
-                                          UserType.delivery_partner.name) {
-                                        markDelivered(context);
-                                      }
-
-                                      // if lp manager is logged in then he need to select any delivery
-                                      // partner to mark as delivered any order
-                                      // that's why I check if any delivery partner is selected or not
-                                      if ((userController.userType ==
-                                                  UserType.lp_manager.name ||
-                                              userController.userType ==
-                                                  UserType.lp_head.name) &&
-                                          controller.selectedPartner == null) {
-                                        CustomSnackBar.showSnackBar(
-                                            CustomSnackBar.error,
-                                            "Please Select delivery partner.",
-                                            CustomSnackBar.error);
-                                      } else {
-                                        markDelivered(context);
-                                      }
-                                    } else {
-                                      CustomSnackBar.showSnackBar(
-                                          CustomSnackBar.error,
-                                          "Select order.",
-                                          CustomSnackBar.error);
-                                    }
+                          child: ElevatedButton(
+                            onPressed: () {
+                              if (controller.buttonLoading.isFalse) {
+                                if (controller.anyOrderSelected()) {
+                                  if (userController.userType ==
+                                      UserType.delivery_partner.name) {
+                                    markDelivered(context);
                                   }
-                                },
-                                child: controller.buttonLoading.isTrue
-                                    ? circularloadingWhiteSmall()
-                                    : const Text("Mark Delivered"))),
+
+                                  // if lp manager is logged in then he need to select any delivery
+                                  // partner to mark as delivered any order
+                                  // that's why I check if any delivery partner is selected or not
+                                  if ((userController.userType ==
+                                              UserType.lp_manager.name ||
+                                          userController.userType ==
+                                              UserType.lp_head.name) &&
+                                      controller.selectedPartner == null) {
+                                    CustomSnackBar.showSnackBar(
+                                      CustomSnackBar.error,
+                                      "Please Select delivery partner.",
+                                      CustomSnackBar.error,
+                                    );
+                                  } else {
+                                    markDelivered(context);
+                                  }
+                                } else {
+                                  CustomSnackBar.showSnackBar(
+                                    CustomSnackBar.error,
+                                    "Select order.",
+                                    CustomSnackBar.error,
+                                  );
+                                }
+                              }
+                            },
+                            child: controller.buttonLoading.isTrue
+                                ? circularloadingWhiteSmall()
+                                : const Text("Mark Delivered"),
+                          ),
+                        ),
                     ],
                   )
                 :
-                // boy buttons
-                Row(
+                  // boy buttons
+                  Row(
                     mainAxisSize: MainAxisSize.max,
                     children: [
                       // if t2p delivery order already started then show view map button else start order
@@ -171,109 +189,127 @@ class _OrderBottomSheetState extends State<OrderBottomSheet> {
                                   userController.orderAlreadyStarted)
                           ? Expanded(
                               child: ElevatedButton(
-                              onPressed: () async {
-                                var lat =/* (controller.t2pOrderType ==
+                                onPressed: () async {
+                                  var lat = /* (controller.t2pOrderType ==
                                             T2POrderType.AF2AP &&
                                         controller.orderType ==
                                             OrderType.pickup)
                                     ? userController.pickupLat
-                                    : */userController.deliveryLat;
-                                var lng =/* (controller.t2pOrderType ==
+                                    : */
+                                      userController.deliveryLat;
+                                  var lng = /* (controller.t2pOrderType ==
                                             T2POrderType.AF2AP &&
                                         controller.orderType ==
                                             OrderType.pickup)
                                     ? userController.pickupLng
-                                    : */userController.deliveryLng;
-                                mapLocationController.openGoogleMap(lat!, lng!);
-                              },
-                              child: const Text("View Map"),
-                            ))
+                                    : */
+                                      userController.deliveryLng;
+                                  mapLocationController.openGoogleMap(
+                                    lat!,
+                                    lng!,
+                                  );
+                                },
+                                child: const Text("View Map"),
+                              ),
+                            )
                           : Expanded(
                               child: ElevatedButton(
-                              onPressed: () async {
-                                if (controller.buttonLoading.isFalse) {
-                                  if (userController.orderAlreadyStarted) {
-                                    CustomSnackBar.showSnackBar(
+                                onPressed: () async {
+                                  if (controller.buttonLoading.isFalse) {
+                                    if (userController.orderAlreadyStarted) {
+                                      CustomSnackBar.showSnackBar(
                                         CustomSnackBar.error,
                                         "Already ${userController.t2pOrderType}[${userController.orderId}] order is started, Please end that order first.",
-                                        CustomSnackBar.error);
-                                  } else {
-                                    controller.checkAndAssign();
+                                        CustomSnackBar.error,
+                                      );
+                                    } else {
+                                      controller.checkAndAssign();
+                                    }
                                   }
-                                }
-                              },
-                              child: controller.buttonLoading.isFalse
-                                  ? const Text("Start Order")
-                                  : circularloadingWhiteSmall(),
-                            )),
+                                },
+                                child: controller.buttonLoading.isFalse
+                                    ? const Text("Start Order")
+                                    : circularloadingWhiteSmall(),
+                              ),
+                            ),
                       Gap(DimensConstants.spaceBetweenViews),
                       (controller.t2pOrderType == T2POrderType.AF2AP &&
                               controller.orderType == OrderType.pickup)
                           ? Expanded(
                               child: ElevatedButton(
-                                  onPressed: () {
-                                    if (controller.buttonLoading.isFalse) {
-                                      if (controller.anyOrderSelected()) {
-                                        // in these 2 cases boy have to first start order then only he can end order
-                                        // 1. AF2AP pickup order
-                                        if (!userController
-                                            .orderAlreadyStarted) {
-                                          CustomSnackBar.showSnackBar(
-                                              CustomSnackBar.error,
-                                              "First start order.",
-                                              CustomSnackBar.error);
-                                        } else {
-                                          takePayment(context);
-                                        }
-                                      } else {
+                                onPressed: () {
+                                  if (controller.buttonLoading.isFalse) {
+                                    if (controller.anyOrderSelected()) {
+                                      // in these 2 cases boy have to first start order then only he can end order
+                                      // 1. AF2AP pickup order
+                                      if (!userController.orderAlreadyStarted) {
                                         CustomSnackBar.showSnackBar(
-                                            CustomSnackBar.error,
-                                            "Select order.",
-                                            CustomSnackBar.error);
+                                          CustomSnackBar.error,
+                                          "First start order.",
+                                          CustomSnackBar.error,
+                                        );
+                                      } else {
+                                        takePayment(context);
                                       }
+                                    } else {
+                                      CustomSnackBar.showSnackBar(
+                                        CustomSnackBar.error,
+                                        "Select order.",
+                                        CustomSnackBar.error,
+                                      );
                                     }
-                                  },
-                                  child: controller.buttonLoading.isTrue
-                                      ? circularloadingWhiteSmall()
-                                      : const Text("Picked Up")))
+                                  }
+                                },
+                                child: controller.buttonLoading.isTrue
+                                    ? circularloadingWhiteSmall()
+                                    : const Text("Picked Up"),
+                              ),
+                            )
                           : Expanded(
                               child: ElevatedButton(
-                                  onPressed: () {
-                                    if (controller.buttonLoading.isFalse) {
-                                      if (controller.anyOrderSelected()) {
-                                        // in these 2 cases boy have to first start order then only he can end order
-                                        // 1. T2P delivery order
-                                        // 2. AF2AP pickup order
-                                        if (controller.orderType ==
-                                                OrderType.deliver &&
-                                            (!userController
-                                                .orderAlreadyStarted)) {
-                                          printValue(
-                                              "Order already started : ${userController.orderAlreadyStarted}\n"
-                                              "${(controller.t2pOrderType == T2POrderType.T2P && controller.orderType == OrderType.deliver)}\n"
-                                              "${(controller.t2pOrderType == T2POrderType.AF2AP && controller.orderType == OrderType.pickup)}");
-                                          CustomSnackBar.showSnackBar(
-                                              CustomSnackBar.error,
-                                              "First start order.",
-                                              CustomSnackBar.error);
-                                        } else {
-                                          takePayment(context);
-                                        }
-                                      } else {
+                                onPressed: () {
+                                  if (controller.buttonLoading.isFalse) {
+                                    if (controller.anyOrderSelected()) {
+                                      // in these 2 cases boy have to first start order then only he can end order
+                                      // 1. T2P delivery order
+                                      // 2. AF2AP pickup order
+                                      if (controller.orderType ==
+                                              OrderType.deliver &&
+                                          (!userController
+                                              .orderAlreadyStarted)) {
+                                        printValue(
+                                          "Order already started : ${userController.orderAlreadyStarted}\n"
+                                          "${(controller.t2pOrderType == T2POrderType.T2P && controller.orderType == OrderType.deliver)}\n"
+                                          "${(controller.t2pOrderType == T2POrderType.AF2AP && controller.orderType == OrderType.pickup)}",
+                                        );
                                         CustomSnackBar.showSnackBar(
-                                            CustomSnackBar.error,
-                                            "Select order.",
-                                            CustomSnackBar.error);
+                                          CustomSnackBar.error,
+                                          "First start order.",
+                                          CustomSnackBar.error,
+                                        );
+                                      } else {
+                                        takePayment(context);
                                       }
+                                    } else {
+                                      CustomSnackBar.showSnackBar(
+                                        CustomSnackBar.error,
+                                        "Select order.",
+                                        CustomSnackBar.error,
+                                      );
                                     }
-                                  },
-                                  child: controller.buttonLoading.isTrue
-                                      ? circularloadingWhiteSmall()
-                                      : const Text("End Order"))),
+                                  }
+                                },
+                                child: controller.buttonLoading.isTrue
+                                    ? circularloadingWhiteSmall()
+                                    : const Text("End Order"),
+                              ),
+                            ),
                     ],
-                  )),
-          );
-        });
+                  ),
+          ),
+        );
+      },
+    );
   }
 }
 
@@ -329,69 +365,72 @@ deliveryBoyList() {
   OrderController controller = Get.find();
   UserController userController = Get.find();
   return GetBuilder(
-      init: DeliveryBoyController(),
-      builder: (dController) {
-        return Scaffold(
-          floatingActionButton:
-              userController.userType == UserType.delivery_partner.name
-                  ? FloatingActionButton.small(
-                      onPressed: () {
-                        Get.to(() => const AddUser(
-                              addEditDeliveryBoy: AddEditDeliveryBoy.add,
-                            ));
+    init: DeliveryBoyController(),
+    builder: (dController) {
+      return Scaffold(
+        floatingActionButton:
+            userController.userType == UserType.delivery_partner.name
+            ? FloatingActionButton.small(
+                onPressed: () {
+                  Get.to(
+                    () => const AddUser(
+                      addEditDeliveryBoy: AddEditDeliveryBoy.add,
+                    ),
+                  );
+                },
+                child: const Icon(Icons.add),
+              )
+            : const SizedBox.shrink(),
+        body: Padding(
+          padding: EdgeInsets.all(DimensConstants.screePadding),
+          child: dController.isLoading.isTrue
+              ? Center(child: circularloadingRedSmall())
+              : dController.boyList.isEmpty
+              ? const AppEmptyView(message: "No Delivery Boy Found.")
+              : ListView.separated(
+                  itemBuilder: (context, index) {
+                    return InkWell(
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) {
+                            return DefaultDialog(
+                              message: "Would you like to assign this order?",
+                              btn1Txt: "Yes",
+                              btn1Click: () {
+                                // close dialog
+                                Get.back();
+                                //close bottom sheet
+                                Get.back();
+                                //api call
+                                controller.assignOrder(
+                                  dController.boyList[index].id!,
+                                );
+                              },
+                              btn2Txt: "No",
+                              btn2Click: () {
+                                Get.back();
+                              },
+                            );
+                          },
+                        );
                       },
-                      child: const Icon(Icons.add),
-                    )
-                  : const SizedBox.shrink(),
-          body: Padding(
-            padding: EdgeInsets.all(DimensConstants.screePadding),
-            child: dController.isLoading.isTrue
-                ? Center(child: circularloadingRedSmall())
-                : dController.boyList.isEmpty
-                    ? const AppEmptyView(
-                        message: "No Delivery Boy Found.",
-                      )
-                    : ListView.separated(
-                        itemBuilder: (context, index) {
-                          return InkWell(
-                            onTap: () {
-                              showDialog(
-                                context: context,
-                                builder: (context) {
-                                  return DefaultDialog(
-                                    message:
-                                        "Would you like to assign this order?",
-                                    btn1Txt: "Yes",
-                                    btn1Click: () {
-                                      // close dialog
-                                      Get.back();
-                                      //close bottom sheet
-                                      Get.back();
-                                      //api call
-                                      controller.assignOrder(
-                                          dController.boyList[index].id!);
-                                    },
-                                    btn2Txt: "No",
-                                    btn2Click: () {
-                                      Get.back();
-                                    },
-                                  );
-                                },
-                              );
-                            },
-                            child: singleUserItem(dController.boyList[index],
-                                onStatusChange: (userId) {
-                              dController.userStatusChange(userId);
-                            }, showSwitchButton: false),
-                          );
+                      child: singleUserItem(
+                        dController.boyList[index],
+                        onStatusChange: (userId) {
+                          dController.userStatusChange(userId);
                         },
-                        separatorBuilder: (context, index) {
-                          return SizedBox(
-                            height: DimensConstants.spaceBetweenViews,
-                          );
-                        },
-                        itemCount: dController.boyList.length),
-          ),
-        );
-      });
+                        showSwitchButton: false,
+                      ),
+                    );
+                  },
+                  separatorBuilder: (context, index) {
+                    return SizedBox(height: DimensConstants.spaceBetweenViews);
+                  },
+                  itemCount: dController.boyList.length,
+                ),
+        ),
+      );
+    },
+  );
 }

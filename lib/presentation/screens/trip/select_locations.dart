@@ -17,18 +17,29 @@ class SelectLocationWidget extends StatelessWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
-        Obx(() => locationWidget(
-            context, tripController.pickupAddress.value,
-            isPickup: true)),
-        Obx(() => locationWidget(
-            context, tripController.destinationAddress.value,
-            isPickup: false)),
+        Obx(
+          () => locationWidget(
+            context,
+            tripController.pickupAddress.value,
+            isPickup: true,
+          ),
+        ),
+        Obx(
+          () => locationWidget(
+            context,
+            tripController.destinationAddress.value,
+            isPickup: false,
+          ),
+        ),
       ],
     );
   }
 
-  Widget locationWidget(BuildContext context, Address address,
-      {bool isPickup = true}) {
+  Widget locationWidget(
+    BuildContext context,
+    Address address, {
+    bool isPickup = true,
+  }) {
     TripController tripController = Get.find();
 
     return GestureDetector(
@@ -38,45 +49,47 @@ class SelectLocationWidget extends StatelessWidget {
       child: Card(
         clipBehavior: Clip.antiAlias,
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
           width: double.infinity,
-          color: isPickup ? Theme.of(context).primaryColor : Colors.green,
+          color: Colors.white,
           child: Row(
             children: [
               Icon(
-                isPickup
-                    ? Icons.local_activity
-                    : Icons.add,
-                color: Colors.grey.shade100,
-                size: 40,
+                isPickup ? Icons.local_activity : Icons.add,
+                color: isPickup
+                    ? Theme.of(context).primaryColor
+                    : const Color(0xFF067647),
+                size: 26,
               ),
-              const Gap(20),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isPickup ? 'Pickup Location' : 'Destination Location',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleLarge!
-                        .copyWith(color: Colors.grey.shade100),
-                  ),
-                  const Gap(2),
-                  Text(
-                    (isPickup
-                        ? tripController.pickupAddress.value.id == null
-                            ? ('Tap here to select a pickup location')
-                            : '${address.contactName}\n${address.address}\n+91-${address.contactMobile}\n${address.city!.name} (${address.pincode})'
-                        : tripController.destinationAddress.value.id ==
-                                null
-                            ? ('Tap here to select a destination location')
-                            : '${address.contactName}\n${address.address}\n+91-${address.contactMobile}\n${address.city!.name} (${address.pincode})'),
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodyMedium!
-                        .copyWith(color: Colors.grey.shade200),
-                  ),
-                ],
+              const Gap(14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isPickup ? 'Pickup Location' : 'Destination Location',
+                      style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                        color: const Color(0xFF182230),
+                        fontSize: 15,
+                      ),
+                    ),
+                    const Gap(2),
+                    Text(
+                      (isPickup
+                          ? tripController.pickupAddress.value.id == null
+                                ? ('Tap here to select a pickup location')
+                                : '${address.contactName}\n${address.address}\n+91-${address.contactMobile}\n${address.city!.name} (${address.pincode})'
+                          : tripController.destinationAddress.value.id == null
+                          ? ('Tap here to select a destination location')
+                          : '${address.contactName}\n${address.address}\n+91-${address.contactMobile}\n${address.city!.name} (${address.pincode})'),
+                      style: Theme.of(context).textTheme.bodyMedium!.copyWith(
+                        color: const Color(0xFF667085),
+                        fontSize: 12,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -109,23 +122,23 @@ class SelectLocationWidget extends StatelessWidget {
               const Gap(20),
               for (var item in addressController.addressList)
                 GestureDetector(
-                    onTap: () {
-                      if (isPickup) {
-                        tripController.pickupAddress.value = item;
-                        tripController.destinationAddress.value = Address(); //reset destination
-                      } else  {
-                        tripController.destinationAddress.value = item;
-                      }
-                      Get.back();
-                    },
-                    child:
-                        // condition for hiding slected pickup location from destination select address list
-                        (!isPickup &&
-                                tripController.pickupAddress.value.id ==
-                                    item.id)
-                            ? const SizedBox.shrink()
-                            : addressCard(context, item,
-                                showDefaultMark: false))
+                  onTap: () {
+                    if (isPickup) {
+                      tripController.pickupAddress.value = item;
+                      tripController.destinationAddress.value =
+                          Address(); //reset destination
+                    } else {
+                      tripController.destinationAddress.value = item;
+                    }
+                    Get.back();
+                  },
+                  child:
+                      // condition for hiding slected pickup location from destination select address list
+                      (!isPickup &&
+                          tripController.pickupAddress.value.id == item.id)
+                      ? const SizedBox.shrink()
+                      : addressCard(context, item, showDefaultMark: false),
+                ),
             ],
           ),
         );

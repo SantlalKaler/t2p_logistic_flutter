@@ -14,6 +14,7 @@ import '../../../domain/Model/expense/expense_v1.dart';
 import 'add_edit_expense_screen.dart';
 import 'expense_controller.dart';
 import 'components/expense_design.dart';
+import 'components/expense_dialog.dart';
 import 'components/expense_attachments.dart';
 
 class ExpenseDetailScreen extends StatefulWidget {
@@ -91,15 +92,17 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen>
   Future<bool> confirm(String message) async =>
       await showDialog<bool>(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Confirm'),
+        builder: (context) => ExpenseDialog(
+          title: 'Confirm action',
+          icon: Icons.task_alt_rounded,
+          onClose: () => Navigator.pop(context, false),
           content: Text(message),
           actions: [
-            TextButton(
+            OutlinedButton(
               onPressed: () => Navigator.pop(context, false),
               child: const Text('Keep editing'),
             ),
-            TextButton(
+            FilledButton(
               onPressed: () => Navigator.pop(context, true),
               child: const Text('Continue'),
             ),
@@ -115,8 +118,10 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen>
       final form = GlobalKey<FormState>();
       reason = await showDialog<String>(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Cancel expense'),
+        builder: (context) => ExpenseDialog(
+          title: 'Cancel expense',
+          icon: Icons.cancel_outlined,
+          onClose: () => Navigator.pop(context),
           content: Form(
             key: form,
             child: TextFormField(
@@ -131,11 +136,11 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen>
             ),
           ),
           actions: [
-            TextButton(
+            OutlinedButton(
               onPressed: () => Navigator.pop(context),
               child: const Text('Keep expense'),
             ),
-            TextButton(
+            FilledButton(
               onPressed: () {
                 if (form.currentState!.validate()) {
                   Navigator.pop(context, input.text.trim());
@@ -343,11 +348,23 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen>
       children: [
         Row(
           children: [
-            Icon(icon, color: ExpenseDesign.accent, size: 20),
+            Container(
+              padding: const EdgeInsets.all(9),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFDF0F1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: ExpenseDesign.accent, size: 19),
+            ),
             const SizedBox(width: 10),
-            Text(
-              title,
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
           ],
         ),
@@ -417,10 +434,6 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen>
 
   Widget content(BuildContext context, ExpenseDetail d) {
     final e = d.expense, details = d.expense.details;
-    final gstRateBp = details.containsKey('gst_rate_bp')
-        ? details['gst_rate_bp']
-        : (expenseMaps(details['items']).firstOrNull?['gst_rate_bp'] ??
-              expenseNumber(c.meta['gst_rate_percent'] ?? 5) * 100);
     final statusColor = switch (e.status) {
       'approved' => const Color(0xFF067647),
       'submitted' => const Color(0xFF175CD3),
@@ -437,14 +450,6 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen>
             for (final missing in e.incomplete)
               messageBox('${missing['message']}'),
           ],
-          if (e.category == 'FOOD_PURCHASE')
-            Text(
-              details['gst_applicable'] == false
-                  ? 'GST: No'
-                  : gstRateBp == null
-                  ? 'GST: Yes (percentage missing)'
-                  : 'GST: ${expenseNumber(gstRateBp) / 100}%',
-            ),
           if (loading)
             const Padding(
               padding: EdgeInsets.only(bottom: 16),
@@ -576,6 +581,11 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen>
                           'Discount: ${expenseMoney(line['discount'])} • GST: ${expenseMoney(line['gst'])}',
                         ),
                         Text('Total: ${expenseMoney(line['total'])}'),
+                        Text(
+                          expenseNumber(line['gst_rate_bp']) > 0
+                              ? 'GST: Yes (${expenseNumber(line['gst_rate_bp']) / 100}%)'
+                              : 'GST: No',
+                        ),
                         for (final a in expenseMaps(line['adjustments']))
                           Text(
                             '${a['quantity']} • ${a['note']} ${a['orderid'] ?? ''}',

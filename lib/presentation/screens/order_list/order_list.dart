@@ -1,3 +1,6 @@
+import '../duty/duty_widgets.dart';
+import '../duty/duty_controller.dart';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:t2p_logistic/domain/enums/other.dart';
@@ -23,7 +26,6 @@ class OrderList extends StatefulWidget {
 
 class _OrderListState extends State<OrderList>
     with SingleTickerProviderStateMixin {
-
   late TabController _tabController;
 
   late OrderController controller;
@@ -39,6 +41,7 @@ class _OrderListState extends State<OrderList>
 
     _tabController = TabController(initialIndex: 0, length: 2, vsync: this);
     controller.getOrders();
+    Get.find<DutyController>().reconcile();
 
     //get all cities so that user can filter order based on city
     addressController.getAllCities();
@@ -59,183 +62,194 @@ class _OrderListState extends State<OrderList>
   @override
   Widget build(BuildContext context) {
     return GetBuilder(
-        init: OrderController(),
-        builder: (controller) {
-          return Scaffold(
-            bottomNavigationBar: const OrderBottomSheet(),
-            body: NestedScrollView(
-              headerSliverBuilder: (context, innerBoxIsScrolled) {
-                var pickupCount = "";
-                var deliveryCount = "";
-                if (controller.t2pOrderType == T2POrderType.T2P) {
-                  pickupCount = controller.t2pPickupFilterOrders.length.toString();
-                  deliveryCount =
-                      controller.t2pDeliveryFilterOrders.length.toString();
-                } else {
-                  pickupCount =
-                      controller.aF2APPickupFilterOrders.length.toString();
-                  deliveryCount =
-                      controller.aF2APDeliveryFilterOrders.length.toString();
-                }
+      init: OrderController(),
+      builder: (controller) {
+        return Scaffold(
+          bottomNavigationBar: const OrderBottomSheet(),
+          body: NestedScrollView(
+            headerSliverBuilder: (context, innerBoxIsScrolled) {
+              var pickupCount = "";
+              var deliveryCount = "";
+              if (controller.t2pOrderType == T2POrderType.T2P) {
+                pickupCount = controller.t2pPickupFilterOrders.length
+                    .toString();
+                deliveryCount = controller.t2pDeliveryFilterOrders.length
+                    .toString();
+              } else {
+                pickupCount = controller.aF2APPickupFilterOrders.length
+                    .toString();
+                deliveryCount = controller.aF2APDeliveryFilterOrders.length
+                    .toString();
+              }
 
-                return [
-                  SliverAppBar(
-                    pinned: true,
-                    floating: true,
-                    title: const Text("My Orders"),
-                    leading: IconButton(
-                        onPressed: () {
-                          Get.back();
-                        },
-                        icon: const Icon(Icons.arrow_back_ios)),
-                    bottom: PreferredSize(
-                      preferredSize: Size(
-                          double.infinity,
-                          (userController.userType ==
-                                      UserType.delivery_partner.name ||
-                                  userController.userType ==
-                                      UserType.lp_manager.name ||
-                                  userController.userType ==
-                                      UserType.lp_head.name)
-                              ? 175
-                              : 100),
-                      child: Column(
-                        children: [
-                          TabBar(
-                              controller: _tabController,
-                              indicatorColor: Colors.green,
-                              indicatorWeight: 5,
-                              tabs: [
-                                Tab(
-                                  text: "Pickup($pickupCount)",
-                                ),
-                                Tab(
-                                  text: "Deliver($deliveryCount)",
-                                ),
-                              ]),
-
-                          if (userController.userType ==
+              return [
+                const SliverPadding(
+                  padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  sliver: SliverToBoxAdapter(child: DutyPanel()),
+                ),
+                SliverAppBar(
+                  toolbarHeight: 64,
+                  pinned: true,
+                  floating: true,
+                  title: const Text("My Orders"),
+                  leading: IconButton(
+                    onPressed: () {
+                      Get.back();
+                    },
+                    icon: const Icon(Icons.arrow_back_ios),
+                  ),
+                  bottom: PreferredSize(
+                    preferredSize: Size(
+                      double.infinity,
+                      (userController.userType ==
                                   UserType.delivery_partner.name ||
                               userController.userType ==
                                   UserType.lp_manager.name ||
                               userController.userType == UserType.lp_head.name)
-                            Row(
+                          ? 175
+                          : 100,
+                    ),
+                    child: Column(
+                      children: [
+                        TabBar(
+                          controller: _tabController,
+                          indicatorColor: const Color(0xFFB42332),
+                          indicatorWeight: 3,
+                          tabs: [
+                            Tab(text: "Pickup($pickupCount)"),
+                            Tab(text: "Deliver($deliveryCount)"),
+                          ],
+                        ),
+
+                        if (userController.userType ==
+                                UserType.delivery_partner.name ||
+                            userController.userType ==
+                                UserType.lp_manager.name ||
+                            userController.userType == UserType.lp_head.name)
+                          Row(
                             children: [
                               // only delivery partner can select all orders at once
-                                Expanded(
-                                  child: CheckboxListTile(
-                                    contentPadding: const EdgeInsets.all(0),
-                                    checkColor: Colors.green,
-                                    value: controller.allOrderSelected(),
-                                    onChanged: (value) {
-                                      if (value != null) {
-                                        controller.changeSelectAllOrders(value);
-                                      }
-                                    },
-                                    title: const Text(
-                                      "Select All Orders",
-                                      style: TextStyle(
-                                          color: Colors.white, fontSize: 14),
-                                    ),
-                                    controlAffinity:
-                                        ListTileControlAffinity.leading,
-                                  ),
-                                ),
                               Expanded(
-                                  child: Padding(
-                                padding: const EdgeInsets.all(10.0)
-                                    .copyWith(left: 0),
-                                child: SearchBar(
-                                  controller: searchController,
-                                  hintText: "Search By Order Id...",
-                                  leading: const Icon(
-                                    Icons.search,
-                                  ),
-                                  keyboardType: TextInputType.phone,
-                                  onChanged: (value){
-                                    printValue("Search value is $value");
-                                    controller.searchOrderById(value);
+                                child: CheckboxListTile(
+                                  contentPadding: const EdgeInsets.all(0),
+                                  checkColor: Colors.white,
+                                  activeColor: const Color(0xFFB42332),
+                                  value: controller.allOrderSelected(),
+                                  onChanged: (value) {
+                                    if (value != null) {
+                                      controller.changeSelectAllOrders(value);
+                                    }
                                   },
-                                  elevation: const MaterialStatePropertyAll(0),
+                                  title: const Text(
+                                    "Select All Orders",
+                                    style: TextStyle(
+                                      color: Color(0xFF182230),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  controlAffinity:
+                                      ListTileControlAffinity.leading,
                                 ),
-                              ))
+                              ),
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(10.0)
+                                      .copyWith(left: 0),
+                                  child: SearchBar(
+                                    controller: searchController,
+                                    hintText: "Search By Order Id...",
+                                    leading: const Icon(Icons.search),
+                                    keyboardType: TextInputType.phone,
+                                    onChanged: (value) {
+                                      printValue("Search value is $value");
+                                      controller.searchOrderById(value);
+                                    },
+                                    elevation: const MaterialStatePropertyAll(
+                                      0,
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
 
-                          // chip show to all type of user's but it changes according to user
-                          Container(
-                            height: 48,
-                            color: ColorConstants.screenBackgroundColor,
-                            child: const ChipList(),
-                          ),
-                        ],
-                      ),
+                        // chip show to all type of user's but it changes according to user
+                        Container(
+                          height: 54,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          color: ColorConstants.screenBackgroundColor,
+                          child: const ChipList(),
+                        ),
+                      ],
                     ),
                   ),
-                ];
-              },
-              body: TabBarView(controller: _tabController, children: [
+                ),
+              ];
+            },
+            body: TabBarView(
+              controller: _tabController,
+              children: [
                 //pickup orders
                 controller.pickupLoading.isTrue && _tabController.index == 0
                     ? circularloadingRedSmallInfinitySize()
                     : (controller.t2pOrderType == T2POrderType.T2P &&
-                                controller.t2pPickupFilterOrders.isEmpty ||
-                            controller.t2pOrderType == T2POrderType.AF2AP &&
-                                controller.aF2APPickupFilterOrders.isEmpty)
-                        ? const AppEmptyView(message: "No Orders Found.")
-                        : ListView.builder(
-                            itemCount:
-                                controller.t2pOrderType == T2POrderType.T2P
-                                    ? controller.t2pPickupFilterOrders.length
-                                    : controller.aF2APPickupFilterOrders.length,
-                            itemBuilder: (context, index) {
-                              return Padding(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: DimensConstants.screePadding,
-                                    vertical: DimensConstants
-                                        .spaceBetweenViewsAndSubViews),
-                                child: SingleOrderItem(
-                                    order: controller.t2pOrderType ==
-                                            T2POrderType.T2P
-                                        ? controller.t2pPickupFilterOrders[index]
-                                        : controller
-                                            .aF2APPickupFilterOrders[index]),
-                              );
-                            },
-                          ),
+                              controller.t2pPickupFilterOrders.isEmpty ||
+                          controller.t2pOrderType == T2POrderType.AF2AP &&
+                              controller.aF2APPickupFilterOrders.isEmpty)
+                    ? const AppEmptyView(message: "No Orders Found.")
+                    : ListView.builder(
+                        itemCount: controller.t2pOrderType == T2POrderType.T2P
+                            ? controller.t2pPickupFilterOrders.length
+                            : controller.aF2APPickupFilterOrders.length,
+                        itemBuilder: (context, index) {
+                          return Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: DimensConstants.screePadding,
+                              vertical:
+                                  DimensConstants.spaceBetweenViewsAndSubViews,
+                            ),
+                            child: SingleOrderItem(
+                              order: controller.t2pOrderType == T2POrderType.T2P
+                                  ? controller.t2pPickupFilterOrders[index]
+                                  : controller.aF2APPickupFilterOrders[index],
+                            ),
+                          );
+                        },
+                      ),
 
                 //delivery orders
                 controller.deliveryLoading.isTrue && _tabController.index == 1
                     ? circularloadingRedSmallInfinitySize()
                     : (controller.t2pOrderType == T2POrderType.T2P &&
-                                controller.t2pDeliveryFilterOrders.isEmpty ||
-                            controller.t2pOrderType == T2POrderType.AF2AP &&
-                                controller.aF2APDeliveryFilterOrders.isEmpty)
-                        ? const AppEmptyView(message: "No Orders Found.")
-                        : ListView.builder(
-                            itemCount: controller.t2pOrderType ==
-                                    T2POrderType.T2P
-                                ? controller.t2pDeliveryFilterOrders.length
-                                : controller.aF2APDeliveryFilterOrders.length,
-                            itemBuilder: (context, index) {
-                              //printValue(controller.t2pDeliveryOrders.length);
-                              return Padding(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: DimensConstants.screePadding,
-                                    vertical: DimensConstants
-                                        .spaceBetweenViewsAndSubViews),
-                                child: SingleOrderItem(
-                                    order: controller.t2pOrderType ==
-                                            T2POrderType.T2P
-                                        ? controller.t2pDeliveryFilterOrders[index]
-                                        : controller
-                                            .aF2APDeliveryFilterOrders[index]),
-                              );
-                            },
-                          )
-              ]),
+                              controller.t2pDeliveryFilterOrders.isEmpty ||
+                          controller.t2pOrderType == T2POrderType.AF2AP &&
+                              controller.aF2APDeliveryFilterOrders.isEmpty)
+                    ? const AppEmptyView(message: "No Orders Found.")
+                    : ListView.builder(
+                        itemCount: controller.t2pOrderType == T2POrderType.T2P
+                            ? controller.t2pDeliveryFilterOrders.length
+                            : controller.aF2APDeliveryFilterOrders.length,
+                        itemBuilder: (context, index) {
+                          //printValue(controller.t2pDeliveryOrders.length);
+                          return Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: DimensConstants.screePadding,
+                              vertical:
+                                  DimensConstants.spaceBetweenViewsAndSubViews,
+                            ),
+                            child: SingleOrderItem(
+                              order: controller.t2pOrderType == T2POrderType.T2P
+                                  ? controller.t2pDeliveryFilterOrders[index]
+                                  : controller.aF2APDeliveryFilterOrders[index],
+                            ),
+                          );
+                        },
+                      ),
+              ],
             ),
-          );
-        });
+          ),
+        );
+      },
+    );
   }
 }

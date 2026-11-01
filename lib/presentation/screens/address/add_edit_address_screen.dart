@@ -1,3 +1,5 @@
+import '../../widgets/app_container.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -19,11 +21,12 @@ class AddEditAddress extends StatefulWidget {
   final bool isEdit;
   final bool redirectToHome;
 
-  const AddEditAddress(
-      {super.key,
-      required this.isEdit,
-      required this.redirectToHome,
-      this.address});
+  const AddEditAddress({
+    super.key,
+    required this.isEdit,
+    required this.redirectToHome,
+    this.address,
+  });
 
   @override
   AddEditAddressState createState() => AddEditAddressState();
@@ -50,12 +53,12 @@ class AddEditAddressState extends State<AddEditAddress> {
     if (widget.isEdit == true) {
       addressController.selectedAddressType.value =
           widget.address!.title.toString().toLowerCase() ==
-                  AddressType.work.name
-              ? AddressType.work
-              : widget.address!.title.toString().toLowerCase() ==
-                      AddressType.home.name
-                  ? AddressType.home
-                  : AddressType.other;
+              AddressType.work.name
+          ? AddressType.work
+          : widget.address!.title.toString().toLowerCase() ==
+                AddressType.home.name
+          ? AddressType.home
+          : AddressType.other;
 
       _fullNameController.text = widget.address!.contactName ?? '';
       _mobileNoController.text = widget.address!.contactMobile ?? '';
@@ -67,10 +70,10 @@ class AddEditAddressState extends State<AddEditAddress> {
 
       _stateController.text = widget.address!.state!.name ?? "";
 
-       addressController.getAllCityByStatess(widget.address!.state!.id);
+      addressController.getAllCityByStatess(widget.address!.state!.id);
       _cityController.text = widget.address!.city!.name ?? "";
 
-       addressController.getZipCodeByCity(widget.address!.city!.id);
+      addressController.getZipCodeByCity(widget.address!.city!.id);
       _postalCodeController.text = widget.address!.pincode ?? '';
 
       addressController.lat.value =
@@ -89,25 +92,24 @@ class AddEditAddressState extends State<AddEditAddress> {
     addressController.isLocationOnMapSelected.value = false;
     MapLocationController mapLocationController = Get.find();
 
-    return Obx(() => AppScaffold(
-        appBar: appBar(
-          title: "Add Address",
-        ), body: SingleChildScrollView(
+    return Obx(
+      () => AppScaffold(
+        appBar: appBar(title: "Add Address"),
+        body: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           child: Padding(
             padding: EdgeInsets.all(DimensConstants.screePadding),
-            child: Form(
-              key: _formKey,
-              child: Column(
+            child: AppContainer(
+              child: Form(
+                key: _formKey,
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     TextFormField(
                       style: Theme.of(context).textTheme.titleSmall,
                       controller: _fullNameController,
                       decoration: const InputDecoration(
-                        label: Text(
-                          'Full name',
-                        ),
+                        label: Text('Full name'),
                       ),
                       validator: (value) {
                         if (value!.isEmpty) {
@@ -127,9 +129,7 @@ class AddEditAddressState extends State<AddEditAddress> {
                         prefixIcon: Text('    +91 -    '),
                         prefixIconConstraints: BoxConstraints(),
                         counterText: '',
-                        label: Text(
-                          'Phone number',
-                        ),
+                        label: Text('Phone number'),
                       ),
                       validator: (value) {
                         if (value!.isEmpty) {
@@ -147,10 +147,9 @@ class AddEditAddressState extends State<AddEditAddress> {
                       style: Theme.of(context).textTheme.titleSmall,
                       controller: _addressController,
                       decoration: const InputDecoration(
-                          label: Text(
-                            'House no./Building name etc.',
-                          ),
-                          floatingLabelBehavior: FloatingLabelBehavior.auto),
+                        label: Text('House no./Building name etc.'),
+                        floatingLabelBehavior: FloatingLabelBehavior.auto,
+                      ),
                       validator: (value) {
                         if (value!.isEmpty) {
                           return 'Please enter your address';
@@ -163,10 +162,9 @@ class AddEditAddressState extends State<AddEditAddress> {
                       style: Theme.of(context).textTheme.titleSmall,
                       controller: _addressController2,
                       decoration: const InputDecoration(
-                          label: Text(
-                            'Road/Area/Colony',
-                          ),
-                          floatingLabelBehavior: FloatingLabelBehavior.auto),
+                        label: Text('Road/Area/Colony'),
+                        floatingLabelBehavior: FloatingLabelBehavior.auto,
+                      ),
                       validator: (value) {
                         if (value!.isEmpty) {
                           return 'Please enter your address';
@@ -179,29 +177,26 @@ class AddEditAddressState extends State<AddEditAddress> {
                       style: Theme.of(context).textTheme.titleSmall,
                       controller: _landmarkController,
                       decoration: const InputDecoration(
-                          label: Text(
-                            'Landmark (optional)',
-                          ),
-                          floatingLabelBehavior: FloatingLabelBehavior.auto),
+                        label: Text('Landmark (optional)'),
+                        floatingLabelBehavior: FloatingLabelBehavior.auto,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     DropdownMenu(
-                        expandedInsets: const EdgeInsets.all(0),
-                        controller: _countryController,
-                        hintText: 'Select Country',
-                        inputDecorationTheme:
-                        Theme.of(context).inputDecorationTheme,
-                        dropdownMenuEntries: const [
-                          DropdownMenuEntry(
-                            value: 'India',
-                            label: 'India',
-                          )
-                        ],
-                        onSelected: (v) {
-                          _stateController.clear();
-                          _cityController.clear();
-                          _postalCodeController.clear();
-                        }),
+                      expandedInsets: const EdgeInsets.all(0),
+                      controller: _countryController,
+                      hintText: 'Select Country',
+                      inputDecorationTheme: Theme.of(context)
+                          .inputDecorationTheme,
+                      dropdownMenuEntries: const [
+                        DropdownMenuEntry(value: 'India', label: 'India'),
+                      ],
+                      onSelected: (v) {
+                        _stateController.clear();
+                        _cityController.clear();
+                        _postalCodeController.clear();
+                      },
+                    ),
                     const SizedBox(height: 16),
                     DropdownMenu(
                       expandedInsets: const EdgeInsets.all(0),
@@ -212,11 +207,11 @@ class AddEditAddressState extends State<AddEditAddress> {
                         _postalCodeController.clear();
                         addressController.getAllCityByStatess(stateId);
                       },
-                      inputDecorationTheme:
-                      Theme.of(context).inputDecorationTheme,
+                      inputDecorationTheme: Theme.of(context)
+                          .inputDecorationTheme,
                       dropdownMenuEntries: [
                         for (var item in addressController.stateList)
-                          DropdownMenuEntry(value: item.id, label: item.name!)
+                          DropdownMenuEntry(value: item.id, label: item.name!),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -230,14 +225,15 @@ class AddEditAddressState extends State<AddEditAddress> {
                       onSelected: (cityId) {
                         _postalCodeController.clear();
                         addressController.getZipCodeByCity(cityId);
-                        mapLocationController
-                            .getCordinatesFromAddress(_cityController.text);
+                        mapLocationController.getCordinatesFromAddress(
+                          _cityController.text,
+                        );
                       },
-                      inputDecorationTheme:
-                      Theme.of(context).inputDecorationTheme,
+                      inputDecorationTheme: Theme.of(context)
+                          .inputDecorationTheme,
                       dropdownMenuEntries: [
                         for (var item in addressController.cityList)
-                          DropdownMenuEntry(value: item.id, label: item.name!)
+                          DropdownMenuEntry(value: item.id, label: item.name!),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -249,35 +245,37 @@ class AddEditAddressState extends State<AddEditAddress> {
                           ? 'Loading postal codes...'
                           : 'Select postal code',
                       onSelected: (postalCodeId) {},
-                      inputDecorationTheme:
-                      Theme.of(context).inputDecorationTheme,
+                      inputDecorationTheme: Theme.of(context)
+                          .inputDecorationTheme,
                       dropdownMenuEntries: [
                         for (var item in addressController.zipList)
-                          DropdownMenuEntry(value: item.id, label: item.name!)
+                          DropdownMenuEntry(value: item.id, label: item.name!),
                       ],
                     ),
                     const SizedBox(height: 16),
                     Obx(
-                          () => Wrap(
+                      () => Wrap(
                         spacing: 5.0,
                         children: List<Widget>.generate(
                           addressController.addressTypes.length,
-                              (int index) {
+                          (int index) {
                             bool isSelected =
                                 addressController.selectedAddressType.value ==
-                                    addressController.addressTypes[index];
+                                addressController.addressTypes[index];
                             return ChoiceChip(
                               labelStyle: TextStyle(
-                                  color: isSelected
-                                      ? Colors.grey.shade50
-                                      : Colors.black87),
-                              label: Text(addressController
-                                  .addressTypes[index].name
-                                  .toUpperCase()),
+                                color: isSelected
+                                    ? Colors.grey.shade50
+                                    : Colors.black87,
+                              ),
+                              label: Text(
+                                addressController.addressTypes[index].name
+                                    .toUpperCase(),
+                              ),
                               selected: isSelected,
                               onSelected: (bool selected) {
                                 addressController.selectedAddressType.value =
-                                addressController.addressTypes[index];
+                                    addressController.addressTypes[index];
                               },
                             );
                           },
@@ -287,39 +285,46 @@ class AddEditAddressState extends State<AddEditAddress> {
                     const SizedBox(height: 20),
                     Center(
                       child: Obx(
-                            () => ElevatedButton(
-                            onPressed: addressController
-                                  .isAddingEdittingAddress
-                                  .isTrue ||
-                                  mapLocationController
-                                      .isLoading.isTrue
-                                  ? null
-                                  : () {
-                              if (_formKey.currentState!.validate()) {
-                                if (addressController
-                                    .isLocationOnMapSelected.isTrue) {
-                                  _saveAddress();
-                                } else {
-                                  _selectLocation();
-                                }
-                              }
-                            },
-                            child:  addressController
-                                  .isAddingEdittingAddress
-                                  .isTrue
-                                  ? circularloadingWhiteSmall()
-                                  : Text(
-                              addressController.isLocationOnMapSelected.isTrue
-                                  ? 'Save address'
-                                  : 'Select location',
-                            )),
+                        () => ElevatedButton(
+                          onPressed:
+                              addressController
+                                      .isAddingEdittingAddress
+                                      .isTrue ||
+                                  mapLocationController.isLoading.isTrue
+                              ? null
+                              : () {
+                                  if (_formKey.currentState!.validate()) {
+                                    if (addressController
+                                        .isLocationOnMapSelected
+                                        .isTrue) {
+                                      _saveAddress();
+                                    } else {
+                                      _selectLocation();
+                                    }
+                                  }
+                                },
+                          child:
+                              addressController.isAddingEdittingAddress.isTrue
+                              ? circularloadingWhiteSmall()
+                              : Text(
+                                  addressController
+                                          .isLocationOnMapSelected
+                                          .isTrue
+                                      ? 'Save address'
+                                      : 'Select location',
+                                ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 20),
-                  ]),
+                  ],
+                ),
+              ),
             ),
           ),
-        )));
+        ),
+      ),
+    );
   }
 
   void _selectLocation() async {
@@ -337,7 +342,10 @@ class AddEditAddressState extends State<AddEditAddress> {
         _postalCodeController.text.isEmpty ||
         _stateController.text.isEmpty) {
       CustomSnackBar.showSnackBar(
-          CustomSnackBar.error, 'All fields required', CustomSnackBar.error);
+        CustomSnackBar.error,
+        'All fields required',
+        CustomSnackBar.error,
+      );
     } else {
       String cityId = addressController.cityList
           .firstWhere((p0) => p0.name! == _cityController.text)
@@ -347,40 +355,41 @@ class AddEditAddressState extends State<AddEditAddress> {
           .id!;
       if (widget.isEdit == false) {
         await addressController.addAddress(
-            title: addressController.selectedAddressType.value.name,
-            address: _addressController.text,
-            address2: _addressController2.text,
-            cityId: cityId,
-            cityName: _cityController.text,
-            stateId: stateId,
-            stateName: _stateController.text,
-            postOffice: 'not_defined',
-            postalCode: _postalCodeController.text,
-            contactName: _fullNameController.text,
-            contactPhone: _mobileNoController.text,
-            lat: addressController.lat.value.toString(),
-            lng: addressController.lng.value.toString(),
-            landmark: _landmarkController.text,
-            redirectToHome: widget.redirectToHome);
-      }
-      else {
+          title: addressController.selectedAddressType.value.name,
+          address: _addressController.text,
+          address2: _addressController2.text,
+          cityId: cityId,
+          cityName: _cityController.text,
+          stateId: stateId,
+          stateName: _stateController.text,
+          postOffice: 'not_defined',
+          postalCode: _postalCodeController.text,
+          contactName: _fullNameController.text,
+          contactPhone: _mobileNoController.text,
+          lat: addressController.lat.value.toString(),
+          lng: addressController.lng.value.toString(),
+          landmark: _landmarkController.text,
+          redirectToHome: widget.redirectToHome,
+        );
+      } else {
         await addressController.editAddress(
-            addressId: widget.address!.id,
-            title: addressController.selectedAddressType.value.name,
-            address: _addressController.text,
-            address2: _addressController2.text,
-            cityId: cityId,
-            cityName: _cityController.text,
-            stateId: stateId,
-            stateName: _stateController.text,
-            postOffice: 'not_defined',
-            postalCode: _postalCodeController.text,
-            contactName: _fullNameController.text,
-            contactPhone: _mobileNoController.text,
-            lat: addressController.lat.value.toString(),
-            lng: addressController.lng.value.toString(),
-            landmark: _landmarkController.text,
-            redirectToHome: widget.redirectToHome);
+          addressId: widget.address!.id,
+          title: addressController.selectedAddressType.value.name,
+          address: _addressController.text,
+          address2: _addressController2.text,
+          cityId: cityId,
+          cityName: _cityController.text,
+          stateId: stateId,
+          stateName: _stateController.text,
+          postOffice: 'not_defined',
+          postalCode: _postalCodeController.text,
+          contactName: _fullNameController.text,
+          contactPhone: _mobileNoController.text,
+          lat: addressController.lat.value.toString(),
+          lng: addressController.lng.value.toString(),
+          landmark: _landmarkController.text,
+          redirectToHome: widget.redirectToHome,
+        );
       }
     }
   }

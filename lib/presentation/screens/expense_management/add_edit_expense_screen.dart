@@ -10,6 +10,7 @@ import 'expense_detail.dart';
 import 'components/expense_order_dropdown.dart';
 import 'components/expense_order_info.dart';
 import 'components/expense_design.dart';
+import 'components/expense_dialog.dart';
 import 'components/food_usage_dialog.dart';
 
 class AddEditExpenseScreen extends StatefulWidget {
@@ -37,7 +38,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
   String error = '', lookupQuery = '';
   Map<String, String> serverErrors = {};
   Map<String, dynamic>? distance;
-  bool validatingSubmit = false, gstApplicable = true;
+  bool validatingSubmit = false;
   int lookupGeneration = 0;
   ExpenseDetail? currentExpense;
   bool get editing => currentExpense != null;
@@ -106,8 +107,8 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
               .map(expenseId)
               .toSet();
           lines = expenseMaps(jsonDecode(jsonEncode(original['items'])));
-          gstApplicable = original['gst_applicable'] != false;
           for (final line in lines) {
+            line['gst_applicable'] = expenseNumber(line['gst_rate_bp']) > 0;
             line['rate'] = line['rate'] == null
                 ? ''
                 : expenseRupees(line['rate']);
@@ -147,7 +148,6 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
       }
     });
     try {
-      gstApplicable = true;
       await loadCategory();
     } catch (e) {
       error = '$e';
@@ -283,28 +283,38 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
     return true;
   }
 
-  num foodLineTaxPaise(Map<String, dynamic> line) {
-    final subtotal = expenseNumber(line['rate']) * finalQuantity(line);
-    final discount = line['discount_type'] == 'percent'
-        ? subtotal * expenseNumber(line['discount_value']) / 100
-        : expenseNumber(line['discount_value']);
-    return gstApplicable
-        ? (subtotal - discount).clamp(0, double.infinity) * 5
-        : 0;
+  int foodLineSubtotalPaise(Map<String, dynamic> line) =>
+      (previewNumber(line['rate']) *
+              finalQuantity(line).clamp(0, double.infinity) *
+              100)
+          .round();
+
+  num previewNumber(dynamic value) {
+    final number = expenseNumber(value);
+    return number.isFinite && number >= 0 ? number : 0;
   }
 
-  int foodPreviewPaise() {
-    num total = 0;
-    for (final line in lines) {
-      final subtotal = expenseNumber(line['rate']) * finalQuantity(line);
-      final discount = line['discount_type'] == 'percent'
-          ? subtotal * expenseNumber(line['discount_value']) / 100
-          : expenseNumber(line['discount_value']);
-      final taxable = (subtotal - discount).clamp(0, double.infinity);
-      total += taxable + (gstApplicable ? taxable * 5 / 100 : 0);
-    }
-    return (total * 100).round();
+  int foodLineDiscountPaise(Map<String, dynamic> line) {
+    final subtotal = foodLineSubtotalPaise(line);
+    return (line['discount_type'] == 'percent'
+            ? subtotal * previewNumber(line['discount_value']) / 100
+            : previewNumber(line['discount_value']) * 100)
+        .round()
+        .clamp(0, subtotal);
   }
+
+  int foodLineTaxPaise(Map<String, dynamic> line) {
+    final taxable = foodLineSubtotalPaise(line) - foodLineDiscountPaise(line);
+    return line['gst_applicable'] != false ? (taxable * 5 / 100).round() : 0;
+  }
+
+  int foodLineTotalPaise(Map<String, dynamic> line) =>
+      foodLineSubtotalPaise(line) -
+      foodLineDiscountPaise(line) +
+      foodLineTaxPaise(line);
+
+  int foodPreviewPaise() =>
+      lines.fold(0, (sum, line) => sum + foodLineTotalPaise(line));
 
   Future<void> foodLines() async {
     setState(() {
@@ -328,9 +338,12 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
           'discount_type',
           'discount_value',
           'adjustments',
+          'gst_applicable',
         ]) {
           if (previous?[key] != null) line[key] = previous![key];
         }
+        line['rate'] = previous?['rate'] ?? '';
+        line.putIfAbsent('gst_applicable', () => true);
         line.putIfAbsent(
           'weight_kg',
           () =>
@@ -455,52 +468,56 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
     );
   }
 
-  Widget dateInput(String label, String current, ValueChanged<String> change) =>
-      Padding(
-        padding: const EdgeInsets.only(bottom: 14),
-        child: InkWell(
-          key: ValueKey('expense-date:$label'),
-          borderRadius: BorderRadius.circular(12),
-          onTap: saving || loading
-              ? null
-              : () async {
-                  final today = DateTime.parse(expenseToday());
-                  final earliest = today.subtract(
-                    Duration(
-                      days: expenseNumber(c.meta['backdate_days'] ?? 7).toInt(),
-                    ),
-                  );
-                  final parsed = DateTime.tryParse(current) ?? today;
-                  final chosen = await showDatePicker(
-                    context: context,
-                    initialDate:
-                        parsed.isBefore(earliest) || parsed.isAfter(today)
-                        ? today
-                        : parsed,
-                    firstDate: earliest,
-                    lastDate: today,
-                  );
-                  if (chosen != null && mounted) {
-                    setState(() => change(expenseDay(chosen)));
-                  }
-                },
-          child: InputDecorator(
-            decoration: InputDecoration(
-              labelText: label,
-              prefixIcon: const Icon(Icons.calendar_today_outlined, size: 20),
-              suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded),
-            ),
-            child: Text(
-              current.isEmpty ? 'Select date' : current,
-              style: const TextStyle(
-                fontFamily: 'Roboto',
-                fontSize: 14,
-                color: ink,
-              ),
-            ),
+  Widget dateInput(
+    String label,
+    String current,
+    ValueChanged<String> change,
+  ) => Padding(
+    padding: const EdgeInsets.only(bottom: 14),
+    child: InkWell(
+      key: ValueKey('expense-date:$label'),
+      borderRadius: BorderRadius.circular(12),
+      onTap: saving || loading
+          ? null
+          : () async {
+              final today = DateTime.parse(expenseToday());
+              final earliest = today.subtract(
+                Duration(
+                  days: expenseNumber(c.meta['backdate_days'] ?? 7).toInt(),
+                ),
+              );
+              final parsed = DateTime.tryParse(current) ?? today;
+              final chosen = await showDatePicker(
+                context: context,
+                builder: (context, child) =>
+                    Theme(data: ExpenseDesign.theme(context), child: child!),
+                initialDate: parsed.isBefore(earliest) || parsed.isAfter(today)
+                    ? today
+                    : parsed,
+                firstDate: earliest,
+                lastDate: today,
+              );
+              if (chosen != null && mounted) {
+                setState(() => change(expenseDay(chosen)));
+              }
+            },
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: const Icon(Icons.calendar_today_outlined, size: 20),
+          suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded),
+        ),
+        child: Text(
+          current.isEmpty ? 'Select date' : current,
+          style: const TextStyle(
+            fontFamily: 'Roboto',
+            fontSize: 14,
+            color: ink,
           ),
         ),
-      );
+      ),
+    ),
+  );
   static const accent = Color(0xFFB42332);
   static const ink = Color(0xFF182230);
   static const muted = Color(0xFF667085);
@@ -782,7 +799,12 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
                           Expanded(
                             child: Text(
                               'Save a draft to attach bills, photos or PDFs.',
-                              style: Theme.of(context).textTheme.bodySmall,
+                              style: const TextStyle(
+                                fontFamily: 'Roboto',
+                                fontSize: 12,
+                                color: muted,
+                                height: 1.5,
+                              ),
                             ),
                           ),
                         ],
@@ -922,9 +944,23 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
             .where((e) => expenseId(e) == from)
             .firstOrNull?['name'];
         return [
-          ListTile(
-            title: const Text('From city'),
-            subtitle: Text('${fromName ?? from} (locked)'),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 14),
+            child: InputDecorator(
+              decoration: const InputDecoration(
+                labelText: 'From city',
+                suffixIcon: Icon(Icons.lock_outline_rounded, size: 18),
+              ),
+              child: Text(
+                '${fromName ?? from} (locked)',
+                style: const TextStyle(
+                  fontFamily: 'Roboto',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: muted,
+                ),
+              ),
+            ),
           ),
           dropdown(
             'To city',
@@ -1056,15 +1092,37 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
               child: ExpenseOrderInfo(order: selected, purchase: false),
             ),
           if (distance != null)
-            Material(
-              color: Colors.transparent,
-              child: ListTile(
-                title: Text(
-                  'Default distance: ${distance!['km'] == null ? 'Not available' : '${distance!['km']} km'}',
-                ),
-                subtitle: Text(
-                  '${distance!['message'] ?? distance!['source'] ?? ''}',
-                ),
+            Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8F9FC),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFEAECF0)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Default distance: ${distance!['km'] == null ? 'Not available' : '${distance!['km']} km'}',
+                    style: const TextStyle(
+                      fontFamily: 'Roboto',
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: ink,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${distance!['message'] ?? distance!['source'] ?? ''}',
+                    style: const TextStyle(
+                      fontFamily: 'Roboto',
+                      fontSize: 12,
+                      color: muted,
+                      height: 1.5,
+                    ),
+                  ),
+                ],
               ),
             ),
           text(
@@ -1075,12 +1133,16 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
           ),
           const Text(
             'Delivery amount is currently ₹0.00, as defined by the server.',
+            style: TextStyle(
+              fontFamily: 'Roboto',
+              fontSize: 12,
+              color: muted,
+              height: 1.5,
+            ),
           ),
         ];
       case 'FOOD_PURCHASE':
         return [
-          Text('Estimated total: ${expenseMoney(foodPreviewPaise())}'),
-          const Text('Final totals are calculated by the server.'),
           ExpenseOrderDropdown(
             orders: orders,
             currentExpenseId: currentExpense?.expense.id,
@@ -1155,6 +1217,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
           ],
           const SizedBox(height: 12),
           for (int i = 0; i < lines.length; i++) foodLine(i),
+          if (lines.isNotEmpty) foodSummary(),
         ];
       case 'CANCELLED_ORDER':
         return [
@@ -1254,120 +1317,298 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
       expenseNumber(line['order_quantity']) +
       expenseMaps(line['adjustments'])
           .fold<num>(0, (sum, e) => sum + expenseNumber(e['quantity']));
+  Widget foodSummary() => Container(
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: const Color(0xFFF8F9FC),
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(color: const Color(0xFFEAECF0)),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Row(
+          children: [
+            Icon(Icons.receipt_long_outlined, size: 18, color: accent),
+            SizedBox(width: 8),
+            Text(
+              'Purchase summary',
+              style: TextStyle(
+                fontFamily: 'Roboto',
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: ink,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        for (final entry in <String, int>{
+          'Subtotal': lines.fold<int>(
+            0,
+            (sum, line) => sum + foodLineSubtotalPaise(line),
+          ),
+          'Discount': lines.fold<int>(
+            0,
+            (sum, line) => sum + foodLineDiscountPaise(line),
+          ),
+          'GST': lines.fold<int>(
+            0,
+            (sum, line) => sum + foodLineTaxPaise(line),
+          ),
+        }.entries)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              '${entry.key}: ${expenseMoney(entry.value)}',
+              style: const TextStyle(
+                fontFamily: 'Roboto',
+                fontSize: 13,
+                color: muted,
+              ),
+            ),
+          ),
+        const Divider(height: 20),
+        Text(
+          'Grand total: ${expenseMoney(foodPreviewPaise())}',
+          style: const TextStyle(
+            fontFamily: 'Roboto',
+            fontSize: 17,
+            fontWeight: FontWeight.w700,
+            color: accent,
+          ),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'Final totals are calculated by the server.',
+          style: TextStyle(fontFamily: 'Roboto', fontSize: 11, color: muted),
+        ),
+      ],
+    ),
+  );
+
   Widget foodLine(int i) {
     final line = lines[i], path = 'details.items[$i]';
     final adjustments = expenseMaps(line['adjustments']);
     final finalQty = finalQuantity(line);
+    final moreErrors = serverErrors.keys.any(
+      (key) =>
+          key.startsWith('$path.adjustments') ||
+          key == '$path.weight_kg' ||
+          key.startsWith('$path.discount'),
+    );
     return Card(
+      key: ValueKey('food-line:${expenseId(line['product'])}'),
+      color: Colors.white,
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              '${line['product_name'] ?? expenseId(line['product'])}',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            Text('${expenseMap(line['vendor'])['name'] ?? ''}'),
-            Text(
-              expenseMaps(line['orders'])
-                  .map((o) => '${o['orderid']} × ${o['quantity']}')
-                  .join(', '),
-            ),
-            Text(
-              'Order quantity: ${line['order_quantity']} • Final quantity: $finalQty',
-            ),
-            for (final entry in serverErrors.entries.where(
-              (e) => e.key.startsWith('$path.adjustments['),
-            ))
-              Text(
-                entry.value,
-                style: const TextStyle(fontFamily: 'Roboto', color: Colors.red),
-              ),
-            if (serverErrors['$path.adjustments'] != null)
-              Text(
-                serverErrors['$path.adjustments']!,
-                style: const TextStyle(fontFamily: 'Roboto', color: Colors.red),
-              ),
-            for (int j = 0; j < adjustments.length; j++)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(
-                  '${adjustments[j]['quantity']} • ${adjustments[j]['note']}',
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 28,
+                  height: 28,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFDF0F1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '${i + 1}',
+                    style: const TextStyle(
+                      fontFamily: 'Roboto',
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: accent,
+                    ),
+                  ),
                 ),
-                subtitle: Text('${adjustments[j]['orderid'] ?? ''}'),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  onPressed: () => setState(() {
-                    adjustments.removeAt(j);
-                    line['adjustments'] = adjustments;
-                  }),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    '${line['product_name'] ?? expenseId(line['product'])}',
+                    style: const TextStyle(
+                      fontFamily: 'Roboto',
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: ink,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF2F4F7),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'Qty: $finalQty',
+                style: const TextStyle(
+                  fontFamily: 'Roboto',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: muted,
                 ),
               ),
-            if (adjustments.length < 20)
-              TextButton(
-                onPressed: () => addAdjustment(i),
-                child: const Text('Change quantity'),
-              ),
-            lineNumber(
-              line,
-              'rate',
-              'Rate per unit (₹)',
-              path,
-              required: finalQty > 0,
-              zero: finalQty == 0,
             ),
-            lineNumber(
-              line,
-              'weight_kg',
-              'Total weight (kg), optional',
-              path,
-              decimals: 3,
-              required: false,
-              zero: true,
-            ),
-            Text(
-              'Unit rate ${expenseMoney(expenseNumber(line['rate']) * 100)} x $finalQty = ${expenseMoney(expenseNumber(line['rate']) * finalQty * 100)}',
-              key: ValueKey('$path.product-cost'),
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<bool>(
-              key: ValueKey('$path.gst:$gstApplicable'),
-              initialValue: gstApplicable,
-              decoration: const InputDecoration(
-                labelText: 'GST (all products)',
-              ),
-              items: const [
-                DropdownMenuItem(value: true, child: Text('Yes (5%)')),
-                DropdownMenuItem(value: false, child: Text('No')),
+            const SizedBox(height: 18),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: lineNumber(
+                    line,
+                    'rate',
+                    'Price per item (\u20b9)',
+                    path,
+                    required: finalQty > 0,
+                    zero: finalQty == 0,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: DropdownButtonFormField<bool>(
+                    isExpanded: true,
+                    key: ValueKey('$path.gst:${line['gst_applicable']}'),
+                    initialValue: line['gst_applicable'] != false,
+                    decoration: InputDecoration(
+                      labelText: 'GST',
+                      errorText: serverErrors['$path.gst_applicable'],
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: true, child: Text('Yes (5%)')),
+                      DropdownMenuItem(value: false, child: Text('No')),
+                    ],
+                    onChanged: saving || loading
+                        ? null
+                        : (value) {
+                            if (value != null) {
+                              setState(() {
+                                line['gst_applicable'] = value;
+                                serverErrors.remove('$path.gst_applicable');
+                              });
+                            }
+                          },
+                  ),
+                ),
               ],
-              onChanged: saving || loading
-                  ? null
-                  : (value) {
-                      if (value != null) setState(() => gstApplicable = value);
-                    },
             ),
-            const SizedBox(height: 8),
-            Text('GST: ${expenseMoney(foodLineTaxPaise(line))}'),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              key: ValueKey('$path.discount:${line['discount_type']}'),
-              initialValue: '${line['discount_type'] ?? 'amount'}',
-              decoration: const InputDecoration(labelText: 'Discount type'),
-              items: const [
-                DropdownMenuItem(value: 'amount', child: Text('Amount (₹)')),
-                DropdownMenuItem(value: 'percent', child: Text('Percent (%)')),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFDF0F1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                'Total: ${expenseMoney(foodLineTotalPaise(line))}',
+                key: ValueKey('$path.product-cost'),
+                style: const TextStyle(
+                  fontFamily: 'Roboto',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: accent,
+                ),
+              ),
+            ),
+            ExpansionTile(
+              key: ValueKey('$path.more:$moreErrors'),
+              tilePadding: EdgeInsets.zero,
+              childrenPadding: const EdgeInsets.only(top: 10),
+              shape: const Border(),
+              collapsedShape: const Border(),
+              iconColor: muted,
+              collapsedIconColor: muted,
+              title: const Text(
+                'More',
+                style: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: muted,
+                ),
+              ),
+              initiallyExpanded: moreErrors,
+              maintainState: true,
+              children: [
+                Text(
+                  expenseMaps(line['orders'])
+                      .map((o) => '${o['orderid']} × ${o['quantity']}')
+                      .join(', '),
+                ),
+                for (final entry in serverErrors.entries.where(
+                  (e) => e.key.startsWith('$path.adjustments'),
+                ))
+                  Text(entry.value, style: const TextStyle(color: Colors.red)),
+                for (int j = 0; j < adjustments.length; j++)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
+                      '${adjustments[j]['quantity']} • ${adjustments[j]['note']}',
+                    ),
+                    subtitle: Text('${adjustments[j]['orderid'] ?? ''}'),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete_outline),
+                      onPressed: saving
+                          ? null
+                          : () => setState(() {
+                              adjustments.removeAt(j);
+                              line['adjustments'] = adjustments;
+                            }),
+                    ),
+                  ),
+                if (adjustments.length < 20)
+                  TextButton(
+                    onPressed: saving ? null : () => addAdjustment(i),
+                    child: const Text('Change quantity'),
+                  ),
+                lineNumber(
+                  line,
+                  'weight_kg',
+                  'Total weight (kg), optional',
+                  path,
+                  decimals: 3,
+                  required: false,
+                  zero: true,
+                ),
+                DropdownButtonFormField<String>(
+                  key: ValueKey('$path.discount:${line['discount_type']}'),
+                  initialValue: '${line['discount_type'] ?? 'amount'}',
+                  decoration: InputDecoration(
+                    labelText: 'Discount type',
+                    errorText: serverErrors['$path.discount_type'],
+                  ),
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'amount',
+                      child: Text('Amount (\u20b9)'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'percent',
+                      child: Text('Percent (%)'),
+                    ),
+                  ],
+                  onChanged: saving
+                      ? null
+                      : (v) => setState(() => line['discount_type'] = v),
+                ),
+                const SizedBox(height: 12),
+                lineNumber(
+                  line,
+                  'discount_value',
+                  'Discount (optional)',
+                  path,
+                  required: false,
+                  zero: true,
+                ),
               ],
-              onChanged: (v) => setState(() => line['discount_type'] = v),
-            ),
-            const SizedBox(height: 12),
-            lineNumber(
-              line,
-              'discount_value',
-              'Discount (optional)',
-              path,
-              required: false,
-              zero: true,
             ),
           ],
         ),
@@ -1386,8 +1627,10 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
     final accepted = await showDialog<bool>(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, set) => AlertDialog(
-          title: const Text('Change quantity'),
+        builder: (context, set) => ExpenseDialog(
+          title: 'Change quantity',
+          icon: Icons.tune_rounded,
+          onClose: () => Navigator.pop(context, false),
           content: SingleChildScrollView(
             child: Form(
               key: key,
@@ -1396,12 +1639,14 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
                 children: [
                   DropdownButtonFormField<bool>(
                     initialValue: true,
+                    decoration: const InputDecoration(labelText: 'Adjustment'),
                     items: const [
                       DropdownMenuItem(value: true, child: Text('Add')),
                       DropdownMenuItem(value: false, child: Text('Less')),
                     ],
                     onChanged: (v) => set(() => add = v ?? true),
                   ),
+                  const SizedBox(height: 16),
                   TextFormField(
                     controller: quantity,
                     decoration: const InputDecoration(labelText: 'Quantity'),
@@ -1416,12 +1661,14 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
                           : null;
                     },
                   ),
+                  const SizedBox(height: 16),
                   TextFormField(
                     controller: orderNumber,
                     decoration: const InputDecoration(
                       labelText: 'Order number (optional)',
                     ),
                   ),
+                  const SizedBox(height: 16),
                   TextFormField(
                     controller: note,
                     maxLength: 1000,
@@ -1437,11 +1684,11 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
             ),
           ),
           actions: [
-            TextButton(
+            OutlinedButton(
               onPressed: () => Navigator.pop(context, false),
               child: const Text('Cancel'),
             ),
-            TextButton(
+            FilledButton(
               onPressed: () {
                 if (key.currentState!.validate()) Navigator.pop(context, true);
               },
@@ -1487,9 +1734,31 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
           children: [
             Text(
               '${line['product_name'] ?? expenseId(line['product'])}',
-              style: Theme.of(context).textTheme.titleMedium,
+              style: const TextStyle(
+                fontFamily: 'Roboto',
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: ink,
+                height: 1.4,
+              ),
             ),
-            Text('Quantity: ${line['quantity']} • Left: $left'),
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF2F4F7),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                'Quantity: ${line['quantity']} • Left: $left',
+                style: const TextStyle(
+                  fontFamily: 'Roboto',
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: muted,
+                ),
+              ),
+            ),
             for (int j = 0; j < entries.length; j++)
               ListTile(
                 contentPadding: EdgeInsets.zero,
@@ -1591,7 +1860,10 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
       case 'FOOD_PURCHASE':
         final foodItems = <Map<String, dynamic>>[];
         for (final line in lines) {
-          final item = <String, dynamic>{'product': expenseId(line['product'])};
+          final item = <String, dynamic>{
+            'product': expenseId(line['product']),
+            'gst_applicable': line['gst_applicable'] != false,
+          };
           for (final key in [
             'rate',
             'weight_kg',
@@ -1615,8 +1887,6 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
         return {
           if (!editing || ordersChanged) 'orders': selectedOrders.toList(),
           'items': foodItems,
-          'gst_applicable': gstApplicable,
-          if (gstApplicable) 'gst_percent': '5',
         };
       case 'CANCELLED_ORDER':
         final items = <Map<String, dynamic>>[];

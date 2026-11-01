@@ -15,47 +15,61 @@ class AuthScreen extends StatelessWidget {
     AuthController authController = Get.find();
 
     return Scaffold(
-        body: Obx(
-      () => SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(40),
-              height: 350,
-              width: double.infinity,
-              child: Center(
-                child: getAssetImage(
-                  ImageConstants.appLogoCircle,
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Form(
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: Obx(
+              () => SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(20, 32, 20, 24),
                 child: Column(
                   children: [
-                    Text(
-                      'India\'s Most Trusted Intercity Food Delivery Application',
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleLarge!
-                          .copyWith(fontSize: 20, fontWeight: FontWeight.w800),
-                      textAlign: TextAlign.center,
+                    SizedBox(
+                      height: 180,
+                      child: Center(
+                        child: getAssetImage(
+                          ImageConstants.appLogoCircle,
+                          height: 150,
+                        ),
+                      ),
                     ),
-                    const SizedBox(
-                      height: 20,
+                    const SizedBox(height: 24),
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(color: const Color(0xFFEAECF0)),
+                      ),
+                      child: Form(
+                        child: Column(
+                          children: [
+                            Text(
+                              'India\'s Most Trusted Intercity Food Delivery Application',
+                              style: Theme.of(context).textTheme.titleLarge!
+                                  .copyWith(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w700,
+                                    height: 1.4,
+                                  ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 28),
+                            authController.isOTPSent.isFalse
+                                ? const EnterPhoneWidget()
+                                : const EnterOtpWidget(),
+                          ],
+                        ),
+                      ),
                     ),
-                    authController.isOTPSent.isFalse
-                        ? const EnterPhoneWidget()
-                        : const EnterOtpWidget()
                   ],
                 ),
               ),
             ),
-          ],
+          ),
         ),
       ),
-    ));
+    );
   }
 }

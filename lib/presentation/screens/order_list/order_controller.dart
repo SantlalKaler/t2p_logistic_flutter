@@ -1,3 +1,4 @@
+import '../duty/duty_controller.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
@@ -1035,6 +1036,7 @@ class OrderController extends GetxController {
           response?.data[StringConstants.message], CustomSnackBar.error);
       if (response != null &&
           response.data[StringConstants.status] == Status.success.name) {
+        await Get.find<DutyController>().delivered(orderToBeAssign.last);
         clearList(t2pOrderType, orderType);
         getOrders();
       }
@@ -1249,6 +1251,7 @@ class OrderController extends GetxController {
 
       if (response != null &&
           response.data[StringConstants.status] == Status.success.name) {
+        await Get.find<DutyController>().delivered('${data['id']}');
         // update delivery boy distance of delivery order only
         if (orderType == OrderType.deliver) {
           userController.clearOrderInfo();
@@ -1282,6 +1285,7 @@ class OrderController extends GetxController {
 
       if (response != null &&
           response.data[StringConstants.status] == Status.success.name) {
+        await Get.find<DutyController>().delivered('${data['id']}');
         clearList(t2pOrderType, orderType);
         getOrders();
       }

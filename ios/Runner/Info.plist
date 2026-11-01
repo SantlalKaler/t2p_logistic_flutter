@@ -26,7 +26,13 @@
 	<string>Take photos of expense bills and receipts.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Attach bill and receipt photos to expenses.</string>
-	<key>LSRequiresIPhoneOS</key>
+	<key>NSLocationWhenInUseUsageDescription</key>
+    <string>T2P uses your location during duty to record your route and duty kilometres.</string>
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>T2P records your route while duty is on, including with the screen locked or the app in the background.</string>
+    <key>UIBackgroundModes</key>
+    <array><string>location</string></array>
+    <key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>

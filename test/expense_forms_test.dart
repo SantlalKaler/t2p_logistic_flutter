@@ -17,6 +17,7 @@ import 'package:t2p_logistic/presentation/screens/expense_management/components/
 class RecordingExpenseController extends ExpenseController {
   Map<String, dynamic>? saved;
   List<Map<String, dynamic>> lookupOrders = [];
+  List<Map<String, dynamic>> purchaseLines = [];
   String? openedId;
   @override
   Future<List<Map<String, dynamic>>> lookup(
@@ -27,7 +28,9 @@ class RecordingExpenseController extends ExpenseController {
   Future<Map<String, dynamic>> lookupData(
     String name, {
     Map<String, dynamic>? query,
-  }) async => {'km': null, 'message': 'Not available'};
+  }) async => name == 'food-purchase-lines'
+      ? {'lines': purchaseLines}
+      : {'km': null, 'message': 'Not available'};
   @override
   Future<ExpenseDetail> getDetail(String id) async {
     openedId = id;
@@ -323,6 +326,7 @@ void main() {
             'product': 'product-1',
             'product_name': 'Biryani',
             'rate': null,
+            'gst_rate_bp': 500,
             'order_quantity': 2,
           },
         ],
@@ -331,8 +335,9 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('expense-save-draft')));
       await tester.pumpAndSettle();
       final details = expenseMap(c.saved?['details']);
-      expect(details['gst_applicable'], true);
-      expect(details['gst_percent'], '5');
+      expect(details.containsKey('gst_applicable'), false);
+      expect(details.containsKey('gst_percent'), false);
+      expect(expenseMaps(details['items']).single['gst_applicable'], true);
       expect(expenseMaps(details['items']).single.containsKey('rate'), false);
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.binding.setSurfaceSize(null);
@@ -352,15 +357,13 @@ void main() {
           'product': 'product-1',
           'product_name': 'Biryani',
           'rate': 10000,
+          'gst_rate_bp': 500,
           'order_quantity': 2,
         },
       ],
     });
-    expect(find.text('Estimated total: \u20b9210.00'), findsOneWidget);
-    expect(
-      find.text('Unit rate \u20b9100.00 x 2 = \u20b9200.00'),
-      findsOneWidget,
-    );
+    expect(find.text('Grand total: \u20b9210.00'), findsOneWidget);
+    expect(find.text('Total: \u20b9210.00'), findsOneWidget);
     final gst = find.byType(DropdownButtonFormField<bool>);
     await tester.ensureVisible(gst);
     await tester.pumpAndSettle();
@@ -368,13 +371,119 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('No').last);
     await tester.pumpAndSettle();
-    expect(find.text('Estimated total: \u20b9200.00'), findsOneWidget);
+    expect(find.text('Grand total: \u20b9200.00'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('expense-save-draft')));
     await tester.pumpAndSettle();
-    expect(expenseMap(c.saved?['details'])['gst_applicable'], false);
+    expect(
+      expenseMaps(expenseMap(c.saved?['details'])['items'])
+          .single['gst_applicable'],
+      false,
+    );
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.binding.setSurfaceSize(null);
   });
+
+  testWidgets('saved mixed GST stays independent when prices and GST change', (
+    tester,
+  ) async {
+    final c = await recordSaves();
+    await open(tester, 'FOOD_PURCHASE', {
+      'orders': ['order-1'],
+      // Purchase summaries must never override the individual products.
+      'gst_applicable': false,
+      'gst_rate_bp': 0,
+      'items': [
+        {
+          'product': 'p1',
+          'product_name': 'Biryani',
+          'rate': 10000,
+          'order_quantity': 5,
+          'gst_rate_bp': 500,
+        },
+        {
+          'product': 'p2',
+          'product_name': 'Chaap',
+          'rate': 10000,
+          'order_quantity': 1,
+          'gst_rate_bp': 0,
+        },
+        {
+          'product': 'p3',
+          'product_name': 'Rasgulla',
+          'rate': 10000,
+          'order_quantity': 2,
+          'gst_rate_bp': 500,
+        },
+      ],
+    });
+    expect(find.text('Grand total: \u20b9835.00'), findsOneWidget);
+    final chaap = find.byKey(const ValueKey('food-line:p2'));
+    final price = find
+        .descendant(of: chaap, matching: find.byType(TextFormField))
+        .first;
+    await tester.ensureVisible(price);
+    await tester.enterText(price, '200');
+    tester.testTextInput.hide();
+    await tester.pumpAndSettle();
+    expect(find.text('Grand total: \u20b9935.00'), findsOneWidget);
+    final biryani = find.byKey(const ValueKey('food-line:p1'));
+    final gst = find.descendant(
+      of: biryani,
+      matching: find.byType(DropdownButtonFormField<bool>),
+    );
+    await tester.ensureVisible(gst);
+    await tester.pumpAndSettle();
+    await tester.tap(gst);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('No').last);
+    await tester.pumpAndSettle();
+    expect(find.text('Grand total: \u20b9910.00'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('expense-save-draft')));
+    await tester.pumpAndSettle();
+    final items = expenseMaps(expenseMap(c.saved?['details'])['items']);
+    expect(items.map((e) => e['gst_applicable']), [false, false, true]);
+    expect(items[1]['rate'], '200');
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.binding.setSurfaceSize(null);
+  });
+
+  testWidgets(
+    'fresh purchase lines keep server order, blank prices and default GST',
+    (tester) async {
+      final c = await recordSaves();
+      c.purchaseLines = [
+        {
+          'product': 'z',
+          'product_name': 'Z product',
+          'order_quantity': 1,
+          'rate': 99999,
+        },
+        {
+          'product': 'a',
+          'product_name': 'A product',
+          'order_quantity': 2,
+          'rate': 99999,
+        },
+      ];
+      await open(tester, 'FOOD_PURCHASE', {
+        'orders': ['order-1'],
+        'items': [],
+      });
+      await tester.ensureVisible(find.text('Refresh product lines'));
+      await tester.tap(find.text('Refresh product lines'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('expense-save-draft')));
+      await tester.pumpAndSettle();
+      final items = expenseMaps(expenseMap(c.saved?['details'])['items']);
+      expect(items.map((e) => e['product']), ['z', 'a']);
+      expect(items.every((e) => !e.containsKey('rate')), true);
+      expect(items.every((e) => e['gst_applicable'] == true), true);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.binding.setSurfaceSize(null);
+    },
+  );
 
   testWidgets('Delivery opens the expense for the side the user chooses', (
     tester,

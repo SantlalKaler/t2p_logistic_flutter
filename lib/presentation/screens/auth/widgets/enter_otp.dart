@@ -17,36 +17,36 @@ class EnterOtpWidget extends StatelessWidget {
     AuthController authController = Get.find();
     SettingsController redirectionsController = Get.find();
 
-    return Obx(() => Column(
-          children: [
-            titleDividerSmall(context, 'Enter OTP'),
-            const SizedBox(
-              height: 20,
-            ),
-            Text(
-              'We have sent a verification code to'.toUpperCase(),
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(
-              height: 4,
-            ),
-            Text(
-              '+91-${authController.phoneTextController.value.text}',
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-            const SizedBox(
-              height: 16,
-            ),
-            OtpTextField(
-              fieldWidth: 45,
-
+    return Obx(
+      () => Column(
+        children: [
+          titleDividerSmall(context, 'Enter OTP'),
+          const SizedBox(height: 20),
+          Text(
+            'We have sent a verification code to'.toUpperCase(),
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '+91-${authController.phoneTextController.value.text}',
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          const SizedBox(height: 16),
+          LayoutBuilder(
+            builder: (context, constraints) => OtpTextField(
+              fieldWidth: (constraints.maxWidth / 6 - 6)
+                  .clamp(20, 45)
+                  .toDouble(),
+              margin: const EdgeInsets.symmetric(horizontal: 3),
+              contentPadding: const EdgeInsets.symmetric(vertical: 14),
               numberOfFields: 6,
               filled: true,
-              enabledBorderColor:
-                  Theme.of(context).primaryColor.withOpacity(0.1),
+              enabledBorderColor: Theme.of(context).primaryColor
+                  .withOpacity(0.1),
               fillColor: Theme.of(context).primaryColor.withOpacity(0.1),
-              focusedBorderColor:
-                  Theme.of(context).primaryColor.withOpacity(0.5),
+              focusedBorderColor: Theme.of(context).primaryColor
+                  .withOpacity(0.5),
               //set to true to show as box or false to show as dash
               showFieldAsBox: true,
               //runs when a code is typed in
@@ -58,45 +58,49 @@ class EnterOtpWidget extends StatelessWidget {
                 authController.otpTextController.value = verificationCode;
               }, // end onSubmit
             ),
-            const SizedBox(
-              height: 8,
-            ),
-            authController.isResendOTP.isFalse
-                ? Countdown(
-                    seconds: 30,
-                    build: (BuildContext context, double time) =>
-                        Text('Resend or Edit in ${time.toStringAsFixed(0)}'),
-                    interval: const Duration(milliseconds: 100),
-                    onFinished: () {
-                      authController.isResendOTP.value = true;
-                    },
-                  )
-                : InkWell(
-                    onTap: () {
-                      authController.isOTPSent.value = false;
-                    },
-                    child: Text(
-                      'Resend or Edit?',
-                      style: TextStyle(
-                          color: Theme.of(context).primaryColor, fontSize: 13),
-                    )),
-            const SizedBox(
-              height: 20,
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (authController.otpTextController.value.length < 6) {
-                  CustomSnackBar.showSnackBar(CustomSnackBar.error,
-                      "Enter Valid OTP", CustomSnackBar.error);
-                } else {
-                  authController.verifyOtp();
-                }
-              },
-              child: authController.isLoading.isTrue
-                  ? circularloadingWhiteSmall()
-                  : const Text('Verify'),
-            ),
-          ],
-        ));
+          ),
+          const SizedBox(height: 8),
+          authController.isResendOTP.isFalse
+              ? Countdown(
+                  seconds: 30,
+                  build: (BuildContext context, double time) =>
+                      Text('Resend or Edit in ${time.toStringAsFixed(0)}'),
+                  interval: const Duration(milliseconds: 100),
+                  onFinished: () {
+                    authController.isResendOTP.value = true;
+                  },
+                )
+              : InkWell(
+                  onTap: () {
+                    authController.isOTPSent.value = false;
+                  },
+                  child: Text(
+                    'Resend or Edit?',
+                    style: TextStyle(
+                      color: Theme.of(context).primaryColor,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: () async {
+              if (authController.otpTextController.value.length < 6) {
+                CustomSnackBar.showSnackBar(
+                  CustomSnackBar.error,
+                  "Enter Valid OTP",
+                  CustomSnackBar.error,
+                );
+              } else {
+                authController.verifyOtp();
+              }
+            },
+            child: authController.isLoading.isTrue
+                ? circularloadingWhiteSmall()
+                : const Text('Verify'),
+          ),
+        ],
+      ),
+    );
   }
 }

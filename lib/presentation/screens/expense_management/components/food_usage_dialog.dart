@@ -51,6 +51,8 @@ class _FoodUsageDialogState extends State<FoodUsageDialog> {
     final today = DateTime.parse(expenseToday());
     final chosen = await showDatePicker(
       context: context,
+      builder: (context, child) =>
+          Theme(data: ExpenseDesign.theme(context), child: child!),
       initialDate: DateTime.parse(day),
       firstDate: today.subtract(Duration(days: widget.backdateDays)),
       lastDate: today,

@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:t2p_logistic/presentation/theme/resource/dimens.dart';
 
-dateChooser(
-  BuildContext context,
-) {
+dateChooser(BuildContext context) {
   return Container(
     color: Theme.of(context).primaryColor,
     padding: EdgeInsets.all(DimensConstants.cardInnerPadding),
@@ -20,7 +18,7 @@ dateChooser(
           children: [
             datePickerView("Start Date"),
             Gap(DimensConstants.spaceBetweenViewsAndSubViews),
-            datePickerView("End Date")
+            datePickerView("End Date"),
           ],
         ),
         Gap(DimensConstants.spaceBetweenViews),
@@ -33,7 +31,7 @@ dateChooser(
             "Submit",
             style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
           ),
-        )
+        ),
       ],
     ),
   );
@@ -42,7 +40,11 @@ dateChooser(
 datePickerView(String text, {bool showIcon = true}) {
   return Expanded(
     child: Container(
-      color: Colors.white,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F9FC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFEAECF0)),
+      ),
       padding: EdgeInsets.all(DimensConstants.cardInnerPadding),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -51,13 +53,20 @@ datePickerView(String text, {bool showIcon = true}) {
           if (showIcon)
             const Icon(
               Icons.calendar_month,
-              color: Colors.red,
+              color: Color(0xFFB42332),
+              size: 18,
             ),
           Gap(DimensConstants.spaceBetweenViews),
-          Text(
-            text,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          )
+          Flexible(
+            child: Text(
+              text,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF182230),
+              ),
+            ),
+          ),
         ],
       ),
     ),

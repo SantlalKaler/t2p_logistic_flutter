@@ -3,27 +3,15 @@ import 'package:flutter/material.dart';
 Widget titleDividerSmall(BuildContext context, String title) {
   return Row(
     children: [
-      Expanded(
-          child: Divider(
-        color: Colors.grey.shade500,
-      )),
-      const SizedBox(
-        width: 12,
-      ),
+      Expanded(child: Divider(color: const Color(0xFFE4E7EC))),
+      const SizedBox(width: 12),
       Text(
         title,
-        style: Theme.of(context).textTheme.titleMedium!.copyWith(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
+        style: Theme.of(context).textTheme.titleMedium!
+            .copyWith(fontSize: 13, fontWeight: FontWeight.w600),
       ),
-      const SizedBox(
-        width: 12,
-      ),
-      Expanded(
-          child: Divider(
-        color: Colors.grey.shade500,
-      )),
+      const SizedBox(width: 12),
+      Expanded(child: Divider(color: const Color(0xFFE4E7EC))),
     ],
   );
 }
@@ -31,39 +19,28 @@ Widget titleDividerSmall(BuildContext context, String title) {
 Widget titleDividerMedium(BuildContext context, String title) {
   return Row(
     children: [
-      Expanded(
-          child: Divider(
-        color: Colors.grey.shade500,
-      )),
-      const SizedBox(
-        width: 12,
-      ),
-      Text(
-        title,
-        style: Theme.of(context).textTheme.titleLarge,
-      ),
-      const SizedBox(
-        width: 12,
-      ),
-      Expanded(
-          child: Divider(
-        color: Colors.grey.shade500,
-      )),
+      Expanded(child: Divider(color: const Color(0xFFE4E7EC))),
+      const SizedBox(width: 12),
+      Text(title, style: Theme.of(context).textTheme.titleLarge),
+      const SizedBox(width: 12),
+      Expanded(child: Divider(color: const Color(0xFFE4E7EC))),
     ],
   );
 }
 
 Widget titleDividerUppercase(
-    BuildContext context, String title, bool isInverted) {
+  BuildContext context,
+  String title,
+  bool isInverted,
+) {
   return Row(
     children: [
       Expanded(
-          child: Divider(
-        color: isInverted ? Colors.white : Colors.grey.shade500,
-      )),
-      const SizedBox(
-        width: 12,
+        child: Divider(
+          color: isInverted ? Colors.white : const Color(0xFFE4E7EC),
+        ),
       ),
+      const SizedBox(width: 12),
       Text(
         title.toUpperCase(),
         style: isInverted
@@ -71,32 +48,37 @@ Widget titleDividerUppercase(
                 fontSize: 12,
                 letterSpacing: 1,
                 fontWeight: FontWeight.w800,
-                color: Colors.grey.shade50)
+                color: Colors.grey.shade50,
+              )
             : Theme.of(context).textTheme.titleLarge!.copyWith(
-                fontSize: 12, letterSpacing: 1, fontWeight: FontWeight.w800),
+                fontSize: 12,
+                letterSpacing: 1,
+                fontWeight: FontWeight.w800,
+              ),
       ),
-      const SizedBox(
-        width: 12,
-      ),
+      const SizedBox(width: 12),
       Expanded(
-          child: Divider(
-        color: isInverted ? Colors.white : Colors.grey.shade500,
-      )),
+        child: Divider(
+          color: isInverted ? Colors.white : const Color(0xFFE4E7EC),
+        ),
+      ),
     ],
   );
 }
 
 Widget titleDividerUppercaseRed(
-    BuildContext context, String title, bool isInverted) {
+  BuildContext context,
+  String title,
+  bool isInverted,
+) {
   return Row(
     children: [
       Expanded(
-          child: Divider(
-        color: isInverted ? Colors.white : Theme.of(context).primaryColor,
-      )),
-      const SizedBox(
-        width: 12,
+        child: Divider(
+          color: isInverted ? Colors.white : Theme.of(context).primaryColor,
+        ),
       ),
+      const SizedBox(width: 12),
       Text(
         title.toUpperCase(),
         style: isInverted
@@ -104,20 +86,21 @@ Widget titleDividerUppercaseRed(
                 fontSize: 12,
                 letterSpacing: 1,
                 fontWeight: FontWeight.w800,
-                color: Colors.grey.shade50)
+                color: Colors.grey.shade50,
+              )
             : Theme.of(context).textTheme.titleLarge!.copyWith(
                 color: Theme.of(context).primaryColor,
                 fontSize: 12,
                 letterSpacing: 1,
-                fontWeight: FontWeight.w800),
+                fontWeight: FontWeight.w800,
+              ),
       ),
-      const SizedBox(
-        width: 12,
-      ),
+      const SizedBox(width: 12),
       Expanded(
-          child: Divider(
-        color: isInverted ? Colors.white : Theme.of(context).primaryColor,
-      )),
+        child: Divider(
+          color: isInverted ? Colors.white : Theme.of(context).primaryColor,
+        ),
+      ),
     ],
   );
 }
@@ -132,10 +115,11 @@ Widget homeTitleBg(BuildContext context, String title) {
     child: Text(
       title.toUpperCase(),
       style: Theme.of(context).textTheme.titleLarge!.copyWith(
-          color: Colors.blueGrey.shade50,
-          fontSize: 12,
-          letterSpacing: 1,
-          fontWeight: FontWeight.w800),
+        color: Colors.blueGrey.shade50,
+        fontSize: 12,
+        letterSpacing: 1,
+        fontWeight: FontWeight.w800,
+      ),
     ),
   );
 }

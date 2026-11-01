@@ -1,40 +1,48 @@
 import 'package:flutter/material.dart';
-import 'package:gap/gap.dart';
-import 'package:t2p_logistic/presentation/theme/resource/dimens.dart';
 
-class AppEmptyView extends StatefulWidget {
+import '../theme/app_design.dart';
+
+class AppEmptyView extends StatelessWidget {
   final String? message;
 
   const AppEmptyView({super.key, this.message});
 
   @override
-  State<AppEmptyView> createState() => _AppEmptyViewState();
-}
-
-class _AppEmptyViewState extends State<AppEmptyView> {
-  @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.hourglass_empty,
-              color: Theme.of(context).primaryColor,
-            ),
-            Gap(DimensConstants.spaceBetweenViews),
-            Text(
-              widget.message ?? "",
-              style: const TextStyle(fontSize: 16),
-            )
-          ],
-        ))
-      ],
+    return Center(
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFDF0F1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Icon(
+                  Icons.inbox_outlined,
+                  size: 28,
+                  color: AppDesign.accent,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                message ?? '',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: AppDesign.muted,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

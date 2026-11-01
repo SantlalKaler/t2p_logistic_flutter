@@ -1,7 +1,5 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 
-class ColorConstants{
-  static Color screenBackgroundColor = Colors.grey.shade200;
+class ColorConstants {
+  static Color screenBackgroundColor = const Color(0xFFF5F6FA);
 }

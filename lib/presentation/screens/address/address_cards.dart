@@ -8,8 +8,12 @@ import 'package:t2p_logistic/presentation/theme/resource/dimens.dart';
 
 import 'address_controller.dart';
 
-Widget addressCard(BuildContext context, Address address,
-    {bool? showEditDeleteActions, bool showDefaultMark = true}) {
+Widget addressCard(
+  BuildContext context,
+  Address address, {
+  bool? showEditDeleteActions,
+  bool showDefaultMark = true,
+}) {
   return Card(
     margin: EdgeInsets.symmetric(horizontal: DimensConstants.screePadding)
         .copyWith(top: DimensConstants.screePadding),
@@ -26,63 +30,56 @@ Widget addressCard(BuildContext context, Address address,
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    address.contactName ?? '',
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall!
-                        .copyWith(fontSize: 16),
+                  Expanded(
+                    child: Text(
+                      address.contactName ?? '',
+                      style: Theme.of(context).textTheme.titleSmall!
+                          .copyWith(fontSize: 16, fontWeight: FontWeight.w700),
+                    ),
                   ),
+                  const SizedBox(width: 8),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(vertical: 5, horizontal: 12),
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 5,
+                      horizontal: 12,
+                    ),
                     decoration: BoxDecoration(
-                        border: Border.all(color: Colors.blueGrey.shade300),
-                        borderRadius: BorderRadius.circular(5)),
+                      border: Border.all(color: const Color(0xFFE4E7EC)),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                     child: Text(
                       '${address.title}'.toUpperCase(),
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodySmall!
+                      style: Theme.of(context).textTheme.bodySmall!
                           .copyWith(fontSize: 14, fontWeight: FontWeight.w500),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(
-                height: 10,
-              ),
+              const SizedBox(height: 10),
               Text(
                 address.address ?? '',
-                style: Theme.of(context)
-                    .textTheme
-                    .bodySmall!
+                style: Theme.of(context).textTheme.bodySmall!
                     .copyWith(fontSize: 14),
               ),
               Text(
                 address.address2 ?? '',
-                style: Theme.of(context)
-                    .textTheme
-                    .bodySmall!
+                style: Theme.of(context).textTheme.bodySmall!
                     .copyWith(fontSize: 14),
               ),
               Text(
                 address.state!.name ?? "",
-                style: Theme.of(context)
-                    .textTheme
-                    .bodySmall!
+                style: Theme.of(context).textTheme.bodySmall!
                     .copyWith(fontSize: 14),
               ),
               Text(
                 address.city!.name ?? "",
-                style: Theme.of(context)
-                    .textTheme
-                    .bodySmall!
+                style: Theme.of(context).textTheme.bodySmall!
                     .copyWith(fontSize: 14),
               ),
               const Gap(10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Wrap(
+                spacing: 16,
+                runSpacing: 10,
                 children: [
                   iconTile(Icons.location_on, address.pincode ?? ''),
                   iconTile(Icons.phone, '+91-${address.contactMobile}'),
@@ -93,24 +90,31 @@ Widget addressCard(BuildContext context, Address address,
                   ? Row(
                       children: [
                         Expanded(
-                            child: OutlinedButton(
-                                onPressed: () {
-                                  Get.to(AddEditAddress(
-                                      address: address,
-                                      isEdit: true,
-                                      redirectToHome: false));
-                                },
-                                child: const Text('Edit'))),
+                          child: OutlinedButton(
+                            onPressed: () {
+                              Get.to(
+                                AddEditAddress(
+                                  address: address,
+                                  isEdit: true,
+                                  redirectToHome: false,
+                                ),
+                              );
+                            },
+                            child: const Text('Edit'),
+                          ),
+                        ),
                         const Gap(10),
                         Expanded(
-                            child: OutlinedButton(
-                                onPressed: () {
-                                  _showDeleteActionSheet(context, address.id);
-                                },
-                                child: const Text('Delete')))
+                          child: OutlinedButton(
+                            onPressed: () {
+                              _showDeleteActionSheet(context, address.id);
+                            },
+                            child: const Text('Delete'),
+                          ),
+                        ),
                       ],
                     )
-                  : const SizedBox.shrink()
+                  : const SizedBox.shrink(),
             ],
           ),
         ),
@@ -121,16 +125,11 @@ Widget addressCard(BuildContext context, Address address,
 
 Widget iconTile(IconData icon, String title) {
   return Row(
+    mainAxisSize: MainAxisSize.min,
     children: [
-      Icon(
-        icon,
-        size: 18,
-        color: Colors.blueGrey,
-      ),
+      Icon(icon, size: 18, color: Colors.blueGrey),
       const Gap(5),
-      Text(
-        title,
-      )
+      Text(title),
     ],
   );
 }
@@ -155,10 +154,7 @@ void _showDeleteActionSheet(BuildContext context, addressId) {
           onPressed: () {
             Navigator.pop(context);
           },
-          child: const Text(
-            'Cancel',
-            style: TextStyle(color: Colors.blueGrey),
-          ),
+          child: const Text('Cancel', style: TextStyle(color: Colors.blueGrey)),
         ),
       ],
     ),

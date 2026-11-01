@@ -27,89 +27,99 @@ class _ChipListState extends State<ChipList> {
   @override
   Widget build(BuildContext context) {
     return GetBuilder(
-        init: OrderController(),
-        builder: (controller) {
-          return Container(
-            width: double.infinity,
-            color: ColorConstants.screenBackgroundColor,
-            child: ListView.separated(
-                shrinkWrap: true,
-                scrollDirection: Axis.horizontal,
-                itemBuilder: (context, index) {
-                  var item = controller.getChipList()[index];
-                  return Chip(
-                      backgroundColor: Colors.white,
-                      //  elevation: 1,
-                      deleteIcon: const Icon(
-                        Icons.arrow_drop_down,
-                        color: Colors.red,
-                      ),
-                      onDeleted: () {
-                        switch (item.id) {
-                          case FilterItemId.orderType:
-                            showT2POrderTypes();
-                            break;
-                          case FilterItemId.dateRange:
-                          // TODO: Handle this case.
-                          case FilterItemId.pickupBoy:
-                          // TODO: Handle this case.
-                          case FilterItemId.print:
-                            showPrintView();
-                            break;
-                          case FilterItemId.city:
-                            showCities();
-                            break;
-                          case FilterItemId.status:
-                            if (controller.anyOrderSelected()) {
-                              showStatus();
-                            } else {
-                              CustomSnackBar.showSnackBar(CustomSnackBar.error,
-                                  "Select Order", CustomSnackBar.error);
-                            }
-                            break;
-                          case FilterItemId.lpManager:
-                            /*here user type I use to determine, by which type
+      init: OrderController(),
+      builder: (controller) {
+        return Container(
+          width: double.infinity,
+          color: ColorConstants.screenBackgroundColor,
+          child: ListView.separated(
+            shrinkWrap: true,
+            scrollDirection: Axis.horizontal,
+            itemBuilder: (context, index) {
+              var item = controller.getChipList()[index];
+              return Chip(
+                backgroundColor: Colors.white,
+                //  elevation: 1,
+                deleteIcon: const Icon(
+                  Icons.arrow_drop_down,
+                  color: Color(0xFFB42332),
+                ),
+                onDeleted: () {
+                  switch (item.id) {
+                    case FilterItemId.orderType:
+                      showT2POrderTypes();
+                      break;
+                    case FilterItemId.dateRange:
+                    // TODO: Handle this case.
+                    case FilterItemId.pickupBoy:
+                    // TODO: Handle this case.
+                    case FilterItemId.print:
+                      showPrintView();
+                      break;
+                    case FilterItemId.city:
+                      showCities();
+                      break;
+                    case FilterItemId.status:
+                      if (controller.anyOrderSelected()) {
+                        showStatus();
+                      } else {
+                        CustomSnackBar.showSnackBar(
+                          CustomSnackBar.error,
+                          "Select Order",
+                          CustomSnackBar.error,
+                        );
+                      }
+                      break;
+                    case FilterItemId.lpManager:
+                      /*here user type I use to determine, by which type
                           need to filter order list
                           by lp manager or delivery partner*/
-                            showManagerOrPartnerList(
-                                deliveryBoyController.managerList
-                                    .map((element) => element?.fullName ?? "")
-                                    .toList(),
-                                UserType.lp_manager);
+                      showManagerOrPartnerList(
+                        deliveryBoyController.managerList
+                            .map((element) => element?.fullName ?? "")
+                            .toList(),
+                        UserType.lp_manager,
+                      );
 
-                          case FilterItemId.deliveryPartner:
-                            // if user type is lp head then if he want to filter order list
-                            // according to delivery partner then he need to first select manager
-                            // then he can get delivery partner list of that manger
-                            if (userController.userType ==
-                                    UserType.lp_head.name &&
-                                controller.selectedManager == null) {
-                              CustomSnackBar.showSnackBar(
-                                  "", "Please select lp manager first", "");
-                            } else {
-                              showManagerOrPartnerList(
-                                  deliveryBoyController.partnerList
-                                      .map((element) => element.fullName!)
-                                      .toList(),
-                                  UserType.delivery_partner);
-                            }
-                          case FilterItemId.startDate:
-                          // TODO: Handle this case.
-                          case FilterItemId.endDate:
-                          // TODO: Handle this case.
-                        }
-                      },
-                      //avatar: Icon(item.icon),
-                      label: Text(item.title));
+                    case FilterItemId.deliveryPartner:
+                      // if user type is lp head then if he want to filter order list
+                      // according to delivery partner then he need to first select manager
+                      // then he can get delivery partner list of that manger
+                      if (userController.userType == UserType.lp_head.name &&
+                          controller.selectedManager == null) {
+                        CustomSnackBar.showSnackBar(
+                          "",
+                          "Please select lp manager first",
+                          "",
+                        );
+                      } else {
+                        showManagerOrPartnerList(
+                          deliveryBoyController.partnerList
+                              .map((element) => element.fullName!)
+                              .toList(),
+                          UserType.delivery_partner,
+                        );
+                      }
+                    case FilterItemId.startDate:
+                    // TODO: Handle this case.
+                    case FilterItemId.endDate:
+                    // TODO: Handle this case.
+                  }
                 },
-                separatorBuilder: (context, index) {
-                  return SizedBox(
-                    width: DimensConstants.spaceBetweenViewsAndSubViews,
-                  );
-                },
-                itemCount: controller.getChipList().length),
-          );
-        });
+                //avatar: Icon(item.icon),
+                label: Text(item.title),
+              );
+            },
+            separatorBuilder: (context, index) {
+              return SizedBox(
+                width: DimensConstants.spaceBetweenViewsAndSubViews,
+              );
+            },
+            itemCount: controller.getChipList().length,
+          ),
+        );
+      },
+    );
   }
 
   showT2POrderTypes() {
@@ -122,29 +132,27 @@ class _ChipListState extends State<ChipList> {
           child: Column(
             children: [
               RadioListTile(
-                  value: T2POrderType.T2P.name,
-                  title: Text(
-                    T2POrderType.T2P.name,
-                  ),
-                  groupValue: controller.t2pOrderType.name,
-                  onChanged: (v) {
-                    if (v != null) {
-                      controller.changeT2POrderType(T2POrderType.T2P);
-                    }
-                    Get.back();
-                  }),
+                value: T2POrderType.T2P.name,
+                title: Text(T2POrderType.T2P.name),
+                groupValue: controller.t2pOrderType.name,
+                onChanged: (v) {
+                  if (v != null) {
+                    controller.changeT2POrderType(T2POrderType.T2P);
+                  }
+                  Get.back();
+                },
+              ),
               RadioListTile(
-                  value: T2POrderType.AF2AP.name,
-                  title: Text(
-                    T2POrderType.AF2AP.name,
-                  ),
-                  groupValue: controller.t2pOrderType.name,
-                  onChanged: (v) {
-                    if (v != null) {
-                      controller.changeT2POrderType(T2POrderType.AF2AP);
-                    }
-                    Get.back();
-                  })
+                value: T2POrderType.AF2AP.name,
+                title: Text(T2POrderType.AF2AP.name),
+                groupValue: controller.t2pOrderType.name,
+                onChanged: (v) {
+                  if (v != null) {
+                    controller.changeT2POrderType(T2POrderType.AF2AP);
+                  }
+                  Get.back();
+                },
+              ),
             ],
           ),
         );
@@ -161,24 +169,24 @@ class _ChipListState extends State<ChipList> {
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             TextButton(
-                onPressed: () {
-                  controller.clearFilter();
-                  Get.back();
-                },
-                child: const Text("Clear")),
+              onPressed: () {
+                controller.clearFilter();
+                Get.back();
+              },
+              child: const Text("Clear"),
+            ),
             Expanded(
               child: ListView.builder(
                 itemCount: items.length,
                 itemBuilder: (context, index) {
                   var item = items[index];
                   return ListTile(
-                      title: Text(
-                        item,
-                      ),
-                      onTap: () {
-                        controller.filterOrder(userType, item);
-                        Get.back();
-                      });
+                    title: Text(item),
+                    onTap: () {
+                      controller.filterOrder(userType, item);
+                      Get.back();
+                    },
+                  );
                 },
               ),
             ),
@@ -196,23 +204,26 @@ class _ChipListState extends State<ChipList> {
         var items = controller.orderType == OrderType.pickup
             ? controller.pickupOrderStatus
             : controller.deliveryOrderStatus;
-        printValue("Items length : ${items.length}\n"
-            "Pickup order type : ${controller.pickupOrderStatus.length}");
+        printValue(
+          "Items length : ${items.length}\n"
+          "Pickup order type : ${controller.pickupOrderStatus.length}",
+        );
         return SizedBox(
-            //  height: 120,
-            child: ListView.builder(
-          itemCount: items.length,
-          itemBuilder: (context, index) {
-            var item = items[index];
-            return ListTile(
-              title: Text(item),
-              onTap: () {
-                controller.getExactStatusKey(item);
-                Get.back();
-              },
-            );
-          },
-        ));
+          //  height: 120,
+          child: ListView.builder(
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              var item = items[index];
+              return ListTile(
+                title: Text(item),
+                onTap: () {
+                  controller.getExactStatusKey(item);
+                  Get.back();
+                },
+              );
+            },
+          ),
+        );
       },
     );
   }
@@ -224,17 +235,20 @@ class _ChipListState extends State<ChipList> {
       isScrollControlled: false,
       builder: (context) {
         var items = addressController.allCities;
-        printValue("Items length : ${items.length}\n"
-            "Pickup order type : ${controller.pickupOrderStatus.length}");
+        printValue(
+          "Items length : ${items.length}\n"
+          "Pickup order type : ${controller.pickupOrderStatus.length}",
+        );
         return Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             TextButton(
-                onPressed: () {
-                  controller.clearCityFilter();
-                  Get.back();
-                },
-                child: const Text("Clear")),
+              onPressed: () {
+                controller.clearCityFilter();
+                Get.back();
+              },
+              child: const Text("Clear"),
+            ),
             Expanded(
               child: ListView.builder(
                 itemCount: items.length,
@@ -268,31 +282,30 @@ class _ChipListState extends State<ChipList> {
           "Print Tomorrow Product",
         ];
         return SizedBox(
-            height: 240,
-            child: ListView.builder(
-              itemCount: items.length,
-              itemBuilder: (context, index) {
-                var item = items[index];
-                return ListTile(
-                  title: Text(item),
-                  onTap: () {
-                    var orderInvoiceFile = index == 0
-                        ? PrintInvoiceType.partner_today_order_invoice
-                        : index == 1
-                            ? PrintInvoiceType
-                                .partner_today_order_by_product_invoice
-                            : index == 2
-                                ? PrintInvoiceType
-                                    .partner_tomorrow_order_invoice
-                                : PrintInvoiceType
-                                    .partner_tomorrow_order_by_product_invoice;
+          height: 240,
+          child: ListView.builder(
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              var item = items[index];
+              return ListTile(
+                title: Text(item),
+                onTap: () {
+                  var orderInvoiceFile = index == 0
+                      ? PrintInvoiceType.partner_today_order_invoice
+                      : index == 1
+                      ? PrintInvoiceType.partner_today_order_by_product_invoice
+                      : index == 2
+                      ? PrintInvoiceType.partner_tomorrow_order_invoice
+                      : PrintInvoiceType
+                            .partner_tomorrow_order_by_product_invoice;
 
-                    controller.printOrder(orderInvoiceFile);
-                    Get.back();
-                  },
-                );
-              },
-            ));
+                  controller.printOrder(orderInvoiceFile);
+                  Get.back();
+                },
+              );
+            },
+          ),
+        );
       },
     );
   }

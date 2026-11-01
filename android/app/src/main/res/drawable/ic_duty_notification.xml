@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Monochrome T2P badge. Android tints notification small icons from alpha. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="48" android:viewportHeight="48">
+    <path android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFFFF" android:strokeWidth="2.6"
+        android:pathData="M24,3 A21,21 0,1 1,24,45 A21,21 0,1 1,24,3" />
+    <path android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFFFF" android:strokeWidth="2.3"
+        android:strokeLineCap="round" android:strokeLineJoin="round"
+        android:pathData="M9,20 L19,17 M14,19 L13,30 M21,19 C22,14 30,14 28,20 C27,23 22,25 21,29 L28,27 M32,28 L34,15 C43,12 44,23 33,22 M12,35 Q25,41 37,32" />
+</vector>

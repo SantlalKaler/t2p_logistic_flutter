@@ -57,6 +57,7 @@ class ExpenseController extends GetxController {
     String method = 'GET',
     dynamic data,
     Map<String, dynamic>? query,
+    Duration? timeout,
   }) async {
     if (retryAt != null && DateTime.now().isBefore(retryAt!)) {
       throw ExpenseApiException(
@@ -71,6 +72,7 @@ class ExpenseController extends GetxController {
           method: method,
           data: data,
           query: query,
+          timeout: timeout,
         )).data,
       );
     } on ExpenseApiException catch (e) {
@@ -254,6 +256,21 @@ class ExpenseController extends GetxController {
       data.files.add(MapEntry('files', file));
     }
     await request('$base/$id/documents', method: 'POST', data: data);
+  }
+
+  Future<Map<String, dynamic>> uploadPaymentScreenshot(
+    dio.MultipartFile file,
+  ) async {
+    if (file.length == 0 || file.length > 10 * 1024 * 1024) {
+      throw ExpenseApiException(null, 'Choose an image up to 10 MB.');
+    }
+    final response = await request(
+      'v1/ocr/payment-bill',
+      method: 'POST',
+      data: dio.FormData.fromMap({'file': file}),
+      timeout: const Duration(minutes: 3),
+    );
+    return expenseMap(response['data']);
   }
 
   Future<void> removeDocument(String id, String docId) async =>

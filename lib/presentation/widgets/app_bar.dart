@@ -3,13 +3,15 @@ import 'package:t2p_logistic/presentation/theme/resource/strings_constants.dart'
 
 import 'app_back_button.dart';
 
-appBar(
-    {String? title,
-    Widget? leading,
-    bool centerTitle = false,
-    List<Widget> actions = const []}) {
+appBar({
+  String? title,
+  Widget? leading,
+  bool centerTitle = false,
+  List<Widget> actions = const [],
+}) {
   return AppBar(
     elevation: 0,
+    toolbarHeight: 64,
     title: Text(title ?? StringConstants.appName),
     actions: actions,
     leading: leading,
@@ -23,12 +25,18 @@ class AppBarSliver extends StatelessWidget {
   List<Widget>? actions = [];
   PreferredSizeWidget? bottom;
 
-  AppBarSliver(
-      {super.key, this.title, this.leading, this.actions, this.bottom});
+  AppBarSliver({
+    super.key,
+    this.title,
+    this.leading,
+    this.actions,
+    this.bottom,
+  });
 
   @override
   Widget build(BuildContext context) {
     return SliverAppBar(
+      toolbarHeight: 64,
       pinned: true,
       floating: true,
       leading: leading,
@@ -44,11 +52,12 @@ class AppBarNormal extends StatelessWidget {
   final Widget? leading;
   final List<Widget>? actions;
 
-  const AppBarNormal(
-      {super.key,
-      this.title,
-      this.leading = const AppBackButton(),
-      this.actions});
+  const AppBarNormal({
+    super.key,
+    this.title,
+    this.leading = const AppBackButton(),
+    this.actions,
+  });
 
   @override
   Widget build(BuildContext context) {

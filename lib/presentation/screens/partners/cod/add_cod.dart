@@ -51,23 +51,28 @@ class _AddCodScreenState extends State<AddCodScreen> {
   @override
   Widget build(BuildContext context) {
     return appScaffold(
-        appBar(
-            title: "Edit Cod",
-            leading: IconButton(
-                onPressed: () {
-                  Get.back();
-                },
-                icon: const Icon(Icons.arrow_back_ios))),
-        GetBuilder(
-            init: CodCollectionController(),
-            builder: (controller) {
-              return Padding(
-                padding: EdgeInsets.all(DimensConstants.screePadding),
-                child: Stack(
-                  children: [
-                    Column(
+      appBar(
+        title: "Edit Cod",
+        leading: IconButton(
+          onPressed: () {
+            Get.back();
+          },
+          icon: const Icon(Icons.arrow_back_ios),
+        ),
+      ),
+      GetBuilder(
+        init: CodCollectionController(),
+        builder: (controller) {
+          return Padding(
+            padding: EdgeInsets.all(DimensConstants.screePadding),
+            child: Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
                       children: [
-                        AppContainer(child: Form(
+                        AppContainer(
+                          child: Form(
                             key: _formKey,
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.start,
@@ -77,7 +82,8 @@ class _AddCodScreenState extends State<AddCodScreen> {
                                   controller: orderNumberController,
                                   enabled: false,
                                   decoration: const InputDecoration(
-                                      label: Text("Order Number")),
+                                    label: Text("Order Number"),
+                                  ),
                                   validator: (value) {
                                     if (value!.isEmpty) {
                                       return "Enter first name";
@@ -90,7 +96,8 @@ class _AddCodScreenState extends State<AddCodScreen> {
                                   enabled: false,
                                   controller: cityController,
                                   decoration: const InputDecoration(
-                                      label: Text("City")),
+                                    label: Text("City"),
+                                  ),
                                   validator: (value) {
                                     if (value!.isEmpty) {
                                       return "Enter email";
@@ -109,12 +116,14 @@ class _AddCodScreenState extends State<AddCodScreen> {
                                           value.toString();
                                     }
                                   },
-                                  inputDecorationTheme:
-                                      Theme.of(context).inputDecorationTheme,
+                                  inputDecorationTheme: Theme.of(context)
+                                      .inputDecorationTheme,
                                   dropdownMenuEntries: [
                                     for (var item in controller.boyList)
                                       DropdownMenuEntry(
-                                          value: item.id, label: item.fullName!)
+                                        value: item.id,
+                                        label: item.fullName!,
+                                      ),
                                   ],
                                 ),
                                 Gap(DimensConstants.spaceBetweenViews),
@@ -122,7 +131,8 @@ class _AddCodScreenState extends State<AddCodScreen> {
                                   enabled: false,
                                   controller: amountController,
                                   decoration: const InputDecoration(
-                                      label: Text("Amount")),
+                                    label: Text("Amount"),
+                                  ),
                                   validator: (value) {
                                     if (value!.isEmpty) {
                                       return "Enter mobile";
@@ -135,7 +145,8 @@ class _AddCodScreenState extends State<AddCodScreen> {
                                   controller: paymentController,
                                   keyboardType: TextInputType.phone,
                                   decoration: const InputDecoration(
-                                      label: Text("Payment Received")),
+                                    label: Text("Payment Received"),
+                                  ),
                                   validator: (value) {
                                     if (value!.isEmpty) {
                                       return "Enter mobile";
@@ -156,8 +167,9 @@ class _AddCodScreenState extends State<AddCodScreen> {
                                     enabled: false,
                                     controller: dateOfPaymentController,
                                     decoration: const InputDecoration(
-                                        label: Text("Date of payment"),
-                                        suffixIcon: Icon(Icons.calendar_month)),
+                                      label: Text("Date of payment"),
+                                      suffixIcon: Icon(Icons.calendar_month),
+                                    ),
                                     validator: (value) {
                                       if (value!.isEmpty) {
                                         return "Enter mobile";
@@ -172,7 +184,9 @@ class _AddCodScreenState extends State<AddCodScreen> {
                                     showOptions(context, (source) {
                                       pickImage(source, (name, path) {
                                         controller.setDocumentImages(
-                                            name, path);
+                                          name,
+                                          path,
+                                        );
                                         documentController.text = path;
                                       });
                                     });
@@ -181,8 +195,9 @@ class _AddCodScreenState extends State<AddCodScreen> {
                                     enabled: false,
                                     controller: documentController,
                                     decoration: const InputDecoration(
-                                        label: Text("Document"),
-                                        suffixIcon: Icon(Icons.attach_file)),
+                                      label: Text("Document"),
+                                      suffixIcon: Icon(Icons.attach_file),
+                                    ),
                                     validator: (value) {
                                       if (value!.isEmpty) {
                                         return "Enter mobile";
@@ -206,35 +221,47 @@ class _AddCodScreenState extends State<AddCodScreen> {
                                   },
                                 ),
                               ],
-                            ))),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
-                    Align(
-                      alignment: Alignment.bottomCenter,
-                      child: ElevatedButton(
-                          onPressed: () {
-                            if (deliveryBoyController.text.isEmpty ||
-                                dateOfPaymentController.text.isEmpty ||
-                                paymentController.text.isEmpty) {
-                              CustomSnackBar.showSnackBar(CustomSnackBar.error,
-                                  "Please fill all data", CustomSnackBar.error);
-                            } else {
-                              //printValue("server data : ${dateOfPaymentController.text.toServerDate()}");
-                              controller.updateCodExpense(
-                                  paymentController.text,
-                                  dateOfPaymentController.text,
-                                  deliveryBoyController.text,
-                                  widget.expense.id!,
-                                  remarksController.text);
-                            }
-                          },
-                          child: controller.loading.isTrue
-                              ? circularloadingWhiteSmall()
-                              : const Text("Edit Cod Expense")),
-                    )
-                  ],
+                  ),
                 ),
-              );
-            }));
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      if (deliveryBoyController.text.isEmpty ||
+                          dateOfPaymentController.text.isEmpty ||
+                          paymentController.text.isEmpty) {
+                        CustomSnackBar.showSnackBar(
+                          CustomSnackBar.error,
+                          "Please fill all data",
+                          CustomSnackBar.error,
+                        );
+                      } else {
+                        //printValue("server data : ${dateOfPaymentController.text.toServerDate()}");
+                        controller.updateCodExpense(
+                          paymentController.text,
+                          dateOfPaymentController.text,
+                          deliveryBoyController.text,
+                          widget.expense.id!,
+                          remarksController.text,
+                        );
+                      }
+                    },
+                    child: controller.loading.isTrue
+                        ? circularloadingWhiteSmall()
+                        : const Text("Edit Cod Expense"),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
   }
 }

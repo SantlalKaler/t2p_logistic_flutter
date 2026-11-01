@@ -26,36 +26,38 @@ class _AddTripScreenState extends State<AddTripScreen> {
     return AppScaffold(
       appBar: appBar(leading: const AppBackButton(), title: "Add Trip"),
       body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: DimensConstants.screePadding),
-        child: Stack(
+        padding: EdgeInsets.all(DimensConstants.screePadding),
+        child: Column(
           children: [
-            Align(
-              alignment: Alignment.topCenter,
-              child: Column(
-                children: [
-                  const SelectLocationWidget(),
-                  Gap(DimensConstants.spaceBetweenViews),
-                  TextFormField(
-                    style: Theme.of(context).textTheme.titleSmall,
-                    controller: remarksController,
-                    decoration: const InputDecoration(
-                        label: Text(
-                          'Remarks',
-                        ),
-                        floatingLabelBehavior: FloatingLabelBehavior.auto),
-                    validator: (value) {
-                      if (value!.isEmpty) {
-                        return 'Please enter remarks';
-                      }
-                      return null;
-                    },
-                  ),
-                ],
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    const SelectLocationWidget(),
+                    Gap(DimensConstants.spaceBetweenViews),
+                    TextFormField(
+                      style: Theme.of(context).textTheme.titleSmall,
+                      controller: remarksController,
+                      decoration: const InputDecoration(
+                        label: Text('Remarks'),
+                        floatingLabelBehavior: FloatingLabelBehavior.auto,
+                      ),
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return 'Please enter remarks';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
+            const SizedBox(height: 16),
             Align(
               alignment: Alignment.bottomCenter,
-              child: Obx(() => ElevatedButton(
+              child: Obx(
+                () => ElevatedButton(
                   onPressed: () async {
                     if (tripController.pickupAddress.value.id == null ||
                         tripController.pickupAddress.value.id?.isEmpty ==
@@ -63,16 +65,21 @@ class _AddTripScreenState extends State<AddTripScreen> {
                         tripController.destinationAddress.value.id == null ||
                         tripController.destinationAddress.value.id?.isEmpty ==
                             true) {
-                      CustomSnackBar.showSnackBar(CustomSnackBar.error,
-                          "Please select both address", CustomSnackBar.error);
+                      CustomSnackBar.showSnackBar(
+                        CustomSnackBar.error,
+                        "Please select both address",
+                        CustomSnackBar.error,
+                      );
                     } else {
-                     // await tripController.getDistanceByRoad();
+                      // await tripController.getDistanceByRoad();
                     }
                   },
                   child: tripController.isLoading.isTrue
                       ? circularloadingWhiteSmall()
-                      : const Text("Start"))),
-            )
+                      : const Text("Start"),
+                ),
+              ),
+            ),
           ],
         ),
       ),

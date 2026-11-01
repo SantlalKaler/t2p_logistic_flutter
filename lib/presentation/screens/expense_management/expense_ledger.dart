@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../../../domain/Model/expense/expense_v1.dart';
 import 'components/expense_design.dart';
+import 'components/payment_screenshot_dialog.dart';
 import 'expense_controller.dart';
 import 'expense_detail.dart';
 
@@ -48,7 +49,11 @@ class _ExpenseLedgerScreenState extends State<ExpenseLedgerScreen> {
     }
   }
 
-  String amount(dynamic value) => value == null ? '—' : expenseMoney(value);
+  String amount(dynamic value) => expenseNumber(value) < 0
+      ? '-${expenseMoney(expenseNumber(value).abs())}'
+      : value == null
+      ? '—'
+      : expenseMoney(value);
 
   @override
   Widget build(BuildContext context) => Theme(
@@ -57,7 +62,11 @@ class _ExpenseLedgerScreenState extends State<ExpenseLedgerScreen> {
       builder: (context) {
         final summary = expenseMap(ledger['summary']);
         final balance = expenseMap(ledger['account'])['balance'];
-        final types = expenseMap(c.meta['ledger_types']);
+        final types = {
+          ...expenseMap(c.meta['ledger_types']),
+          'DUTY_DEBIT': 'Duty (km x rate)',
+          'DUTY_REVERSAL': 'Duty reversal',
+        };
         final pagination = expenseMap(ledger['pagination']);
         final entries = expenseMaps(ledger['entries']);
         return Scaffold(
@@ -92,6 +101,80 @@ class _ExpenseLedgerScreenState extends State<ExpenseLedgerScreen> {
                     sliver: SliverList.list(
                       children: [
                         balanceCard(context, balance),
+                        const SizedBox(height: 12),
+                        Material(
+                          color: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            side: const BorderSide(color: Color(0xFFEAECF0)),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: InkWell(
+                            onTap: loading
+                                ? null
+                                : () async {
+                                    final changed = await showDialog<bool>(
+                                      context: context,
+                                      barrierDismissible: false,
+                                      builder: (_) =>
+                                          const PaymentScreenshotDialog(),
+                                    );
+                                    if (changed == true && mounted) {
+                                      await load();
+                                    }
+                                  },
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFDF0F1),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Icon(
+                                      Icons.upload_file_outlined,
+                                      color: ExpenseDesign.accent,
+                                      size: 22,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  const Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Upload payment screenshot',
+                                          style: TextStyle(
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                            color: ExpenseDesign.ink,
+                                          ),
+                                        ),
+                                        SizedBox(height: 4),
+                                        Text(
+                                          'Add money received from the office',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: ExpenseDesign.muted,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Icon(
+                                    Icons.chevron_right_rounded,
+                                    color: ExpenseDesign.muted,
+                                    size: 20,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
                         const SizedBox(height: 22),
                         Row(
                           children: [
@@ -165,6 +248,11 @@ class _ExpenseLedgerScreenState extends State<ExpenseLedgerScreen> {
                               ),
                             ),
                           ],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Duty included in expenses: ${amount(summary['duty_deducted'])}',
+                          style: Theme.of(context).textTheme.bodySmall,
                         ),
                         const SizedBox(height: 22),
                         Row(
@@ -507,7 +595,8 @@ class _ExpenseLedgerScreenState extends State<ExpenseLedgerScreen> {
   Widget transactionCard(BuildContext context, Map<String, dynamic> entry) {
     final credit = entry['direction'] == 'credit';
     final color = credit ? const Color(0xFF067647) : ExpenseDesign.accent;
-    final expense = expenseId(entry['expense']);
+    final isDuty = ['DUTY_DEBIT', 'DUTY_REVERSAL'].contains(entry['type']);
+    final expense = isDuty ? '' : expenseId(entry['expense']);
     final status = '${entry['expense_status'] ?? ''}';
     final statusColor = status == 'approved'
         ? const Color(0xFF067647)

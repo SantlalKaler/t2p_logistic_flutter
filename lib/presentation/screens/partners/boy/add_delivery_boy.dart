@@ -1,3 +1,5 @@
+import '../../../widgets/app_container.dart';
+
 import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
@@ -27,8 +29,7 @@ class AddUser extends StatefulWidget {
   final AddEditDeliveryBoy addEditDeliveryBoy;
   final User? user;
 
-  const AddUser(
-      {super.key, required this.addEditDeliveryBoy, this.user});
+  const AddUser({super.key, required this.addEditDeliveryBoy, this.user});
 
   @override
   State<AddUser> createState() => _AddUserState();
@@ -56,35 +57,39 @@ class _AddUserState extends State<AddUser> {
   @override
   Widget build(BuildContext context) {
     return appScaffold(
-        appBar(
-            leading: IconButton(
-                onPressed: () {
-                  Get.back();
-                },
-                icon: const Icon(Icons.arrow_back_ios))),
-        Form(
-            key: _formKey,
-            child: GetBuilder(
-                init: AddDeliveryBoyController(),
-                builder: (controller) {
-                  return SingleChildScrollView(
-                    child: Padding(
-                      padding: EdgeInsets.all(DimensConstants.screePadding),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          TextFormField(
-                            controller: fullNameController,
-                            decoration:
-                                const InputDecoration(label: Text("Full Name")),
-                            validator: (value) {
-                              if (value!.isEmpty) {
-                                return "Enter full name";
-                              }
-                              return null;
-                            },
-                          ),
-                          /*Gap(DimensConstants.spaceBetweenViews),
+      appBar(
+        leading: IconButton(
+          onPressed: () {
+            Get.back();
+          },
+          icon: const Icon(Icons.arrow_back_ios),
+        ),
+      ),
+      Form(
+        key: _formKey,
+        child: GetBuilder(
+          init: AddDeliveryBoyController(),
+          builder: (controller) {
+            return SingleChildScrollView(
+              child: Padding(
+                padding: EdgeInsets.all(DimensConstants.screePadding),
+                child: AppContainer(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextFormField(
+                        controller: fullNameController,
+                        decoration: const InputDecoration(
+                          label: Text("Full Name"),
+                        ),
+                        validator: (value) {
+                          if (value!.isEmpty) {
+                            return "Enter full name";
+                          }
+                          return null;
+                        },
+                      ),
+                      /*Gap(DimensConstants.spaceBetweenViews),
                         TextFormField(
                           controller: firstNameController,
                           decoration:
@@ -96,121 +101,142 @@ class _AddUserState extends State<AddUser> {
                             return null;
                           },
                         ),*/
-                          Gap(DimensConstants.spaceBetweenViews),
-                          TextFormField(
-                            controller: mobileController,
-                            keyboardType: TextInputType.phone,
-                            maxLength: 10,
-                            decoration: const InputDecoration(
-                                label: Text("Mobile Number")),
-                            validator: (value) {
-                              if (value!.isEmpty || value.length < 10) {
-                                return "Enter valid mobile number";
-                              }
-                              return null;
-                            },
-                          ),
-                          Gap(DimensConstants.spaceBetweenViews),
-                          TextFormField(
-                            controller: emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            decoration:
-                                const InputDecoration(label: Text("Email")),
-                            validator: (value) {
-                              if (value!.isEmpty) {
-                                return "Enter email";
-                              }
-                              return null;
-                            },
-                          ),
-                          Gap(DimensConstants.spaceBetweenViews),
-                          Obx(() => ElevatedButton(
-                              onPressed: () async {
-                                removeFocus(context);
-                                if (controller.isLoading.isFalse &&
-                                    _formKey.currentState!.validate()) {
-                                  // add boy
-                                  if (widget.addEditDeliveryBoy ==
-                                      AddEditDeliveryBoy.add) {
-                                    await controller.addLogisticBoy(
-                                        fullNameController.text,
-                                        mobileController.text,
-                                        emailController.text);
+                      Gap(DimensConstants.spaceBetweenViews),
+                      TextFormField(
+                        controller: mobileController,
+                        keyboardType: TextInputType.phone,
+                        maxLength: 10,
+                        decoration: const InputDecoration(
+                          label: Text("Mobile Number"),
+                        ),
+                        validator: (value) {
+                          if (value!.isEmpty || value.length < 10) {
+                            return "Enter valid mobile number";
+                          }
+                          return null;
+                        },
+                      ),
+                      Gap(DimensConstants.spaceBetweenViews),
+                      TextFormField(
+                        controller: emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: const InputDecoration(label: Text("Email")),
+                        validator: (value) {
+                          if (value!.isEmpty) {
+                            return "Enter email";
+                          }
+                          return null;
+                        },
+                      ),
+                      Gap(DimensConstants.spaceBetweenViews),
+                      Obx(
+                        () => ElevatedButton(
+                          onPressed: () async {
+                            removeFocus(context);
+                            if (controller.isLoading.isFalse &&
+                                _formKey.currentState!.validate()) {
+                              // add boy
+                              if (widget.addEditDeliveryBoy ==
+                                  AddEditDeliveryBoy.add) {
+                                await controller.addLogisticBoy(
+                                  fullNameController.text,
+                                  mobileController.text,
+                                  emailController.text,
+                                );
 
-                                    if (controller.deliveryBoyAdded.isTrue &&
-                                        context.mounted) {
-                                      resetValue();
-                                    }
-                                  }
-                                  // edit boy
-                                  else {
-                                    var user = widget.user!;
-                                    await controller.editLogisticBoy(
-                                        fullNameController.text,
-                                        mobileController.text,
-                                        emailController.text,
-                                        user.address ?? "",
-                                        user.city ?? "",
-                                        user.serviceZipcode ?? "",
-                                        user.id!);
-                                  }
+                                if (controller.deliveryBoyAdded.isTrue &&
+                                    context.mounted) {
+                                  resetValue();
                                 }
-                              },
-                              child: controller.isLoading.isTrue
-                                  ? circularloadingWhiteSmall()
-                                  : Text(widget.addEditDeliveryBoy ==
+                              }
+                              // edit boy
+                              else {
+                                var user = widget.user!;
+                                await controller.editLogisticBoy(
+                                  fullNameController.text,
+                                  mobileController.text,
+                                  emailController.text,
+                                  user.address ?? "",
+                                  user.city ?? "",
+                                  user.serviceZipcode ?? "",
+                                  user.id!,
+                                );
+                              }
+                            }
+                          },
+                          child: controller.isLoading.isTrue
+                              ? circularloadingWhiteSmall()
+                              : Text(
+                                  widget.addEditDeliveryBoy ==
                                           AddEditDeliveryBoy.edit
                                       ? "Edit"
-                                      : "Add"))),
-                          Gap(DimensConstants.spaceBetweenViews),
-                          const Divider(),
-                          Gap(DimensConstants.spaceBetweenViews),
-
-                          // in "add user" case we don't need to show upload documents
-                          // todo: upload documents
-                          if (widget.addEditDeliveryBoy ==
-                              AddEditDeliveryBoy.edit)
-                            ListView.separated(
-                                itemCount: controller.items.length,
-                                physics: const NeverScrollableScrollPhysics(),
-                                shrinkWrap: true,
-                                separatorBuilder: (context, index) {
-                                  return SizedBox(
-                                    height: DimensConstants.spaceBetweenViews,
-                                  );
-                                },
-                                itemBuilder: (context, index) {
-                                  return singleUploadItem(
-                                      controller.items[index], () async {
-                                    showOptions(context, (source) {
-                                      pickImage(source, (imagePath, imageName) {
-                                        switch (controller.items[index].id) {
-                                          case UploadFileItemId.profileImage:
-                                            controller.setProfileImages(
-                                                imagePath, imageName);
-                                            break;
-                                          case UploadFileItemId.voterCard:
-                                            controller.setVoterImages(
-                                                imagePath, imageName);
-                                            break;
-                                          case UploadFileItemId.panCard:
-                                            controller.setPanImages(
-                                                imagePath, imageName);
-                                            break;
-                                          case UploadFileItemId.aadharCard:
-                                            controller.setAadharImages(
-                                                imagePath, imageName);
-                                            break;
-                                        }
-                                      });
-                                    });
-                                  });
-                                })
-                        ],
+                                      : "Add",
+                                ),
+                        ),
                       ),
-                    ),
-                  );
-                })));
+                      Gap(DimensConstants.spaceBetweenViews),
+                      const Divider(),
+                      Gap(DimensConstants.spaceBetweenViews),
+
+                      // in "add user" case we don't need to show upload documents
+                      // todo: upload documents
+                      if (widget.addEditDeliveryBoy == AddEditDeliveryBoy.edit)
+                        ListView.separated(
+                          itemCount: controller.items.length,
+                          physics: const NeverScrollableScrollPhysics(),
+                          shrinkWrap: true,
+                          separatorBuilder: (context, index) {
+                            return SizedBox(
+                              height: DimensConstants.spaceBetweenViews,
+                            );
+                          },
+                          itemBuilder: (context, index) {
+                            return singleUploadItem(
+                              controller.items[index],
+                              () async {
+                                showOptions(context, (source) {
+                                  pickImage(source, (imagePath, imageName) {
+                                    switch (controller.items[index].id) {
+                                      case UploadFileItemId.profileImage:
+                                        controller.setProfileImages(
+                                          imagePath,
+                                          imageName,
+                                        );
+                                        break;
+                                      case UploadFileItemId.voterCard:
+                                        controller.setVoterImages(
+                                          imagePath,
+                                          imageName,
+                                        );
+                                        break;
+                                      case UploadFileItemId.panCard:
+                                        controller.setPanImages(
+                                          imagePath,
+                                          imageName,
+                                        );
+                                        break;
+                                      case UploadFileItemId.aadharCard:
+                                        controller.setAadharImages(
+                                          imagePath,
+                                          imageName,
+                                        );
+                                        break;
+                                    }
+                                  });
+                                });
+                              },
+                            );
+                          },
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
   }
 
   addBoy() {}
@@ -223,9 +249,13 @@ class _AddUserState extends State<AddUser> {
 
   singleUploadItem(UploadFileItem item, Function function) {
     return Container(
-      height: 200,
       width: double.infinity,
-      color: Colors.white,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFAFBFC),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE4E7EC)),
+      ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -234,7 +264,8 @@ class _AddUserState extends State<AddUser> {
             onTap: () {
               function();
             },
-            child: (item.id == UploadFileItemId.profileImage &&
+            child:
+                (item.id == UploadFileItemId.profileImage &&
                         controller.profileImagePath != null) ||
                     (item.id == UploadFileItemId.voterCard &&
                         controller.voterImagePath != null) ||
@@ -243,42 +274,43 @@ class _AddUserState extends State<AddUser> {
                     (item.id == UploadFileItemId.panCard &&
                         controller.panImagePath != null)
                 ? Image.file(
-                    File(item.id == UploadFileItemId.profileImage
-                        ? controller.profileImagePath!
-                        : item.id == UploadFileItemId.voterCard
-                            ? controller.voterImagePath!
-                            : item.id == UploadFileItemId.aadharCard
-                                ? controller.aadharImagePath!
-                                : controller.panImagePath!),
+                    File(
+                      item.id == UploadFileItemId.profileImage
+                          ? controller.profileImagePath!
+                          : item.id == UploadFileItemId.voterCard
+                          ? controller.voterImagePath!
+                          : item.id == UploadFileItemId.aadharCard
+                          ? controller.aadharImagePath!
+                          : controller.panImagePath!,
+                    ),
                     width: double.infinity,
                     height: 100,
                   )
                 : Icon(
                     Icons.create_new_folder,
-                    size: 100,
+                    size: 52,
                     color: Theme.of(context).primaryColor,
                   ),
           ),
           Gap(DimensConstants.spaceBetweenViewsAndSubViews),
-          Text(
-            item.title,
-            textAlign: TextAlign.center,
-          ),
+          Text(item.title, textAlign: TextAlign.center),
           Gap(DimensConstants.spaceBetweenViews),
           ElevatedButton(
-              onPressed: () async {
-                await controller.uploadImage(item.id);
-              },
-              child: (item.id == UploadFileItemId.profileImage &&
-                          controller.profileImageLoading.isTrue) ||
-                      (item.id == UploadFileItemId.voterCard &&
-                          controller.voterCardLoading.isTrue) ||
-                      (item.id == UploadFileItemId.aadharCard &&
-                          controller.aadharLoading.isTrue) ||
-                      (item.id == UploadFileItemId.panCard &&
-                          controller.panLoading.isTrue)
-                  ? circularloadingWhiteSmall()
-                  : const Text("Upload"))
+            onPressed: () async {
+              await controller.uploadImage(item.id);
+            },
+            child:
+                (item.id == UploadFileItemId.profileImage &&
+                        controller.profileImageLoading.isTrue) ||
+                    (item.id == UploadFileItemId.voterCard &&
+                        controller.voterCardLoading.isTrue) ||
+                    (item.id == UploadFileItemId.aadharCard &&
+                        controller.aadharLoading.isTrue) ||
+                    (item.id == UploadFileItemId.panCard &&
+                        controller.panLoading.isTrue)
+                ? circularloadingWhiteSmall()
+                : const Text("Upload"),
+          ),
         ],
       ),
     );

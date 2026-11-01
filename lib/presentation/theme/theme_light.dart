@@ -1,118 +1,122 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
+
+import 'app_design.dart';
 
 class LightTheme {
-  static getTheme() {
-    return ThemeData(
-      useMaterial3: false,
-      brightness: Brightness.light,
-      primarySwatch: Colors.red,
-      scaffoldBackgroundColor: Colors.blueGrey.shade50,
-      primaryColor: Colors.red.shade800,
-      primaryColorDark: Colors.red.shade900,
-      primaryColorLight: Colors.red.shade300,
-      primaryIconTheme: IconThemeData(color: Colors.red.shade700),
-      iconTheme: const IconThemeData(color: Colors.black87),
-      appBarTheme: AppBarTheme(
-          backgroundColor: Colors.red.shade900,
-          iconTheme: IconThemeData(color: Colors.blueGrey.shade50)),
-      cardColor: Colors.grey.shade50,
-      cardTheme: CardThemeData(
-          color: Colors.grey.shade50,
-          elevation: 2,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-      chipTheme: ChipThemeData(
-          selectedColor: Colors.red.shade800,
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          backgroundColor: Colors.blueGrey.shade100,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-      textTheme: TextTheme(
-          labelMedium: GoogleFonts.oswald(
-              fontSize: 14, color: const Color(0xFF725B2E), letterSpacing: 1),
-          labelSmall: GoogleFonts.oswald(
-              fontSize: 14, color: Colors.black87, letterSpacing: 1),
-          bodyLarge:
-              GoogleFonts.lato(color: Colors.grey.shade600, fontSize: 14),
-          bodyMedium:
-              GoogleFonts.roboto(color: Colors.blueGrey.shade600, fontSize: 14),
-          bodySmall: GoogleFonts.poppins(
-              color: Colors.blueGrey.shade500, fontSize: 11),
-          titleLarge: GoogleFonts.lato(
-              fontWeight: FontWeight.w600, fontSize: 18, color: Colors.black87),
-          titleSmall: GoogleFonts.poppins(
-              fontWeight: FontWeight.w500, fontSize: 13, color: Colors.black87),
-          titleMedium: GoogleFonts.poppins(
-              fontWeight: FontWeight.w500, color: Colors.black87, height: 1.0)),
-      outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-            backgroundColor: Colors.red.shade50,
-            minimumSize: const Size(double.infinity, 40),
-            shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(12))),
-            side: const BorderSide(
-              color: Colors.red,
-            )),
-      ),
+  static ThemeData getTheme() {
+    final theme = AppDesign.theme();
+    return theme.copyWith(
+      primaryColor: AppDesign.accent,
+      primaryColorDark: const Color(0xFF8E1B28),
+      primaryColorLight: const Color(0xFFFDF0F1),
       elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ButtonStyle(
-              backgroundColor: MaterialStateProperty.resolveWith((states) {
-                if (states.contains(MaterialState.pressed)) {
-                  return Colors.red; // Color when the button is pressed
-                }
-                if (states.contains(MaterialState.disabled)) {
-                  return Colors.grey.shade400;
-                }
-                return Theme.of(Get.context!).primaryColor; // Default color
-              }),
-              shape: const MaterialStatePropertyAll(RoundedRectangleBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(12)))),
-              minimumSize:
-                  const MaterialStatePropertyAll(Size(double.infinity, 40)))),
-      textSelectionTheme: TextSelectionThemeData(
-        cursorColor: Colors.red.shade700,
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: Colors.grey.shade100,
-        labelStyle:
-            GoogleFonts.roboto(color: Colors.grey.shade600, fontSize: 13),
-        hintStyle: GoogleFonts.lato(fontSize: 13),
-        contentPadding: const EdgeInsets.all(15),
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.grey.shade300),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.grey.shade300),
-        ),
-        errorBorder: const OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.red),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.red.shade600),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppDesign.accent,
+          foregroundColor: Colors.white,
+          disabledBackgroundColor: const Color(0xFFEAECF0),
+          disabledForegroundColor: AppDesign.muted,
+          elevation: 0,
+          minimumSize: const Size(double.infinity, 48),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          textStyle: const TextStyle(
+            fontFamily: 'Roboto',
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       ),
-      checkboxTheme: CheckboxThemeData(
-        fillColor: MaterialStateColor.resolveWith((states) {
-          if (states.contains(MaterialState.disabled)) {
-            return Colors.grey;
-          }
-          return Colors.grey.shade100;
-        }),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: theme.outlinedButtonTheme.style!.copyWith(
+          minimumSize: const WidgetStatePropertyAll(Size(double.infinity, 48)),
+        ),
       ),
-      drawerTheme: DrawerThemeData(backgroundColor: Colors.blueGrey.shade50),
-      dialogTheme: DialogThemeData(
-          contentTextStyle:
-              GoogleFonts.poppins(color: Colors.grey.shade700, fontSize: 13),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20))),
-      listTileTheme: ListTileThemeData(
-        titleTextStyle: GoogleFonts.lato(
-            fontWeight: FontWeight.w600, fontSize: 14.5, color: Colors.black87),
-        iconColor: Colors.black87,
-        shape: Border(bottom: BorderSide(color: Colors.grey.shade300)),
+      cardTheme: theme.cardTheme.copyWith(
+        color: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: const BorderSide(color: Color(0xFFEAECF0)),
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: Colors.white,
+        selectedColor: const Color(0xFFFDF0F1),
+        labelStyle: const TextStyle(
+          fontFamily: 'Roboto',
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+          color: AppDesign.ink,
+        ),
+        deleteIconColor: AppDesign.accent,
+        side: const BorderSide(color: Color(0xFFE4E7EC)),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
+      tabBarTheme: const TabBarThemeData(
+        labelColor: AppDesign.accent,
+        unselectedLabelColor: AppDesign.muted,
+        indicatorColor: AppDesign.accent,
+        dividerColor: Color(0xFFEAECF0),
+        labelStyle: TextStyle(
+          fontFamily: 'Roboto',
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
+        unselectedLabelStyle: TextStyle(
+          fontFamily: 'Roboto',
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      searchBarTheme: SearchBarThemeData(
+        backgroundColor: const WidgetStatePropertyAll(Color(0xFFF8F9FC)),
+        elevation: const WidgetStatePropertyAll(0),
+        constraints: const BoxConstraints(minHeight: 48),
+        hintStyle: const WidgetStatePropertyAll(
+          TextStyle(fontFamily: 'Roboto', fontSize: 12, color: AppDesign.muted),
+        ),
+        textStyle: const WidgetStatePropertyAll(
+          TextStyle(fontFamily: 'Roboto', fontSize: 14, color: AppDesign.ink),
+        ),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: const BorderSide(color: Color(0xFFE4E7EC)),
+          ),
+        ),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+        ),
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: AppDesign.accent,
+        foregroundColor: Colors.white,
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+      listTileTheme: const ListTileThemeData(
+        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        titleTextStyle: TextStyle(
+          fontFamily: 'Roboto',
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: AppDesign.ink,
+        ),
+        subtitleTextStyle: TextStyle(
+          fontFamily: 'Roboto',
+          fontSize: 12,
+          color: AppDesign.muted,
+        ),
+        iconColor: AppDesign.muted,
+      ),
+      textSelectionTheme: const TextSelectionThemeData(
+        cursorColor: AppDesign.accent,
       ),
     );
   }

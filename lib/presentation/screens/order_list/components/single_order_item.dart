@@ -1,3 +1,5 @@
+import '../../duty/duty_widgets.dart';
+
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'package:get/get.dart';
@@ -25,197 +27,230 @@ class SingleOrderItem extends StatelessWidget {
     OrderController controller = Get.find();
     UserController userController = Get.find();
     return AppContainer(
-        child: Column(
-      mainAxisAlignment: MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 1, horizontal: 10),
-              decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(100), color: Colors.red),
-              child: Text(
-                order.paymentMode!,
-                style: const TextStyle(color: Colors.white),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 5,
+                  horizontal: 10,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(20),
+                  color: const Color(0xFFFDF0F1),
+                ),
+                child: Text(
+                  order.paymentMode!,
+                  style: const TextStyle(
+                    color: Color(0xFFB42332),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
-            ),
-            Text(
-              "Order No : ${order.orderId}\n${order.createdAt}",
-              textAlign: TextAlign.end,
-              style: const TextStyle(color: Colors.grey),
-            )
-          ],
-        ),
-        Gap(DimensConstants.spaceBetweenViews),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SingleOrderInfoItem(
-                  title: order.pickupCity!,
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(left: 7),
-                  child: verticalDivider(),
-                ),
-                SingleOrderInfoItem(
-                  title: order.deliveryCity!,
-                ),
-              ],
-            ),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.end,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                if (controller.t2pOrderType == T2POrderType.AF2AP)
-                  Text(
-                    "Due : Rs. ${order.duesAmount}\nPaid : Rs. ${order.paidAmount}\n",
-                    textAlign: TextAlign.end,
-                  ),
-                Text("Rs. ${order.price}"),
-                Gap(DimensConstants.spaceBetweenViews),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-                  decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      color: Colors.green.shade50),
-                  child: Text(
-                    controller.orderType == OrderType.pickup
-                        ? order.pickupBoy!
-                        : order.deliveryBoy!,
-                    style: const TextStyle(color: Colors.green),
+              Expanded(
+                child: Text(
+                  "Order No : ${order.orderId}\n${order.createdAt}",
+                  textAlign: TextAlign.end,
+                  style: const TextStyle(
+                    color: Color(0xFF667085),
+                    fontSize: 11,
+                    height: 1.5,
                   ),
                 ),
-              ],
-            )
-          ],
-        ),
-        Gap(DimensConstants.highSpacing),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            SingleOrderInfoItem(
-                title:
-                    "Pickup Weight : ${order.pickupWeight?.toFixString()} KG",
-                height: 5,
-                width: 5,
-                color: Colors.red),
-          ],
-        ),
-        Gap(DimensConstants.spaceBetweenViews),
-        SingleOrderInfoItem(
+              ),
+            ],
+          ),
+          Gap(DimensConstants.spaceBetweenViews),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SingleOrderInfoItem(title: order.pickupCity!),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 7),
+                      child: verticalDivider(),
+                    ),
+                    SingleOrderInfoItem(title: order.deliveryCity!),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Flexible(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    if (controller.t2pOrderType == T2POrderType.AF2AP)
+                      Text(
+                        "Due : Rs. ${order.duesAmount}\nPaid : Rs. ${order.paidAmount}\n",
+                        textAlign: TextAlign.end,
+                      ),
+                    Text("Rs. ${order.price}"),
+                    Gap(DimensConstants.spaceBetweenViews),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 5,
+                        horizontal: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        color: Colors.green.shade50,
+                      ),
+                      child: Text(
+                        controller.orderType == OrderType.pickup
+                            ? order.pickupBoy!
+                            : order.deliveryBoy!,
+                        style: const TextStyle(color: Colors.green),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Divider(height: 1),
+          ),
+          SingleOrderInfoItem(
+            title: "Pickup Weight : ${order.pickupWeight?.toFixString()} KG",
+            height: 5,
+            width: 5,
+            color: Color(0xFFB42332),
+          ),
+          Gap(DimensConstants.spaceBetweenViews),
+          SingleOrderInfoItem(
             title: "Delivery Weight : ${order.deliveryWeight.toFixString()} KG",
             height: 5,
             width: 5,
-            color: Colors.red),
-        Gap(DimensConstants.spaceBetweenViews),
-        const SingleOrderInfoItem(
-            title: "Product : ", height: 5, width: 5, color: Colors.red),
-        Text(order.productNames!),
-        Gap(DimensConstants.spaceBetweenViews),
-        SingleOrderInfoItem(
+            color: Color(0xFFB42332),
+          ),
+          Gap(DimensConstants.spaceBetweenViews),
+          const SingleOrderInfoItem(
+            title: "Product : ",
+            height: 5,
+            width: 5,
+            color: Color(0xFFB42332),
+          ),
+          Text(order.productNames!),
+          Gap(DimensConstants.spaceBetweenViews),
+          SingleOrderInfoItem(
             title: "Express : ${order.express}",
             height: 5,
             width: 5,
-            color: Colors.red),
-        Gap(DimensConstants.spaceBetweenViews),
-        InkWell(
-          onTap: () async {
-            launchDialer(order.customerNumber!);
-          },
-          child: SingleOrderInfoItem(
+            color: Color(0xFFB42332),
+          ),
+          Gap(DimensConstants.spaceBetweenViews),
+          InkWell(
+            onTap: () async {
+              launchDialer(order.customerNumber!);
+            },
+            child: SingleOrderInfoItem(
               title: "Customer Mobile : ${order.customerNumber}",
               height: 5,
               width: 5,
-              color: Colors.red),
-        ),
-        Gap(DimensConstants.spaceBetweenViews),
-        const SingleOrderInfoItem(
+              color: Color(0xFFB42332),
+            ),
+          ),
+          Gap(DimensConstants.spaceBetweenViews),
+          const SingleOrderInfoItem(
             title: "Customer Address : ",
             height: 5,
             width: 5,
-            color: Colors.red),
-        Text(
-          "${controller.t2pOrderType == T2POrderType.T2P
-              ? order.customerAddress
-              : controller.orderType == OrderType.pickup
-              ? "${order.pickupAddress?.contactName}, \n${order.pickupAddress?.address}, \n${order.pickupAddress?.city?.name}, ${order.pickupAddress?.state?.name}\n${order.pickupAddress?.pincode}"
-              : "${order.deliveryAddress?.contactName}, \n${order.deliveryAddress?.address}, \n${order.deliveryAddress?.city?.name}, ${order.deliveryAddress?.state?.name}\n${order.deliveryAddress?.pincode}"}",
-          maxLines: 20,
-          softWrap: true,
-          overflow: TextOverflow.ellipsis,
-        ),
-        /*Gap(DimensConstants.spaceBetweenViews),
+            color: Color(0xFFB42332),
+          ),
+          Text(
+            "${controller.t2pOrderType == T2POrderType.T2P
+                ? order.customerAddress
+                : controller.orderType == OrderType.pickup
+                ? "${order.pickupAddress?.contactName}, \n${order.pickupAddress?.address}, \n${order.pickupAddress?.city?.name}, ${order.pickupAddress?.state?.name}\n${order.pickupAddress?.pincode}"
+                : "${order.deliveryAddress?.contactName}, \n${order.deliveryAddress?.address}, \n${order.deliveryAddress?.city?.name}, ${order.deliveryAddress?.state?.name}\n${order.deliveryAddress?.pincode}"}",
+            maxLines: 20,
+            softWrap: true,
+            overflow: TextOverflow.ellipsis,
+          ),
+          /*Gap(DimensConstants.spaceBetweenViews),
         singleAddressItem(
-            title: "Payment Mode : ", height: 5, width: 5, color: Colors.red),*/
-        Gap(DimensConstants.spaceBetweenViews),
-        if (order.pickupDate?.isNotEmpty == true)
-          SingleOrderInfoItem(
+            title: "Payment Mode : ", height: 5, width: 5, color: Color(0xFFB42332)),*/
+          Gap(DimensConstants.spaceBetweenViews),
+          if (order.pickupDate?.isNotEmpty == true)
+            SingleOrderInfoItem(
               title: "Pickup Date : ${order.pickupDate}",
               height: 5,
               width: 5,
-              color: Colors.red),
-        Gap(DimensConstants.spaceBetweenViews),
-        if (order.pickupTime?.isNotEmpty == true)
-          SingleOrderInfoItem(
+              color: Color(0xFFB42332),
+            ),
+          Gap(DimensConstants.spaceBetweenViews),
+          if (order.pickupTime?.isNotEmpty == true)
+            SingleOrderInfoItem(
               title: "Pickup Time : ${order.pickupTime}",
               height: 5,
               width: 5,
-              color: Colors.red),
-        Gap(DimensConstants.spaceBetweenViews),
-        SingleOrderInfoItem(
+              color: Color(0xFFB42332),
+            ),
+          Gap(DimensConstants.spaceBetweenViews),
+          SingleOrderInfoItem(
             title: "Delivery Date : ${order.deliveryDate}",
             height: 5,
             width: 5,
-            color: Colors.red),
-        Gap(DimensConstants.spaceBetweenViews),
-        SingleOrderInfoItem(
+            color: Color(0xFFB42332),
+          ),
+          Gap(DimensConstants.spaceBetweenViews),
+          SingleOrderInfoItem(
             title: "Delivery Time : ${order.deliveryTime}",
             height: 5,
             width: 5,
-            color: Colors.red),
-        Gap(DimensConstants.spaceBetweenViews),
-        SingleOrderInfoItem(
+            color: Color(0xFFB42332),
+          ),
+          Gap(DimensConstants.spaceBetweenViews),
+          SingleOrderInfoItem(
             title: "Status : ${order.orderStatus}",
             height: 5,
             width: 5,
-            color: Colors.red),
-        //Gap(DimensConstants.spaceBetweenViews),
-        Row(
-          children: [
-            Expanded(
-              child: CheckboxListTile(
-                tileColor: Theme.of(context).primaryColor,
-                checkColor: Colors.green,
-                value: controller.orderSelected(order.id!),
-                onChanged: (value) {
-                  if (value != null) {
-                    controller.selectOrder(order.id!);
-                  }
-                },
-                title: const Text(
-                  "Select Order",
+            color: Color(0xFFB42332),
+          ),
+          OrderDutyButton(order: order),
+          //Gap(DimensConstants.spaceBetweenViews),
+          Row(
+            children: [
+              Expanded(
+                child: CheckboxListTile(
+                  tileColor: const Color(0xFFF8F9FC),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+                  checkColor: Colors.white,
+                  activeColor: const Color(0xFFB42332),
+                  value: controller.orderSelected(order.id!),
+                  onChanged: (value) {
+                    if (value != null) {
+                      controller.selectOrder(order.id!);
+                    }
+                  },
+                  title: const Text("Select Order"),
+                  controlAffinity: ListTileControlAffinity.leading,
                 ),
-                controlAffinity: ListTileControlAffinity.leading,
               ),
-            ),
 
-            /** who can update t2p order weight
+              /** who can update t2p order weight
                 1. partner, of pickup orders
                 2. boy, of delivery orders
                 <----------------------------->
                 who can update af2ap order weight, height, width, length
                 1. only pickup boy **/
-
-            if (userController.userType == UserType.delivery_boy.name &&
-                controller.orderType == OrderType.pickup)
-              Expanded(
+              if (userController.userType == UserType.delivery_boy.name &&
+                  controller.orderType == OrderType.pickup)
+                Expanded(
                   child: controller.updateButtonLoading.isTrue
                       ? Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -229,16 +264,16 @@ class SingleOrderItem extends StatelessWidget {
                                 return controller.t2pOrderType ==
                                         T2POrderType.T2P
                                     ? t2pWeightUpdateDialog(order.id!)
-                                    : AF2APProductDialog(
-                                        order: order,
-                                      );
+                                    : AF2APProductDialog(order: order);
                               },
                             );
                           },
-                          child: const Text("Update"))),
+                          child: const Text("Update"),
+                        ),
+                ),
 
-            // if af2ap pickup boy take payment when he pick food from user
-            /*if (userController.userType == UserType.delivery_boy.name &&
+              // if af2ap pickup boy take payment when he pick food from user
+              /*if (userController.userType == UserType.delivery_boy.name &&
                 controller.orderType == OrderType.pickup && controller.t2pOrderType == T2POrderType.AF2AP)
               Expanded(
                   child:TextButton(
@@ -246,9 +281,9 @@ class SingleOrderItem extends StatelessWidget {
                             takePayment(context);
                           },
                           child: const Text("Take Payment"))),*/
-          ],
-        ),
-        /* SizedBox(
+            ],
+          ),
+          /* SizedBox(
           height: 30,
           child: SwipeableButtonView(
             buttonText: 'Start Order',
@@ -272,8 +307,9 @@ class SingleOrderItem extends StatelessWidget {
             },
           ),
         )*/
-      ],
-    ));
+        ],
+      ),
+    );
   }
 
   t2pWeightUpdateDialog(String orderId) {
@@ -312,17 +348,13 @@ class SingleOrderItem extends StatelessWidget {
   }
 
   verticalDivider() {
-    return Container(
-      height: 30,
-      width: 1,
-      color: Colors.grey,
-    );
+    return Container(height: 30, width: 1, color: Colors.grey);
   }
 
   void launchDialer(String phoneNumer) async {
     String url = "tel:$phoneNumer";
     if (await canLaunchUrl(Uri.parse(url))) {
-      await launchUrl(Uri.parse(url,));
+      await launchUrl(Uri.parse(url));
     } else {
       throw 'Could not launch $url';
     }

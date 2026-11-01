@@ -1,3 +1,5 @@
+import '../screens/duty/duty_controller.dart';
+
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -144,6 +146,9 @@ class UserController extends GetxController {
   }
 
   Future<void> clearUser() async {
+    if (Get.isRegistered<DutyController>()) {
+      await Get.find<DutyController>().suspend();
+    }
     await Get.find<AuthController>().clearAccessToken();
     if (Get.isRegistered<ExpenseNotificationController>()) {
       Get.find<ExpenseNotificationController>().resetSession();

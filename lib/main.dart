@@ -1,3 +1,5 @@
+import 'presentation/screens/duty/duty_controller.dart';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -39,6 +41,7 @@ void main() async {
   runApp(const MyApp());
 }
 
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -64,6 +67,7 @@ class InitialBindings extends Bindings {
     Get.put(AuthController());
     Get.put(ConnectivityController());
     Get.put(ExpenseController());
+    Get.put(DutyController(), permanent: true);
     Get.put(ExpenseNotificationController());
     Get.put(DashboardController());
     Get.put(AddDeliveryBoyController());

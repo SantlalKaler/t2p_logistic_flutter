@@ -127,6 +127,7 @@ class ApiService {
     dynamic data,
     Map<String, dynamic>? query,
     ResponseType? responseType,
+    Duration? timeout,
   }) async {
     final token = await authController.readAccessToken();
     if (token.isEmpty) {
@@ -150,8 +151,8 @@ class ApiService {
           method: method,
           responseType: responseType,
           headers: {'Authorization': 'Bearer $token'},
-          sendTimeout: const Duration(seconds: 45),
-          receiveTimeout: const Duration(seconds: 45),
+          sendTimeout: timeout ?? const Duration(seconds: 45),
+          receiveTimeout: timeout ?? const Duration(seconds: 45),
         ),
       );
       _logExpenseResponse(method, path, response);

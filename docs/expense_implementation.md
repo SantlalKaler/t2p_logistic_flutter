@@ -1,5 +1,30 @@
 ﻿# Expense module (API guide v1.2)
 
+## November 2026 expense update (API guide v1.4)
+
+Food Purchase uses independent `items[].gst_applicable` values (Yes = 5%).
+Saved rows restore GST from their own `gst_rate_bp`; purchase-level GST summaries
+are ignored and no purchase-level GST fields are sent. New product prices start
+blank, line order is preserved, and weight, discounts and quantity changes sit
+under More. Each row shows quantity, price, GST and its total, followed by the
+purchase subtotal, discount, tax and grand total. Saved details show each row's
+GST choice and use the server's totals.
+
+My Cash has an Upload payment screenshot button. It accepts one JPG, PNG, WEBP or
+HEIC image up to 10 MB and posts multipart `file` to `/v1/ocr/payment-bill` with
+a three-minute send/receive timeout. Confirmation shows the rupee amount,
+reference and sender; closing confirmation refreshes the server ledger. A 409
+shows the server message and offers a balance refresh. Refused screenshots are
+not automatically resent; network/service failures allow manual retry.
+
+Duty implementation is deferred. Native image picking and the deployed OCR
+endpoint still need device/live verification. Local tests cover mixed GST,
+blank-price drafts, upload limits, success, duplicate handling, retries and the
+authenticated request contract. The older implementation notes below describe
+earlier versions; their purchase-wide GST behavior is superseded by this update.
+
+## Original expense implementation
+
 The existing dashboard entry now opens the `/v1` expense flow. It keeps the
 project's GetX controller / Dio ApiService / domain models / shared widget layout.
 Legacy COD and other admin API calls are separate and unchanged in behavior.
