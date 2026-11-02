@@ -51,10 +51,13 @@ class DutyStore {
   Future<List<Map<String, Object?>>> batch(
     String owner, {
     String? session,
+    List<String> excludeSessions = const [],
   }) async => (await database).query(
     'points',
-    where: 'owner = ?${session == null ? '' : ' AND session = ?'}',
-    whereArgs: [owner, ?session],
+    where:
+        'owner = ?${session == null ? '' : ' AND session = ?'}'
+        '${excludeSessions.isEmpty ? '' : ' AND session NOT IN (${List.filled(excludeSessions.length, '?').join(',')})'}',
+    whereArgs: [owner, ?session, ...excludeSessions],
     orderBy: 'id ASC',
     limit: 500,
   );

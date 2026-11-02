@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart' as dio;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -22,6 +24,35 @@ class _PaymentScreenshotDialogState extends State<PaymentScreenshotDialog> {
   bool busy = false, retryable = false, duplicate = false;
   String error = '';
   Map<String, dynamic>? payment;
+  Timer? _cooldownTimer;
+  int get retrySeconds {
+    final until = c.paymentRetryAt;
+    if (until == null) return 0;
+    final seconds = (until.difference(DateTime.now()).inMilliseconds / 1000)
+        .ceil();
+    return seconds < 0 ? 0 : seconds;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    watchCooldown();
+  }
+
+  void watchCooldown() {
+    _cooldownTimer?.cancel();
+    if (retrySeconds == 0) return;
+    _cooldownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted || retrySeconds == 0) timer.cancel();
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _cooldownTimer?.cancel();
+    super.dispose();
+  }
 
   Future<void> choose() async {
     setState(() {
@@ -86,6 +117,7 @@ class _PaymentScreenshotDialogState extends State<PaymentScreenshotDialog> {
             e.statusCode == 429 ||
             (e.statusCode ?? 0) >= 500;
       });
+      if (e.statusCode == 429) watchCooldown();
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -248,10 +280,19 @@ class _PaymentScreenshotDialogState extends State<PaymentScreenshotDialog> {
           ),
           FilledButton(
             onPressed:
-                busy || selected == null || (error.isNotEmpty && !retryable)
+                busy ||
+                    retrySeconds > 0 ||
+                    selected == null ||
+                    (error.isNotEmpty && !retryable)
                 ? null
                 : upload,
-            child: Text(retryable ? 'Try again' : 'Upload'),
+            child: Text(
+              retrySeconds > 0
+                  ? 'Try again in ${retrySeconds}s'
+                  : retryable
+                  ? 'Try again'
+                  : 'Upload',
+            ),
           ),
         ],
       ],

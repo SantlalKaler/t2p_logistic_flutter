@@ -200,6 +200,28 @@ void main() {
     },
   );
 
+  testWidgets(
+    'payment cooldown disables upload and expires without resending',
+    (tester) async {
+      final c = CashController()
+        ..paymentRetryAt = DateTime.now().add(const Duration(seconds: 60));
+      await openUpload(tester, c);
+      final retry = find.byType(FilledButton).last;
+      expect(tester.widget<FilledButton>(retry).onPressed, isNull);
+      expect(find.textContaining('Try again in'), findsOneWidget);
+      expect(c.uploads, 0);
+      c.paymentRetryAt = DateTime.now().subtract(const Duration(seconds: 1));
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pumpAndSettle();
+      expect(tester.widget<FilledButton>(retry).onPressed, isNotNull);
+      expect(c.uploads, 0);
+      await tester.tap(find.text('Upload'));
+      await tester.pumpAndSettle();
+      expect(c.uploads, 1);
+      await tester.pumpWidget(const SizedBox.shrink());
+    },
+  );
+
   for (final file in [
     ScreenshotFile('payment.pdf'),
     ScreenshotFile('large.png', size: 10 * 1024 * 1024 + 1),

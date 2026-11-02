@@ -1,4 +1,28 @@
-﻿# Expense module (API guide v1.2)
+﻿# Expense module (API guide v1.4)
+
+## Expense review fixes (November 2026)
+
+- Filling and journey date controls display and clear their field errors.
+  Cancelled-food usage errors appear beside the affected entry and inside its
+  edit dialog. Food adjustments and usage entries can be edited in place,
+  including incomplete drafts. Quantity limits exclude the entry being replaced.
+- Food GST previews and the Yes label use `meta.gst_rate_percent` (5% fallback).
+  Each product still sends only its own `gst_applicable`; saved totals remain
+  authoritative server values.
+- Payment OCR has a separate cooldown from other expense requests. It honors
+  `Retry-After`, defaults to 60 seconds without it, and displays a retry countdown.
+  Balance/list requests remain available during a payment cooldown. There is no
+  automatic upload retry.
+- Editable expenses with `actions.submit` offer Save and submit. The app first
+  PATCHes full details, then submits using the returned version. If submission
+  fails, the saved draft and its new version are retained and field errors are
+  shown. Cancelled Orders continue to use their separate approval action.
+
+The backend must return `CANCELLED_ORDER` in metadata for that form to appear.
+The guide's general claim that app users never receive `actions.approve` has a
+documented exception for Cancelled Orders; the app follows returned actions.
+Real OCR, private file handling, cash reversals and push still need device/live
+backend verification.
 
 ## November 2026 expense update (API guide v1.4)
 

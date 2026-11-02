@@ -305,8 +305,18 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
 
   int foodLineTaxPaise(Map<String, dynamic> line) {
     final taxable = foodLineSubtotalPaise(line) - foodLineDiscountPaise(line);
-    return line['gst_applicable'] != false ? (taxable * 5 / 100).round() : 0;
+    return line['gst_applicable'] != false
+        ? (taxable * gstRatePercent / 100).round()
+        : 0;
   }
+
+  num get gstRatePercent {
+    final rate = num.tryParse('${c.meta['gst_rate_percent']}');
+    return rate != null && rate.isFinite && rate > 0 && rate <= 28 ? rate : 5;
+  }
+
+  String get gstYesLabel =>
+      'Yes (${gstRatePercent.toString().replaceFirst(RegExp(r'\.0$'), '')}%)';
 
   int foodLineTotalPaise(Map<String, dynamic> line) =>
       foodLineSubtotalPaise(line) -
@@ -396,7 +406,10 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
     child: TextFormField(
       controller: field(name),
       onChanged: (_) {
-        setState(() => serverErrors.remove('details.$name'));
+        setState(() {
+          serverErrors.remove('details.$name');
+          serverErrors.remove(name);
+        });
       },
       maxLines: lines,
       maxLength: maxLength,
@@ -458,7 +471,10 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
         onChanged: loading || saving
             ? null
             : (v) {
-                if (v != null) changed(v);
+                if (v != null) {
+                  setState(() => serverErrors.remove(errorKey));
+                  changed(v);
+                }
               },
         validator: (v) =>
             (validatingSubmit || requiredForDraft) && (v ?? '').isEmpty
@@ -471,8 +487,9 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
   Widget dateInput(
     String label,
     String current,
-    ValueChanged<String> change,
-  ) => Padding(
+    ValueChanged<String> change, {
+    String? errorKey,
+  }) => Padding(
     padding: const EdgeInsets.only(bottom: 14),
     child: InkWell(
       key: ValueKey('expense-date:$label'),
@@ -498,12 +515,16 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
                 lastDate: today,
               );
               if (chosen != null && mounted) {
-                setState(() => change(expenseDay(chosen)));
+                setState(() {
+                  change(expenseDay(chosen));
+                  serverErrors.remove(errorKey);
+                });
               }
             },
       child: InputDecorator(
         decoration: InputDecoration(
           labelText: label,
+          errorText: serverErrors[errorKey],
           prefixIcon: const Icon(Icons.calendar_today_outlined, size: 20),
           suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded),
         ),
@@ -848,7 +869,9 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
 
   Widget actionBar() {
     final enabled = category.isNotEmpty && !loading && !saving;
-    final canSubmit = !editing && category != 'CANCELLED_ORDER';
+    final canSubmit =
+        category != 'CANCELLED_ORDER' &&
+        (!editing || currentExpense!.can('submit'));
     return Container(
       key: const ValueKey('expense-action-bar'),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
@@ -875,7 +898,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
                       ? OutlinedButton(
                           key: const ValueKey('expense-save-draft'),
                           onPressed: enabled ? () => save(false) : null,
-                          child: const Text('Save draft'),
+                          child: Text(editing ? 'Save changes' : 'Save draft'),
                         )
                       : FilledButton(
                           key: const ValueKey('expense-save-draft'),
@@ -1004,6 +1027,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
             'Filling date (optional)',
             field('filled_at').text,
             (v) => field('filled_at').text = v,
+            errorKey: 'details.filled_at',
           ),
           text('vehicle_no', 'Vehicle number (optional)', required: false),
           text('pump_name', 'Petrol pump (optional)', required: false),
@@ -1028,6 +1052,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
             'Journey date (optional)',
             field('journey_date').text,
             (v) => field('journey_date').text = v,
+            errorKey: 'details.journey_date',
           ),
           text('purpose', 'Purpose (optional)', required: false),
           text('amount', 'Amount (₹)', decimals: 2),
@@ -1317,6 +1342,23 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
       expenseNumber(line['order_quantity']) +
       expenseMaps(line['adjustments'])
           .fold<num>(0, (sum, e) => sum + expenseNumber(e['quantity']));
+
+  Map<String, String> entryErrors(String path) => {
+    for (final error in serverErrors.entries)
+      if (error.key.startsWith('$path.'))
+        error.key.substring(path.length + 1): error.value,
+  };
+
+  List<Widget> entryErrorMessages(String path) => [
+    for (final error in serverErrors.entries)
+      if (error.key == path || error.key.startsWith('$path.'))
+        Text(error.value, style: const TextStyle(color: Colors.red)),
+  ];
+
+  void clearEntryErrors(String path) => serverErrors.removeWhere(
+    (key, _) =>
+        key == path || key.startsWith('$path.') || key.startsWith('$path['),
+  );
   Widget foodSummary() => Container(
     padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
@@ -1482,9 +1524,9 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
                       labelText: 'GST',
                       errorText: serverErrors['$path.gst_applicable'],
                     ),
-                    items: const [
-                      DropdownMenuItem(value: true, child: Text('Yes (5%)')),
-                      DropdownMenuItem(value: false, child: Text('No')),
+                    items: [
+                      DropdownMenuItem(value: true, child: Text(gstYesLabel)),
+                      const DropdownMenuItem(value: false, child: Text('No')),
                     ],
                     onChanged: saving || loading
                         ? null
@@ -1553,15 +1595,38 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
                     title: Text(
                       '${adjustments[j]['quantity']} • ${adjustments[j]['note']}',
                     ),
-                    subtitle: Text('${adjustments[j]['orderid'] ?? ''}'),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete_outline),
-                      onPressed: saving
-                          ? null
-                          : () => setState(() {
-                              adjustments.removeAt(j);
-                              line['adjustments'] = adjustments;
-                            }),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('${adjustments[j]['orderid'] ?? ''}'),
+                        ...entryErrorMessages('$path.adjustments[$j]'),
+                      ],
+                    ),
+                    onTap: saving || loading
+                        ? null
+                        : () => addAdjustment(i, index: j),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          tooltip: 'Edit adjustment',
+                          icon: const Icon(Icons.edit_outlined),
+                          onPressed: saving || loading
+                              ? null
+                              : () => addAdjustment(i, index: j),
+                        ),
+                        IconButton(
+                          tooltip: 'Delete adjustment',
+                          icon: const Icon(Icons.delete_outline),
+                          onPressed: saving || loading
+                              ? null
+                              : () => setState(() {
+                                  adjustments.removeAt(j);
+                                  line['adjustments'] = adjustments;
+                                  clearEntryErrors('$path.adjustments');
+                                }),
+                        ),
+                      ],
                     ),
                   ),
                 if (adjustments.length < 20)
@@ -1616,19 +1681,30 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
     );
   }
 
-  Future<void> addAdjustment(int i) async {
-    validatingSubmit = false;
+  Future<void> addAdjustment(int i, {int? index}) async {
     final line = lines[i];
-    final quantity = TextEditingController(),
-        note = TextEditingController(),
-        orderNumber = TextEditingController();
+    final adjustments = expenseMaps(line['adjustments']);
+    final original = index == null ? <String, dynamic>{} : adjustments[index];
+    final path = 'details.items[$i].adjustments';
+    final errors = index == null
+        ? <String, String>{}
+        : entryErrors('$path[$index]');
+    final originalQuantity = '${original['quantity'] ?? ''}';
+    final quantity = TextEditingController(
+          text: originalQuantity.replaceFirst(RegExp(r'^[+-]'), ''),
+        ),
+        note = TextEditingController(text: '${original['note'] ?? ''}'),
+        orderNumber = TextEditingController(
+          text: '${original['orderid'] ?? ''}',
+        );
     final key = GlobalKey<FormState>();
-    bool add = true;
+    bool add = !originalQuantity.startsWith('-');
+    final available = finalQuantity(line) - expenseNumber(original['quantity']);
     final accepted = await showDialog<bool>(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, set) => ExpenseDialog(
-          title: 'Change quantity',
+          title: index == null ? 'Change quantity' : 'Edit quantity change',
           icon: Icons.tune_rounded,
           onClose: () => Navigator.pop(context, false),
           content: SingleChildScrollView(
@@ -1638,7 +1714,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   DropdownButtonFormField<bool>(
-                    initialValue: true,
+                    initialValue: add,
                     decoration: const InputDecoration(labelText: 'Adjustment'),
                     items: const [
                       DropdownMenuItem(value: true, child: Text('Add')),
@@ -1649,14 +1725,19 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: quantity,
-                    decoration: const InputDecoration(labelText: 'Quantity'),
+                    decoration: InputDecoration(
+                      labelText: 'Quantity',
+                      errorText: errors['quantity'],
+                    ),
+                    onChanged: (_) => set(() => errors.remove('quantity')),
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
                     validator: (v) {
-                      final error = validateNumber(v, 3);
+                      final error = validateNumber(v, 3, required: false);
                       if (error != null) return error;
-                      return !add && finalQuantity(line) - expenseNumber(v) < 0
+                      final change = expenseNumber(v) * (add ? 1 : -1);
+                      return available + change < 0
                           ? 'Final quantity cannot be negative'
                           : null;
                     },
@@ -1664,15 +1745,21 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: orderNumber,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Order number (optional)',
+                      errorText: errors['orderid'],
                     ),
+                    onChanged: (_) => set(() => errors.remove('orderid')),
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: note,
                     maxLength: 1000,
-                    decoration: const InputDecoration(labelText: 'Reason'),
+                    decoration: InputDecoration(
+                      labelText: 'Reason',
+                      errorText: errors['note'],
+                    ),
+                    onChanged: (_) => set(() => errors.remove('note')),
                     validator: (v) =>
                         (v ?? '').trim().isNotEmpty &&
                             (v ?? '').trim().length < 3
@@ -1692,26 +1779,31 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
               onPressed: () {
                 if (key.currentState!.validate()) Navigator.pop(context, true);
               },
-              child: const Text('Add'),
+              child: Text(index == null ? 'Add' : 'Save adjustment'),
             ),
           ],
         ),
       ),
     );
     if (accepted == true && mounted) {
-      setState(
-        () => line['adjustments'] = [
-          ...expenseMaps(line['adjustments']),
-          {
-            'quantity': quantity.text.trim().isEmpty
-                ? ''
-                : '${add ? '+' : '-'}${quantity.text.trim()}',
-            'note': note.text.trim(),
-            if (orderNumber.text.trim().isNotEmpty)
-              'orderid': orderNumber.text.trim(),
-          },
-        ],
-      );
+      setState(() {
+        final entry = <String, dynamic>{
+          'quantity': quantity.text.trim().isEmpty
+              ? ''
+              : '${add ? '+' : '-'}${quantity.text.trim()}',
+          'note': note.text.trim(),
+          if (orderNumber.text.trim().isNotEmpty)
+            'orderid': orderNumber.text.trim(),
+        };
+        if (index == null) {
+          adjustments.add(entry);
+        } else {
+          adjustments[index] = entry;
+          clearEntryErrors('$path[$index]');
+        }
+        serverErrors.remove(path);
+        line['adjustments'] = adjustments;
+      });
     }
     // Dialog text controllers are disposed after its reverse animation.
     await Future<void>.delayed(const Duration(milliseconds: 250));
@@ -1722,6 +1814,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
 
   Widget cancelledLine(int i) {
     final line = lines[i];
+    final path = 'details.items[$i].dispositions';
     final entries = expenseMaps(line['dispositions']);
     final left =
         expenseNumber(line['quantity']) -
@@ -1759,26 +1852,54 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
                 ),
               ),
             ),
+            ...entryErrorMessages(path),
             for (int j = 0; j < entries.length; j++)
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: Text(
                   '${entries[j]['type']} • ${entries[j]['quantity']}',
                 ),
-                subtitle: Text(
-                  '${expenseDay(entries[j]['date'])} ${entries[j]['orderid'] ?? ''} ${entries[j]['note'] ?? ''}',
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${expenseDay(entries[j]['date'])} ${entries[j]['orderid'] ?? ''} ${entries[j]['note'] ?? ''}',
+                    ),
+                    ...entryErrorMessages('$path[$j]'),
+                  ],
                 ),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  onPressed: () => setState(() {
-                    entries.removeAt(j);
-                    line['dispositions'] = entries;
-                  }),
+                onTap: saving || loading
+                    ? null
+                    : () => addDisposition(i, left, index: j),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      tooltip: 'Edit food usage',
+                      icon: const Icon(Icons.edit_outlined),
+                      onPressed: saving || loading
+                          ? null
+                          : () => addDisposition(i, left, index: j),
+                    ),
+                    IconButton(
+                      tooltip: 'Delete food usage',
+                      icon: const Icon(Icons.delete_outline),
+                      onPressed: saving || loading
+                          ? null
+                          : () => setState(() {
+                              entries.removeAt(j);
+                              line['dispositions'] = entries;
+                              clearEntryErrors(path);
+                            }),
+                    ),
+                  ],
                 ),
               ),
             if (entries.length < 30 && left > 0)
               TextButton(
-                onPressed: () => addDisposition(i, left),
+                onPressed: saving || loading
+                    ? null
+                    : () => addDisposition(i, left),
                 child: const Text('Add food usage'),
               ),
           ],
@@ -1787,23 +1908,32 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
     );
   }
 
-  Future<void> addDisposition(int i, num left) async {
+  Future<void> addDisposition(int i, num left, {int? index}) async {
+    final entries = expenseMaps(lines[i]['dispositions']);
+    final original = index == null ? null : entries[index];
+    final path = 'details.items[$i].dispositions';
     final entry = await showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) => FoodUsageDialog(
-        available: left,
+        available: left + expenseNumber(original?['quantity']),
         allowIncomplete: true,
+        initialEntry: original,
+        errors: index == null ? const {} : entryErrors('$path[$index]'),
         backdateDays: expenseNumber(c.meta['backdate_days'] ?? 7).toInt(),
         productName: '${lines[i]['product_name'] ?? ''}',
       ),
     );
     if (entry != null && mounted) {
-      setState(
-        () => lines[i]['dispositions'] = [
-          ...expenseMaps(lines[i]['dispositions']),
-          entry,
-        ],
-      );
+      setState(() {
+        if (index == null) {
+          entries.add(entry);
+        } else {
+          entries[index] = entry;
+          clearEntryErrors('$path[$index]');
+        }
+        serverErrors.remove(path);
+        lines[i]['dispositions'] = entries;
+      });
     }
   }
 
@@ -1952,6 +2082,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
       error = '';
       serverErrors = {};
     });
+    var persisted = false;
     try {
       final response = await c.save({
         if (!editing) 'category': category,
@@ -1966,48 +2097,76 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
       }, id: currentExpense?.expense.id);
       if (!mounted) return;
       if (response != null) {
+        persisted = true;
         if (editing) {
+          // PATCH never submits. Use its returned version for the separate action,
+          // and retain it if submission fails so the saved draft can be retried.
+          currentExpense = response;
+          ordersChanged = false;
+          if (submit) {
+            if (!response.can('submit')) {
+              throw ExpenseApiException(
+                409,
+                'Changes saved. This expense can no longer be submitted.',
+              );
+            }
+            currentExpense = await c.action(response, 'submit');
+            if (!mounted) return;
+          }
           Get.back(result: true);
         } else {
           Get.off(() => ExpenseDetailScreen(id: response.expense.id));
         }
-        c.getExpenseList();
-        c.loadLedger().catchError((Object e) => c.showError(e));
       } else {
         setState(() {
           error = c.error;
           serverErrors = Map.of(c.fieldErrors);
         });
-        if (editing && c.lastStatusCode == 409) {
-          final fresh = await c.getDetail(currentExpense!.expense.id);
-          if (!mounted) return;
-          if (!fresh.can('edit')) {
-            Get.back(result: true);
-            return;
-          }
-          currentExpense = fresh;
-          for (final controller in fields.values) {
-            controller.clear();
-          }
-          lines = [];
-          selectedOrders = {};
-          serverErrors = {};
-          ordersChanged = false;
-          await initialize();
-          if (mounted) {
-            setState(
-              () => error = 'This expense changed. Fresh details have been loaded; review before saving.',
-            );
-          }
-        } else if (editing && c.lastStatusCode == 404) {
-          await c.refreshAfterDeletion();
-          if (mounted) Get.back(result: true);
-        }
+        await recoverSaveFailure(c.lastStatusCode);
       }
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) {
+        setState(() {
+          error = persisted ? 'Changes saved. Submission failed: $e' : '$e';
+          if (e is ExpenseApiException) serverErrors = Map.of(e.fields);
+        });
+        if (e is ExpenseApiException) await recoverSaveFailure(e.statusCode);
+      }
     } finally {
+      if (persisted) {
+        c.getExpenseList();
+        c.loadLedger().catchError((Object e) => c.showError(e));
+      }
       if (mounted) setState(() => saving = false);
+    }
+  }
+
+  Future<void> recoverSaveFailure(int? statusCode) async {
+    if (!editing) return;
+    if (statusCode == 409) {
+      final fresh = await c.getDetail(currentExpense!.expense.id);
+      if (!mounted) return;
+      if (!fresh.can('edit')) {
+        Get.back(result: true);
+        return;
+      }
+      currentExpense = fresh;
+      for (final controller in fields.values) {
+        controller.clear();
+      }
+      lines = [];
+      selectedOrders = {};
+      serverErrors = {};
+      ordersChanged = false;
+      await initialize();
+      if (mounted) {
+        setState(
+          () => error = 'This expense changed. Fresh details have been loaded; review before saving.',
+        );
+      }
+    } else if (statusCode == 404) {
+      await c.refreshAfterDeletion();
+      if (mounted) Get.back(result: true);
     }
   }
 }

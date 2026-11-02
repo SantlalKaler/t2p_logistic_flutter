@@ -112,7 +112,8 @@ String dutyTime(dynamic value) {
 
 class DutySessionCard extends StatelessWidget {
   final DutySession duty;
-  const DutySessionCard({super.key, required this.duty});
+  final VoidCallback? onEnterKm;
+  const DutySessionCard({super.key, required this.duty, this.onEnterKm});
   @override
   Widget build(BuildContext context) => DutySurface(
     child: Column(
@@ -157,7 +158,11 @@ class DutySessionCard extends StatelessWidget {
             ),
             const SizedBox(width: 6),
             DutyBadge(
-              label: duty.isOn ? 'Active' : 'Completed',
+              label: duty.isOn
+                  ? 'Active'
+                  : duty.needsActualKm
+                  ? 'Km pending'
+                  : 'Completed',
               active: duty.isOn,
             ),
           ],
@@ -206,6 +211,27 @@ class DutySessionCard extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
+        if (duty.actualKm != null) ...[
+          Text('Actual km: ${duty.actualKm!.toStringAsFixed(2)} km'),
+          const SizedBox(height: 6),
+          Text(
+            'Difference: ${duty.differenceKm?.toStringAsFixed(2) ?? '—'} km',
+          ),
+          const SizedBox(height: 12),
+        ],
+        if (duty.needsActualKm) ...[
+          const Text(
+            'Pending actual km · Unpaid',
+            style: TextStyle(color: ExpenseDesign.accent),
+          ),
+          if (onEnterKm != null)
+            TextButton.icon(
+              onPressed: onEnterKm,
+              icon: const Icon(Icons.edit_road_outlined),
+              label: const Text('Enter km'),
+            ),
+          const SizedBox(height: 12),
+        ],
         Text(
           '${duty.rate == 0 ? 'Rate not set' : '₹${duty.rate}/km'}  ·  ${duty.isOn ? 'Duty in progress' : 'Stopped ${dutyTime(duty.json['ended_at'])}'}',
           style: const TextStyle(fontSize: 11, color: ExpenseDesign.muted),

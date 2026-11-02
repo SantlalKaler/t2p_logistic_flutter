@@ -8,12 +8,16 @@ class FoodUsageDialog extends StatefulWidget {
   final bool allowIncomplete;
   final int backdateDays;
   final String productName;
+  final Map<String, dynamic>? initialEntry;
+  final Map<String, String> errors;
   const FoodUsageDialog({
     super.key,
     required this.available,
     this.allowIncomplete = false,
     required this.backdateDays,
     required this.productName,
+    this.initialEntry,
+    this.errors = const {},
   });
   @override
   State<FoodUsageDialog> createState() => _FoodUsageDialogState();
@@ -25,6 +29,21 @@ class _FoodUsageDialogState extends State<FoodUsageDialog> {
   final note = TextEditingController();
   final order = TextEditingController();
   String type = 'adjusted', day = expenseToday();
+  late final Map<String, String> errors;
+  @override
+  void initState() {
+    super.initState();
+    errors = Map.of(widget.errors);
+    final entry = widget.initialEntry;
+    if (entry != null) {
+      type = '${entry['type'] ?? 'adjusted'}';
+      quantity.text = '${entry['quantity'] ?? ''}';
+      note.text = '${entry['note'] ?? ''}';
+      order.text = '${entry['orderid'] ?? ''}';
+      day = expenseDay(entry['date']);
+    }
+  }
+
   @override
   void dispose() {
     quantity.dispose();
@@ -49,15 +68,24 @@ class _FoodUsageDialogState extends State<FoodUsageDialog> {
 
   Future<void> pickDate() async {
     final today = DateTime.parse(expenseToday());
+    final earliest = today.subtract(Duration(days: widget.backdateDays));
+    final parsed = DateTime.tryParse(day) ?? today;
     final chosen = await showDatePicker(
       context: context,
       builder: (context, child) =>
           Theme(data: ExpenseDesign.theme(context), child: child!),
-      initialDate: DateTime.parse(day),
-      firstDate: today.subtract(Duration(days: widget.backdateDays)),
+      initialDate: parsed.isBefore(earliest) || parsed.isAfter(today)
+          ? today
+          : parsed,
+      firstDate: earliest,
       lastDate: today,
     );
-    if (chosen != null && mounted) setState(() => day = expenseDay(chosen));
+    if (chosen != null && mounted) {
+      setState(() {
+        day = expenseDay(chosen);
+        errors.remove('date');
+      });
+    }
   }
 
   void save() {
@@ -66,7 +94,7 @@ class _FoodUsageDialogState extends State<FoodUsageDialog> {
     Navigator.pop(context, <String, dynamic>{
       'type': type,
       'quantity': quantity.text.trim(),
-      'date': day,
+      if (day.isNotEmpty) 'date': day,
       if (type == 'adjusted') 'orderid': order.text.trim(),
       if (note.text.trim().isNotEmpty) 'note': note.text.trim(),
     });
@@ -103,10 +131,12 @@ class _FoodUsageDialogState extends State<FoodUsageDialog> {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'Record food usage',
-                      style: TextStyle(
+                      widget.initialEntry == null
+                          ? 'Record food usage'
+                          : 'Edit food usage',
+                      style: const TextStyle(
                         fontFamily: 'Roboto',
                         fontSize: 17,
                         fontWeight: FontWeight.w700,
@@ -172,8 +202,9 @@ class _FoodUsageDialogState extends State<FoodUsageDialog> {
                       DropdownButtonFormField<String>(
                         initialValue: type,
                         isExpanded: true,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: 'Usage type',
+                          errorText: errors['type'],
                         ),
                         items: const [
                           DropdownMenuItem(
@@ -194,17 +225,27 @@ class _FoodUsageDialogState extends State<FoodUsageDialog> {
                           ),
                         ],
                         onChanged: (value) {
-                          if (value != null) setState(() => type = value);
+                          if (value != null) {
+                            setState(() {
+                              type = value;
+                              errors.remove('type');
+                              errors.remove('orderid');
+                              errors.remove('note');
+                            });
+                          }
                         },
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
                         key: const ValueKey('food-usage-quantity'),
                         controller: quantity,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: 'Quantity',
                           hintText: 'Enter quantity',
+                          errorText: errors['quantity'],
                         ),
+                        onChanged: (_) =>
+                            setState(() => errors.remove('quantity')),
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
@@ -216,10 +257,13 @@ class _FoodUsageDialogState extends State<FoodUsageDialog> {
                         TextFormField(
                           key: const ValueKey('food-usage-order'),
                           controller: order,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: 'Existing order number',
                             hintText: 'T2P-...',
+                            errorText: errors['orderid'],
                           ),
+                          onChanged: (_) =>
+                              setState(() => errors.remove('orderid')),
                           textInputAction: TextInputAction.next,
                           validator: (value) =>
                               !widget.allowIncomplete &&
@@ -236,6 +280,7 @@ class _FoodUsageDialogState extends State<FoodUsageDialog> {
                         maxLines: 3,
                         maxLength: 1000,
                         decoration: InputDecoration(
+                          errorText: errors['note'],
                           labelText: type == 'consumed'
                               ? 'Who consumed it?'
                               : 'Note (optional)',
@@ -244,6 +289,7 @@ class _FoodUsageDialogState extends State<FoodUsageDialog> {
                               : 'Add any additional details',
                           counterText: '',
                         ),
+                        onChanged: (_) => setState(() => errors.remove('note')),
                         validator: (value) =>
                             !widget.allowIncomplete &&
                                 type == 'consumed' &&
@@ -256,16 +302,19 @@ class _FoodUsageDialogState extends State<FoodUsageDialog> {
                         onTap: pickDate,
                         borderRadius: BorderRadius.circular(12),
                         child: InputDecorator(
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             labelText: 'Usage date',
-                            prefixIcon: Icon(
+                            errorText: errors['date'],
+                            prefixIcon: const Icon(
                               Icons.calendar_today_outlined,
                               size: 19,
                             ),
-                            suffixIcon: Icon(Icons.keyboard_arrow_down_rounded),
+                            suffixIcon: const Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                            ),
                           ),
                           child: Text(
-                            day,
+                            day.isEmpty ? 'Select date' : day,
                             style: const TextStyle(
                               fontFamily: 'Roboto',
                               fontSize: 14,
@@ -297,8 +346,10 @@ class _FoodUsageDialogState extends State<FoodUsageDialog> {
                     child: FilledButton(
                       key: const ValueKey('food-usage-save'),
                       onPressed: save,
-                      child: const Text(
-                        'Add usage',
+                      child: Text(
+                        widget.initialEntry == null
+                            ? 'Add usage'
+                            : 'Save usage',
                         textAlign: TextAlign.center,
                       ),
                     ),

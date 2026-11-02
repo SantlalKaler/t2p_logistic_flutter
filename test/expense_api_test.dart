@@ -5,7 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/services.dart';
 import 'package:get_storage/get_storage.dart';
-import 'package:get/get.dart' hide FormData, MultipartFile;
+import 'package:get/get.dart' hide FormData, MultipartFile, Response;
 import 'package:t2p_logistic/data/api_services.dart';
 import 'package:t2p_logistic/domain/Model/expense/expense_v1.dart';
 import 'package:t2p_logistic/presentation/controllers/user_controller.dart';
@@ -19,6 +19,33 @@ class SessionUser extends UserController {
   Future<void> clearUser() async {
     cleared = true;
     await Get.find<AuthController>().clearAccessToken();
+  }
+}
+
+class PaymentLimitedApi extends ApiService {
+  final List<String> calls = [];
+  int? retryAfter;
+  @override
+  Future<Response<dynamic>> expenseRequest(
+    String path, {
+    String method = 'GET',
+    dynamic data,
+    Map<String, dynamic>? query,
+    ResponseType? responseType,
+    Duration? timeout,
+  }) async {
+    calls.add(path);
+    if (path == 'v1/ocr/payment-bill') {
+      throw ExpenseApiException(
+        429,
+        'Payment service at its limit',
+        retryAfter: retryAfter,
+      );
+    }
+    return Response(
+      requestOptions: RequestOptions(path: path),
+      data: {'status': 'success', 'data': {}},
+    );
   }
 }
 
@@ -40,6 +67,43 @@ void main() {
     expect(expenseRupees(10477), '104.77');
     expect(expenseMoney(-72450), '₹-724.50');
     expect(expenseDay('2026-10-15T21:00:00Z'), '2026-10-16');
+  });
+  test('payment cooldown defaults to a minute and allows ledger and expense requests', () async {
+    final api = PaymentLimitedApi();
+    final c = ExpenseController(apiService: api);
+    await expectLater(
+      c.request('v1/ocr/payment-bill', method: 'POST'),
+      throwsA(isA<ExpenseApiException>()),
+    );
+    expect(
+      c.paymentRetryAt!.difference(DateTime.now()).inSeconds,
+      inInclusiveRange(59, 60),
+    );
+    expect(c.retryAt, isNull);
+    await c.request('v1/cash-ledger/me');
+    await c.request('v1/expenses');
+    await expectLater(
+      c.request('v1/ocr/payment-bill', method: 'POST'),
+      throwsA(
+        isA<ExpenseApiException>().having(
+          (e) => e.retryAfter,
+          'remaining wait',
+          greaterThan(0),
+        ),
+      ),
+    );
+    expect(api.calls.where((p) => p == 'v1/ocr/payment-bill'), hasLength(1));
+    c.resetSession();
+    expect(c.paymentRetryAt, isNull);
+    api.retryAfter = 7;
+    await expectLater(
+      c.request('v1/ocr/payment-bill', method: 'POST'),
+      throwsA(isA<ExpenseApiException>()),
+    );
+    expect(
+      c.paymentRetryAt!.difference(DateTime.now()).inSeconds,
+      inInclusiveRange(6, 7),
+    );
   });
   group(
     'Expense API over real Dio HTTP against Postman simulation',

@@ -11,6 +11,12 @@ class DutySession {
   num get distance => expenseNumber(json['distance_km']);
   num get rate => expenseNumber(json['rate_per_km']);
   num get amount => expenseNumber(json['amount']);
+  num? get actualKm =>
+      json['actual_km'] == null ? null : expenseNumber(json['actual_km']);
+  num? get differenceKm => json['difference_km'] == null
+      ? null
+      : expenseNumber(json['difference_km']);
+  bool get needsActualKm => !isOn && json['needs_actual_km'] == true;
   int get seconds => expenseNumber(json['duration_seconds']).toInt();
   bool matches(String order) =>
       !isTotal && (orderId == order || orderNumber == order);

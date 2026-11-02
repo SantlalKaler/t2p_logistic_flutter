@@ -39,10 +39,13 @@ class MemoryStore extends DutyStore {
   Future<List<Map<String, Object?>>> batch(
     String owner, {
     String? session,
+    List<String> excludeSessions = const [],
   }) async => rows
       .where(
         (r) =>
-            r['owner'] == owner && (session == null || r['session'] == session),
+            r['owner'] == owner &&
+            (session == null || r['session'] == session) &&
+            !excludeSessions.contains(r['session']),
       )
       .take(500)
       .toList();
@@ -68,6 +71,8 @@ class MemoryStore extends DutyStore {
 
 class FakeApi extends ApiService {
   bool fail = false;
+  final responses = <String, dynamic>{};
+  final failures = <String, ExpenseApiException>{};
   Completer<void>? holdMe;
   final calls = <String>[];
   final bodies = <Map<String, dynamic>>[];
@@ -84,12 +89,15 @@ class FakeApi extends ApiService {
     if (path.endsWith('/me') && holdMe != null) await holdMe!.future;
     if (data is Map<String, dynamic>) bodies.add(Map.from(data));
     if (fail) throw ExpenseApiException(null, 'Offline');
+    if (failures.containsKey(path)) throw failures[path]!;
     return Response(
       requestOptions: RequestOptions(path: path),
       statusCode: 200,
       data: {
         'status': 'success',
-        'data': path.endsWith('/me')
+        'data': responses.containsKey(path)
+            ? responses[path]
+            : path.endsWith('/me')
             ? null
             : {
                 'session_id': 's1',
@@ -317,6 +325,113 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(ExpenseLedgerScreen), findsOneWidget);
       expect(find.text('Duty 10 km x Rs 10'), findsOneWidget);
+    },
+  );
+
+  test(
+    'actual km waits for all points, uses server amount and refreshes cash',
+    () async {
+      final api = FakeApi();
+      final store = MemoryStore();
+      final c = TestDuty(api, store);
+      await c.reconcile();
+      store.seed(1001);
+      api.calls.clear();
+      api.bodies.clear();
+      api.responses['v1/duty/actual-km'] = {
+        'session_id': 's1',
+        'status': 'off',
+        'actual_km': 12,
+        'difference_km': 2,
+        'distance_km': 10,
+        'rate_per_km': 5,
+        'amount': 59.99,
+        'needs_actual_km': false,
+      };
+      final result = await c.submitActualKm(
+        DutySession({'session_id': 's1'}),
+        12,
+      );
+      expect(api.calls, [
+        'v1/duty/points',
+        'v1/duty/points',
+        'v1/duty/points',
+        'v1/duty/actual-km',
+      ]);
+      expect(api.bodies.last, {'session_id': 's1', 'actual_km': 12});
+      expect(store.rows, isEmpty);
+      expect(result.amount, 59.99);
+      expect(result.actualKm, 12);
+      expect(result.differenceKm, 2);
+      expect(result.needsActualKm, isFalse);
+      expect((Get.find<ExpenseController>() as FakeCash).refreshes, 4);
+    },
+  );
+
+  test(
+    'failed GPS upload prevents actual km acceptance and retains points',
+    () async {
+      final api = FakeApi();
+      final store = MemoryStore();
+      final c = TestDuty(api, store);
+      await c.reconcile();
+      store.seed(501);
+      api.failures['v1/duty/points'] = ExpenseApiException(null, 'Offline');
+      await expectLater(
+        c.submitActualKm(DutySession({'session_id': 's1'}), 2),
+        throwsA(isA<ExpenseApiException>()),
+      );
+      expect(store.rows.length, 501);
+      expect(api.calls, isNot(contains('v1/duty/actual-km')));
+      expect(c.busy, isFalse);
+    },
+  );
+
+  test(
+    '404 during upload still reconciles duty and preserves the outbox',
+    () async {
+      final api = FakeApi();
+      final store = MemoryStore()
+        ..state = {
+          'session': {'session_id': 's1', 'status': 'on'},
+        }
+        ..seed(2);
+      api.failures['v1/duty/points'] = ExpenseApiException(
+        404,
+        'Duty not found',
+      );
+      final c = TestDuty(api, store);
+      await c.reconcile();
+      expect(api.calls, contains('v1/duty/me'));
+      expect(c.on, isFalse);
+      expect(c.ready, isTrue);
+      expect(store.rows.length, 2);
+    },
+  );
+
+  test(
+    'actual km validation is forwarded without refreshing balance',
+    () async {
+      final api = FakeApi();
+      final c = TestDuty(api, MemoryStore());
+      await c.reconcile();
+      api.failures['v1/duty/actual-km'] = ExpenseApiException(
+        422,
+        'Invalid km',
+        fields: {'actual_km': 'Above your allowed difference'},
+      );
+      await expectLater(
+        c.submitActualKm(DutySession({'session_id': 's1'}), 20),
+        throwsA(
+          isA<ExpenseApiException>().having(
+            (e) => e.fields['actual_km'],
+            'field error',
+            'Above your allowed difference',
+          ),
+        ),
+      );
+      expect((Get.find<ExpenseController>() as FakeCash).refreshes, 0);
+      expect(c.busy, isFalse);
     },
   );
 }

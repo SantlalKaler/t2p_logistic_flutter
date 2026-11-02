@@ -158,6 +158,11 @@ void main() {
         150,
         scrollable: find.byType(Scrollable).first,
       );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(
+        find.widgetWithText(FilledButton, 'Apply filters'),
+      );
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Apply filters'));
       await tester.pumpAndSettle();
       expect(c.lastQuery?['order'], 'T2P-123');

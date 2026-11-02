@@ -19,6 +19,9 @@ class RecordingExpenseController extends ExpenseController {
   List<Map<String, dynamic>> lookupOrders = [];
   List<Map<String, dynamic>> purchaseLines = [];
   String? openedId;
+  bool returnSavedRecord = false;
+  final List<int?> submittedVersions = [];
+  ExpenseApiException? submitFailure;
   @override
   Future<List<Map<String, dynamic>>> lookup(
     String name, {
@@ -48,8 +51,43 @@ class RecordingExpenseController extends ExpenseController {
   @override
   Future<ExpenseDetail?> save(Map<String, dynamic> body, {String? id}) async {
     saved = body;
+    if (returnSavedRecord) {
+      return ExpenseDetail.fromJson({
+        'expense': {
+          '_id': id,
+          'category': 'PETROL',
+          'business_date': expenseToday(),
+          'status': 'draft',
+          'details': body['details'],
+          'version': (body['version'] as int) + 1,
+        },
+        'actions': {'edit': true, 'submit': true},
+      });
+    }
     return null;
   }
+
+  @override
+  Future<ExpenseDetail> action(
+    ExpenseDetail detail,
+    String action, {
+    String? reason,
+  }) async {
+    submittedVersions.add(detail.expense.version);
+    if (submitFailure != null) throw submitFailure!;
+    return detail;
+  }
+
+  @override
+  Future<void> getExpenseList({int nextPage = 1}) async {}
+
+  @override
+  Future<void> loadLedger({
+    int nextPage = 1,
+    String from = '',
+    String to = '',
+    String type = '',
+  }) async {}
 }
 
 void main() {
@@ -114,6 +152,7 @@ void main() {
     Map<String, dynamic> details, {
     GlobalKey? capture,
     List<Map<String, dynamic>> incomplete = const [],
+    bool canSubmit = false,
   }) async {
     tester.view.reset();
     await tester.binding.setSurfaceSize(const Size(390, 844));
@@ -128,7 +167,7 @@ void main() {
           'version': 2,
           'incomplete': incomplete,
         },
-        'actions': {'edit': true},
+        'actions': {'edit': true, 'submit': canSubmit},
       }),
     );
     await tester.pumpWidget(
@@ -314,7 +353,7 @@ void main() {
   });
 
   testWidgets(
-    'incomplete Food Purchase keeps blank rate and uses fixed 5 percent GST',
+    'incomplete Food Purchase keeps blank rate and defaults to 5 percent GST',
     (tester) async {
       final c = await recordSaves();
       await open(tester, 'FOOD_PURCHASE', {
@@ -589,6 +628,299 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.binding.setSurfaceSize(null);
   });
+
+  testWidgets('GST preview uses metadata and leaves untaxed rows unchanged', (
+    tester,
+  ) async {
+    final c = await recordSaves();
+    c.meta['gst_rate_percent'] = 12;
+    await open(tester, 'FOOD_PURCHASE', {
+      'orders': ['order-1'],
+      'items': [
+        {
+          'product': 'p1',
+          'product_name': 'Biryani',
+          'order_quantity': 2,
+          'rate': 10000,
+          'gst_rate_bp': 500,
+        },
+        {
+          'product': 'p2',
+          'product_name': 'Sweets',
+          'order_quantity': 1,
+          'rate': 10000,
+          'gst_rate_bp': 0,
+        },
+      ],
+    });
+    expect(find.text('Total: \u20b9224.00'), findsOneWidget);
+    expect(find.text('Total: \u20b9100.00'), findsOneWidget);
+    expect(find.text('Grand total: \u20b9324.00'), findsOneWidget);
+    expect(find.text('Yes (12%)'), findsWidgets);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.binding.setSurfaceSize(null);
+  });
+
+  testWidgets(
+    'date errors are beside the date control and clear after selection',
+    (tester) async {
+      await recordSaves();
+      await open(
+        tester,
+        'PETROL',
+        {},
+        incomplete: [
+          {
+            'field': 'details.filled_at',
+            'message': 'Choose an allowed filling date',
+          },
+        ],
+      );
+      final date = find.byKey(
+        const ValueKey('expense-date:Filling date (optional)'),
+      );
+      await tester.ensureVisible(date);
+      await tester.pumpAndSettle();
+      final decorator = find.descendant(
+        of: date,
+        matching: find.byType(InputDecorator),
+      );
+      expect(
+        tester.widget<InputDecorator>(decorator).decoration.errorText,
+        'Choose an allowed filling date',
+      );
+      await tester.tap(date);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<InputDecorator>(decorator).decoration.errorText,
+        isNull,
+      );
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.binding.setSurfaceSize(null);
+    },
+  );
+
+  testWidgets(
+    'editing a negative adjustment replaces it without double counting',
+    (tester) async {
+      final c = await recordSaves();
+      await open(
+        tester,
+        'FOOD_PURCHASE',
+        {
+          'orders': ['order-1'],
+          'items': [
+            {
+              'product': 'p1',
+              'product_name': 'Biryani',
+              'order_quantity': 5,
+              'rate': 10000,
+              'gst_rate_bp': 500,
+              'adjustments': [
+                {'quantity': -4, 'note': 'Only one available'},
+              ],
+            },
+          ],
+        },
+        incomplete: [
+          {
+            'field': 'details.items[0].adjustments[0].note',
+            'message': 'Explain the change',
+          },
+        ],
+      );
+      final edit = find.byTooltip('Edit adjustment');
+      await tester.ensureVisible(edit);
+      await tester.pumpAndSettle();
+      await tester.tap(edit);
+      await tester.pumpAndSettle();
+      expect(find.text('4'), findsOneWidget);
+      final reason = find.widgetWithText(TextFormField, 'Reason');
+      expect(
+        tester
+            .widget<TextField>(
+              find.descendant(of: reason, matching: find.byType(TextField)),
+            )
+            .decoration!
+            .errorText,
+        'Explain the change',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Quantity'),
+        '3',
+      );
+      await tester.enterText(reason, 'Two available now');
+      tester.testTextInput.hide();
+      await tester.tap(find.text('Save adjustment'));
+      await tester.pumpAndSettle();
+      expect(find.text('Qty: 2'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('expense-save-draft')));
+      await tester.pumpAndSettle();
+      final entry = expenseMaps(
+        expenseMaps(expenseMap(c.saved!['details'])['items'])
+            .single['adjustments'],
+      ).single;
+      expect(entry['quantity'], '-3');
+      expect(entry['note'], 'Two available now');
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.binding.setSurfaceSize(null);
+    },
+  );
+
+  testWidgets(
+    'incomplete food usage can be completed in place even when none is left',
+    (tester) async {
+      final c = await recordSaves();
+      await open(
+        tester,
+        'CANCELLED_ORDER',
+        {
+          'order': 'order-1',
+          'items': [
+            {
+              'line_id': 'line-1',
+              'product': 'p1',
+              'product_name': 'Biryani',
+              'quantity': 3,
+              'dispositions': [
+                {'type': 'consumed', 'quantity': 3, 'date': expenseToday()},
+              ],
+            },
+          ],
+        },
+        incomplete: [
+          {
+            'field': 'details.items[0].dispositions[0].note',
+            'message': 'Enter who consumed the food',
+          },
+        ],
+      );
+      final edit = find.byTooltip('Edit food usage');
+      await tester.ensureVisible(edit);
+      await tester.pumpAndSettle();
+      await tester.tap(edit);
+      await tester.pumpAndSettle();
+      expect(find.text('Available quantity: 3'), findsOneWidget);
+      final note = find.byKey(const ValueKey('food-usage-note'));
+      expect(
+        tester
+            .widget<TextField>(
+              find.descendant(of: note, matching: find.byType(TextField)),
+            )
+            .decoration!
+            .errorText,
+        'Enter who consumed the food',
+      );
+      await tester.ensureVisible(note);
+      await tester.enterText(note, 'Office team');
+      tester.testTextInput.hide();
+      await tester.tap(find.text('Save usage'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('expense-save-draft')));
+      await tester.pumpAndSettle();
+      final entry = expenseMaps(
+        expenseMaps(expenseMap(c.saved!['details'])['items'])
+            .single['dispositions'],
+      ).single;
+      expect(entry['quantity'], '3');
+      expect(entry['note'], 'Office team');
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.binding.setSurfaceSize(null);
+    },
+  );
+
+  testWidgets(
+    'edit then submit uses the saved version and keeps a failed submission editable',
+    (tester) async {
+      final c = await recordSaves();
+      c.returnSavedRecord = true;
+      c.submitFailure = ExpenseApiException(
+        422,
+        'Please correct the reading',
+        fields: {'details.start_km': 'Reading required'},
+      );
+      await open(tester, 'PETROL', {
+        'rate_per_litre': 10477,
+        'litres': 3.25,
+        'start_km': 15230,
+      }, canSubmit: true);
+      await tester.tap(find.byKey(const ValueKey('expense-save-submit')));
+      await tester.pumpAndSettle();
+      expect(c.saved!['version'], 2);
+      expect(c.saved!.containsKey('submit'), false);
+      expect(c.submittedVersions, [3]);
+      expect(
+        find.textContaining('Changes saved. Submission failed:'),
+        findsOneWidget,
+      );
+      final reading = find.widgetWithText(TextFormField, 'Start odometer (km)');
+      expect(
+        tester
+            .widget<TextField>(
+              find.descendant(of: reading, matching: find.byType(TextField)),
+            )
+            .decoration!
+            .errorText,
+        'Reading required',
+      );
+      // A second attempt must PATCH using version 3, rather than the original 2.
+      await tester.tap(find.byKey(const ValueKey('expense-save-submit')));
+      await tester.pumpAndSettle();
+      expect(c.saved!['version'], 3);
+      expect(c.submittedVersions, [3, 4]);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.binding.setSurfaceSize(null);
+    },
+  );
+
+  testWidgets(
+    'Save and submit resubmits an edited rejected expense and returns to details',
+    (tester) async {
+      final c = await recordSaves();
+      c.returnSavedRecord = true;
+      final detail = ExpenseDetail.fromJson({
+        'expense': {
+          '_id': 'rejected-expense',
+          'category': 'PETROL',
+          'status': 'rejected',
+          'business_date': expenseToday(),
+          'version': 8,
+          'details': {
+            'rate_per_litre': 10477,
+            'litres': 3.25,
+            'start_km': 15230,
+          },
+        },
+        'actions': {'edit': true, 'submit': true},
+      });
+      await tester.binding.setSurfaceSize(const Size(390, 844));
+      await tester.pumpWidget(
+        GetMaterialApp(
+          home: Scaffold(
+            body: TextButton(
+              onPressed: () =>
+                  Get.to(() => AddEditExpenseScreen(expense: detail)),
+              child: const Text('Open expense'),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Open expense'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('expense-save-submit')));
+      await tester.pumpAndSettle();
+      expect(c.saved!['version'], 8);
+      expect(c.submittedVersions, [9]);
+      expect(find.byType(AddEditExpenseScreen), findsNothing);
+      expect(find.text('Open expense'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.binding.setSurfaceSize(null);
+    },
+  );
 
   testWidgets('petrol edit converts paise to rupees and preserves odometer', (
     tester,

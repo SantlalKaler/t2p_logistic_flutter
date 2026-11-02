@@ -163,6 +163,14 @@ class _DutyHistoryScreenState extends State<DutyHistoryScreen> {
                         ],
                       ),
                       const SizedBox(height: 12),
+                      Text(
+                        'Actual km: ${expenseNumber(totals['actual_km']).toStringAsFixed(2)} km',
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Awaiting actual km: ${totals['awaiting_actual_km'] ?? 0}',
+                      ),
+                      const SizedBox(height: 12),
                       const Text(
                         'Across all duties matching your filters',
                         style: TextStyle(
@@ -378,7 +386,19 @@ class _DutyHistoryScreenState extends State<DutyHistoryScreen> {
                 ...rows.map(
                   (row) => Padding(
                     padding: const EdgeInsets.only(bottom: 14),
-                    child: DutySessionCard(duty: DutySession(row)),
+                    child: DutySessionCard(
+                      duty: DutySession(row),
+                      onEnterKm: loading
+                          ? null
+                          : () async {
+                              await Get.find<DutyController>().enterActualKm(
+                                DutySession(row),
+                              );
+                              if (mounted) {
+                                await load(next: page);
+                              }
+                            },
+                    ),
                   ),
                 ),
                 if (pages > 1)

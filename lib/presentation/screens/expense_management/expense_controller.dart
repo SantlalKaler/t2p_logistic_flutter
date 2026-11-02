@@ -23,6 +23,7 @@ class ExpenseController extends GetxController {
   int page = 1, pages = 1;
   String status = '', category = '', search = '', from = '', to = '';
   DateTime? retryAt;
+  DateTime? paymentRetryAt;
   int _generation = 0;
   final changeRevision = 0.obs;
   String changedExpenseId = '';
@@ -47,6 +48,7 @@ class ExpenseController extends GetxController {
     page = 1;
     pages = 1;
     retryAt = null;
+    paymentRetryAt = null;
     isLoading = false;
     isSaving = false;
     update();
@@ -59,10 +61,15 @@ class ExpenseController extends GetxController {
     Map<String, dynamic>? query,
     Duration? timeout,
   }) async {
-    if (retryAt != null && DateTime.now().isBefore(retryAt!)) {
+    final isPayment = path == 'v1/ocr/payment-bill';
+    final retryTime = isPayment ? paymentRetryAt : retryAt;
+    if (retryTime != null && DateTime.now().isBefore(retryTime)) {
+      final seconds =
+          (retryTime.difference(DateTime.now()).inMilliseconds / 1000).ceil();
       throw ExpenseApiException(
         429,
-        'Please wait ${retryAt!.difference(DateTime.now()).inSeconds + 1} seconds and retry.',
+        'Please wait $seconds seconds and retry.',
+        retryAfter: seconds,
       );
     }
     try {
@@ -77,7 +84,14 @@ class ExpenseController extends GetxController {
       );
     } on ExpenseApiException catch (e) {
       if (e.statusCode == 429) {
-        retryAt = DateTime.now().add(Duration(seconds: e.retryAfter ?? 30));
+        final until = DateTime.now().add(
+          Duration(seconds: e.retryAfter ?? (isPayment ? 60 : 30)),
+        );
+        if (isPayment) {
+          paymentRetryAt = until;
+        } else {
+          retryAt = until;
+        }
       }
       rethrow;
     }

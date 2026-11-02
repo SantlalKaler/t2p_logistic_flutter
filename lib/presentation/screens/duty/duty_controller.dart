@@ -14,7 +14,7 @@ import '../../../domain/Model/expense/expense_v1.dart';
 import '../../controllers/user_controller.dart';
 import '../expense_management/expense_controller.dart';
 import '../expense_management/components/expense_dialog.dart';
-import 'duty_design.dart';
+import 'duty_actual_km.dart';
 
 class DutyController extends GetxController with WidgetsBindingObserver {
   final ApiService api;
@@ -35,6 +35,7 @@ class DutyController extends GetxController with WidgetsBindingObserver {
   Position? _last;
   Future<void> _writes = Future.value();
   Future<void>? _sync;
+  bool _actualKmOpen = false;
   bool get supported =>
       !kIsWeb &&
       (defaultTargetPlatform == TargetPlatform.android ||
@@ -132,12 +133,23 @@ class DutyController extends GetxController with WidgetsBindingObserver {
       if (session != null || pendingStop != null) ready = true;
       update();
       if (on) await _track();
-      await sync();
+      try {
+        await sync();
+      } on ExpenseApiException catch (e) {
+        // A stale outbox must not prevent checking the server's current duty.
+        if (e.statusCode != 404) rethrow;
+        warning = e.message;
+      }
+      final previous = session;
       final response = await request('me');
       if (_owner != owner || revision != _intentRevision) return;
       session = response['data'] == null
           ? null
           : DutySession(expenseMap(response['data']));
+      if (pendingStop != null && session?.id != pendingStop!['session_id']) {
+        // The requested duty is no longer running. Preserve any unsent points.
+        pendingStop = null;
+      }
       ready = true;
       error = '';
       await _persist();
@@ -145,6 +157,14 @@ class DutyController extends GetxController with WidgetsBindingObserver {
         await _track();
       } else {
         await _stopTracking();
+        if (previous?.isOn == true) {
+          final history = await request('history', query: {'limit': 100});
+          final closed = expenseMaps(history['data'])
+              .where((row) => '${row['session_id']}' == previous!.id);
+          if (closed.isNotEmpty) {
+            unawaited(enterActualKm(DutySession(closed.first)));
+          }
+        }
       }
     } catch (e) {
       error = '$e';
@@ -199,10 +219,42 @@ class DutyController extends GetxController with WidgetsBindingObserver {
     _intentRevision++;
     busy = true;
     error = '';
+    bool recover = false;
     update();
     try {
-      await sync(); // A queued Stop must reach the server before another ON.
+      try {
+        await sync(); // A queued Stop must reach the server before another ON.
+      } on ExpenseApiException catch (e) {
+        if (e.statusCode != 404 || pendingStop != null) rethrow;
+      }
       final position = await _location();
+      final addressResponse = await request(
+        'address',
+        query: {'lat': position.latitude, 'lng': position.longitude},
+      );
+      final address = expenseMap(addressResponse['data'])['address'];
+      final confirmed = await Get.dialog<bool>(
+        ExpenseDialog(
+          title: 'Confirm duty start',
+          icon: Icons.location_on_outlined,
+          content: Text(
+            address == null || '$address'.trim().isEmpty
+                ? 'Address unavailable. Start duty at your current GPS location?'
+                : 'Start duty from:\n$address',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Get.back(result: false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Get.back(result: true),
+              child: const Text('Confirm'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
       if (defaultTargetPlatform == TargetPlatform.android) {
         await Permission.notification.request();
       }
@@ -232,9 +284,11 @@ class DutyController extends GetxController with WidgetsBindingObserver {
       }
     } catch (e) {
       error = '$e';
+      recover = e is ExpenseApiException && e.statusCode == 404;
     } finally {
       busy = false;
       update();
+      if (recover) await reconcile();
     }
   }
 
@@ -243,6 +297,7 @@ class DutyController extends GetxController with WidgetsBindingObserver {
     _intentRevision++;
     busy = true;
     final stoppedAt = DateTime.now().toUtc();
+    bool recover = false;
     update();
     try {
       // Persist the user's intent before network activity or cancelling tracking.
@@ -257,12 +312,14 @@ class DutyController extends GetxController with WidgetsBindingObserver {
       await sync();
       if (pendingStop != null) await sync();
     } catch (e) {
+      recover = e is ExpenseApiException && e.statusCode == 404;
       error = pendingStop != null
           ? 'Duty is OFF on this phone. Stop is saved and will retry automatically. $e'
           : 'Duty ended. Some GPS points are still waiting to sync. $e';
     } finally {
       busy = false;
       update();
+      if (recover) await reconcile();
     }
   }
 
@@ -373,6 +430,7 @@ class DutyController extends GetxController with WidgetsBindingObserver {
     final owner = _owner;
     if (owner.isEmpty) return;
     await _writes;
+    DutySession? stopped;
     if (pendingStop != null) {
       final stop = Map<String, dynamic>.from(pendingStop!);
       final rows = await store.batch(owner, session: '${stop['session_id']}');
@@ -386,50 +444,126 @@ class DutyController extends GetxController with WidgetsBindingObserver {
       pendingStop = null;
       await _persist();
       await _refreshCash();
-      final stopped = session!;
-      if (Get.context != null) {
-        unawaited(
-          Get.dialog<void>(
-            ExpenseDialog(
-              title: 'Duty completed',
-              icon: Icons.check_circle_outline_rounded,
-              content: GetBuilder<DutyController>(
-                builder: (c) => DutySessionCard(
-                  duty: c.session?.id == stopped.id ? c.session! : stopped,
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Get.back(),
-                  child: const Text('Done'),
-                ),
-              ],
-            ),
-          ),
-        );
-      }
+      stopped = session!;
     }
     // A batch contains one session; older, already stopped sessions can still sync.
+    final missingSessions = <String>[];
+    ExpenseApiException? missingError;
     while (_owner == owner) {
-      var rows = await store.batch(owner);
+      var rows = await store.batch(owner, excludeSessions: missingSessions);
       if (rows.isEmpty) break;
       final id = rows.first['session'] as String;
       rows = rows.where((row) => row['session'] == id).toList();
-      final response = await request(
-        'points',
-        data: {'session_id': id, 'points': rows.map(DutyStore.point).toList()},
-      );
+      final Map<String, dynamic> response;
+      try {
+        response = await request(
+          'points',
+          data: {
+            'session_id': id,
+            'points': rows.map(DutyStore.point).toList(),
+          },
+        );
+      } on ExpenseApiException catch (e) {
+        if (e.statusCode != 404) rethrow;
+        // Preserve missing-session points without starving other duties.
+        missingSessions.add(id);
+        missingError = e;
+        continue;
+      }
       if (_owner != owner) return;
       await store.acknowledge(
         rows,
       ); // Includes rejected points: never retry them.
       final returned = DutySession(expenseMap(response['data']));
+      if (returned.id == stopped?.id) stopped = returned;
       if (session?.id == returned.id) {
+        if (session!.isOn && returned.needsActualKm) stopped = returned;
         session = returned;
         await _persist();
         update();
       }
       if (!returned.isOn) await _refreshCash();
+    }
+    // The km form is offered only after every remaining batch has finished.
+    if (stopped != null && _owner == owner) {
+      unawaited(enterActualKm(stopped));
+    }
+    if (missingError != null) throw missingError;
+  }
+
+  Future<DutySession?> enterActualKm(DutySession duty) async {
+    if (!duty.needsActualKm || _actualKmOpen || Get.context == null) {
+      return null;
+    }
+    _actualKmOpen = true;
+    try {
+      return await Get.dialog<DutySession>(
+        DutyActualKmDialog(
+          duty: duty,
+          submit: (km) => submitActualKm(duty, km),
+        ),
+        barrierDismissible: false,
+      );
+    } finally {
+      _actualKmOpen = false;
+    }
+  }
+
+  Future<DutySession> submitActualKm(DutySession duty, num km) async {
+    if (!km.isFinite || km < 0) {
+      throw ExpenseApiException(
+        422,
+        'Enter a valid, non-negative number of km.',
+      );
+    }
+    if (busy || refreshing) {
+      throw ExpenseApiException(
+        409,
+        'Duty is syncing. Please try again shortly.',
+      );
+    }
+    final owner = _owner;
+    if (owner.isEmpty) {
+      throw ExpenseApiException(401, 'Please log in again.');
+    }
+    busy = true;
+    bool recover = false;
+    update();
+    try {
+      try {
+        await sync();
+      } on ExpenseApiException catch (e) {
+        if (e.statusCode != 404) rethrow;
+        // An unrelated missing duty must not block this duty's finalisation.
+        if (pendingStop?['session_id'] == duty.id ||
+            (await store.batch(owner, session: duty.id)).isNotEmpty) {
+          rethrow;
+        }
+      }
+      if (_owner != owner) {
+        throw ExpenseApiException(401, 'Please log in again.');
+      }
+      final response = await request(
+        'actual-km',
+        data: {'session_id': duty.id, 'actual_km': km},
+      );
+      final accepted = DutySession(expenseMap(response['data']));
+      if (_owner != owner) {
+        throw ExpenseApiException(401, 'Please log in again.');
+      }
+      if (session?.id == accepted.id) {
+        session = accepted;
+        await _persist();
+      }
+      await _refreshCash();
+      return accepted;
+    } on ExpenseApiException catch (e) {
+      recover = e.statusCode == 404;
+      rethrow;
+    } finally {
+      busy = false;
+      update();
+      if (recover) await reconcile();
     }
   }
 
