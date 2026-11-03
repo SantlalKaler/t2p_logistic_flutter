@@ -22,8 +22,6 @@ class ExpenseAttachments extends StatelessWidget {
   });
   @override
   Widget build(BuildContext context) {
-    final max = expenseNumber(settings['max_files'] ?? 5).toInt();
-    final full = documents.length >= max;
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -65,7 +63,7 @@ class ExpenseAttachments extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  '${documents.length}/$max',
+                  '${documents.length} files',
                   style: const TextStyle(
                     color: ExpenseDesign.muted,
                     fontSize: 12,
@@ -92,7 +90,7 @@ class ExpenseAttachments extends StatelessWidget {
                     icon: Icons.photo_camera_outlined,
                     label: 'Camera',
                     subtitle: 'Take a photo',
-                    onTap: busy || full ? null : onCamera,
+                    onTap: busy ? null : onCamera,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -102,31 +100,25 @@ class ExpenseAttachments extends StatelessWidget {
                     icon: Icons.upload_file_outlined,
                     label: 'Photos / PDF',
                     subtitle: 'Choose a file',
-                    onTap: busy || full ? null : onFiles,
+                    onTap: busy ? null : onFiles,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 12),
             Text(
-              full
-                  ? 'Attachment limit reached. Remove a file to add another.'
-                  : 'Up to $max files · ${settings['max_mb'] ?? 10} MB each',
+              'Any number of files · ${settings['max_mb'] ?? 10} MB each · 10 per upload',
               style: Theme.of(context).textTheme.bodySmall,
               textAlign: TextAlign.center,
             ),
-            if (!full)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  '${settings['allowed'] ?? 'JPG, PNG, WEBP, HEIC or PDF'}',
-                  style: const TextStyle(
-                    color: Color(0xFF98A2B3),
-                    fontSize: 11,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                '${settings['allowed'] ?? 'JPG, PNG, WEBP, HEIC or PDF'}',
+                style: const TextStyle(color: Color(0xFF98A2B3), fontSize: 11),
+                textAlign: TextAlign.center,
               ),
+            ),
             const SizedBox(height: 18),
           ],
           if (busy)

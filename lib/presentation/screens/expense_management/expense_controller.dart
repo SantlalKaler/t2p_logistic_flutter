@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart' as dio;
 import 'package:get/get.dart';
 
@@ -149,9 +151,9 @@ class ExpenseController extends GetxController {
         },
       );
       if (generation != _generation) return;
-      expenses = expenseMaps(response['data'])
-          .map(ExpenseRecord.fromJson)
-          .toList();
+      expenses = expenseMaps(
+        response['data'],
+      ).map(ExpenseRecord.fromJson).toList();
       totals = expenseMap(response['totals']);
       final pagination = expenseMap(response['pagination']);
       page = expenseNumber(pagination['page']).toInt();
@@ -222,7 +224,12 @@ class ExpenseController extends GetxController {
       final response = await request(
         id == null ? base : '$base/$id',
         method: id == null ? 'POST' : 'PATCH',
-        data: body,
+        data: body['files'] is List<dio.MultipartFile>
+            ? dio.FormData.fromMap({
+                ...body,
+                'details': jsonEncode(body['details']),
+              }, dio.ListFormat.multi)
+            : body,
       );
       final result = ExpenseDetail.fromJson(response['data']);
       _notice(response);
@@ -265,11 +272,13 @@ class ExpenseController extends GetxController {
   }
 
   Future<void> upload(String id, List<dio.MultipartFile> files) async {
-    final data = dio.FormData();
-    for (final file in files) {
-      data.files.add(MapEntry('files', file));
+    for (var offset = 0; offset < files.length; offset += 10) {
+      final data = dio.FormData();
+      for (final file in files.skip(offset).take(10)) {
+        data.files.add(MapEntry('files', file.clone()));
+      }
+      await request('$base/$id/documents', method: 'POST', data: data);
     }
-    await request('$base/$id/documents', method: 'POST', data: data);
   }
 
   Future<Map<String, dynamic>> uploadPaymentScreenshot(
@@ -284,7 +293,7 @@ class ExpenseController extends GetxController {
       data: dio.FormData.fromMap({'file': file}),
       timeout: const Duration(minutes: 3),
     );
-    return expenseMap(response['data']);
+    return {...expenseMap(response['data']), 'message': response['message']};
   }
 
   Future<void> removeDocument(String id, String docId) async =>

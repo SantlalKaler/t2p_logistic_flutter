@@ -1,12 +1,10 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart' as dio;
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -16,6 +14,7 @@ import 'expense_controller.dart';
 import 'components/expense_design.dart';
 import 'components/expense_dialog.dart';
 import 'components/expense_attachments.dart';
+import 'components/expense_upload.dart';
 
 class ExpenseDetailScreen extends StatefulWidget {
   final String id;
@@ -32,6 +31,7 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen>
   bool loading = true, busy = false;
   String error = '';
   final List<File> temporaryFiles = [];
+  final pendingFiles = <ExpenseUploadFile>[];
   @override
   void initState() {
     super.initState();
@@ -112,6 +112,13 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen>
       false;
   Future<void> action(String name) async {
     if (detail == null || busy || !detail!.can(name)) return;
+    if ((name == 'submit' || name == 'approve') && pendingFiles.isNotEmpty) {
+      setState(
+        () => error =
+            'Upload the ${pendingFiles.length} pending files before continuing.',
+      );
+      return;
+    }
     String? reason;
     if (name == 'cancel') {
       final input = TextEditingController();
@@ -199,69 +206,24 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen>
     });
     var stage = 'file selection';
     try {
-      final settings = expenseMap(c.meta['upload']);
-      final maxFiles = expenseNumber(settings['max_files'] ?? 5).toInt();
-      final maxBytes = expenseNumber(settings['max_mb'] ?? 10) * 1024 * 1024;
-      final selected = <dio.MultipartFile>[];
-      if (camera) {
-        final photo = await ImagePicker().pickImage(source: ImageSource.camera);
-        if (photo == null) return;
-        stage = 'reading camera photo';
-        if (await photo.length() > maxBytes) {
-          throw ExpenseApiException(
-            null,
-            'File is larger than ${settings['max_mb'] ?? 10} MB.',
-          );
-        }
-        selected.add(
-          await dio.MultipartFile.fromFile(photo.path, filename: photo.name),
-        );
-      } else {
-        final extensions =
-            RegExp(r'JPEG|JPG|PNG|WEBP|HEIC|PDF', caseSensitive: false)
-                .allMatches('${settings['allowed'] ?? 'JPG PNG WEBP HEIC PDF'}')
-                .map((m) => m.group(0)!.toLowerCase())
-                .expand((e) => e == 'jpg' ? ['jpg', 'jpeg'] : [e])
-                .toSet()
-                .toList();
-        final files = await FilePicker.pickFiles(
-          type: FileType.custom,
-          allowedExtensions: extensions,
-        );
-        if (files.isEmpty) return;
-        stage = 'reading selected files';
-        if (detail!.documents.length + files.length > maxFiles) {
-          throw ExpenseApiException(
-            null,
-            'Maximum $maxFiles documents per expense.',
-          );
-        }
-        for (final file in files) {
-          if ((await file.length() ?? maxBytes + 1) > maxBytes) {
-            throw ExpenseApiException(
-              null,
-              '${file.name} is larger than ${settings['max_mb'] ?? 10} MB.',
-            );
-          }
-          if (file.path == null) {
-            throw ExpenseApiException(
-              null,
-              'Cannot access ${file.name}. Please select it again.',
-            );
-          }
-          selected.add(
-            await dio.MultipartFile.fromFile(file.path!, filename: file.name),
-          );
-        }
-      }
-      if (detail!.documents.length + selected.length > maxFiles) {
-        throw ExpenseApiException(
-          null,
-          'Maximum $maxFiles documents per expense.',
+      if (pendingFiles.isEmpty) {
+        pendingFiles.addAll(
+          await ExpenseUploadFile.choose(
+            camera: camera,
+            settings: expenseMap(c.meta['upload']),
+          ),
         );
       }
       stage = 'server upload';
-      await c.upload(widget.id, selected);
+      while (pendingFiles.isNotEmpty) {
+        final batch = pendingFiles.take(10).toList();
+        final files = <dio.MultipartFile>[];
+        for (final file in batch) {
+          files.add(await file.multipart());
+        }
+        await c.upload(widget.id, files);
+        pendingFiles.removeRange(0, batch.length);
+      }
       await load();
     } catch (e) {
       if (kDebugMode) {
@@ -541,6 +503,12 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen>
             Padding(
               padding: const EdgeInsets.only(bottom: 16),
               child: messageBox(error),
+            ),
+          if (pendingFiles.isNotEmpty)
+            OutlinedButton.icon(
+              onPressed: busy || loading ? null : () => documents(false),
+              icon: const Icon(Icons.refresh),
+              label: Text('Retry ${pendingFiles.length} pending files'),
             ),
           ExpenseAttachments(
             documents: d.documents,
@@ -883,6 +851,7 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen>
       'rate_per_litre': 'Rate / litre',
       'litres': 'Litres',
       'start_km': 'Start odometer',
+      'end_km': 'End odometer',
       'filled_at': 'Filled at',
       'vehicle_no': 'Vehicle',
       'pump_name': 'Pump',

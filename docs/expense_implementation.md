@@ -1,4 +1,83 @@
-﻿# Expense module (API guide v1.4)
+﻿# Duty and expenses (App Update v1.4; Expenses API v1.5)
+
+## Duty/expense update - November 3, 2026
+
+Primary contract: App Update guide v1.4. Reference: Expenses API guide v1.5.
+
+- Android now uses a sticky native location foreground service for GPS and upload,
+  independent of Flutter UI lifetime. High-accuracy reads request 10-second updates,
+  5-second minimum and zero distance filtering. Restart credentials are encrypted
+  with Android Keystore. iOS retains continuous background location without pauses
+  or distance filtering, requests fresh fixes every 10 seconds and triggers uploads
+  from background location callbacks as well as the minute timer.
+- Save after 30 m OR 30 s, including stationary fixes. SQLite retains original UTC
+  timestamps/accuracy. Upload oldest first, at most 500 per request; only HTTP 200
+  acknowledges rows. Drain a large backlog before OFF/actual km. Android can sync
+  an offline Stop without Flutter: GPS stops immediately, upload-only service keeps
+  the original Stop time, drains points and sends OFF. Server OFF stops recording.
+  ON now includes accuracy; History retains pending actual-km entry.
+- GST state/widget identity is keyed by product ID. Every item sends its own
+  `gst_applicable`; saved rows use their own `gst_rate_bp`. No purchase-level GST.
+- Attachments have no total-count cap, including with stale five-file metadata.
+  Forms select documents before save; create a draft with the first 10, upload the
+  remainder in batches of 10, then submit. Partial failures retain the draft ID,
+  latest version and remaining handles while the form stays open. Successful
+  batches are not repeated on retry. File data streams rather than loading the
+  entire selection into memory. Existing draft detail uploads use batches too.
+- Petrol Start/End readings are optional, omitted when blank, support zero and
+  one decimal; End below Start is refused when both exist. `end_km` is restored,
+  submitted and displayed.
+- Payment OCR sends one image under `file`, no PDF, at most 10 MB, with a three-minute
+  timeout. Exact server success/error messages survive, including generic 500
+  messages and JSON envelopes returned as text. Cash refreshes after success/409.
+
+### Section 1 screen inventory
+
+| Screen / capability | Current source status |
+| --- | --- |
+| Food Purchase | Implemented; per-product GST and document batches |
+| Pickup / Delivery lists | Total Duty and per-order controls integrated |
+| Duty ON popup | Address confirmation integrated; accuracy sent |
+| Duty OFF / Actual km | Implemented; pending points precede finalization |
+| Background tracking | Native Android service and iOS flow implemented; device acceptance pending |
+| Delivered integration | Successful matching-order delivery stops duty; total duty stays ON |
+| Duty History | Addresses, system/actual km, rate, payable and pending km entry integrated |
+| My Cash | Ledger and screenshot dialog integrated; server messages preserved |
+
+No app route-map screen is required; the map belongs to Super Admin.
+
+### Verification and Section 9 acceptance
+
+Full Flutter suite: **127 passed**, including all **11** expense HTTP tests against
+the local Postman simulation (no skips). Android JVM recording-policy tests:
+**2 passed**. Final targeted analyzer: **no issues**. The updated Android debug APK
+built successfully at `build/app/outputs/flutter-apk/app-debug.apk`.
+
+| Checklist | Automated evidence | Remaining device/live acceptance |
+| --- | --- | --- |
+| 1-4, Food Purchase | Aggregation, blank prices, independent mixed GST, reopen and previews | Deployed totals and saved-draft round trip |
+| Documents / Petrol | 15 files; 25-file partial failure/retry; stale five-file metadata; no/one/both km; invalid End | Real file storage and backend 422 validation |
+| 5-6, 11-14, Duty UI | Confirmation/cancel, duty state rules, GPS-optional/repeated Stop, History, actual-km errors/pending entry | Deployed permissions, configured km limits and payable |
+| 7-10, lifecycle/offline | Restored state, failed/retried queue batches and original timestamps | Kill/reopen, locked travel, airplane mode and server point deduplication |
+| 15-18, tracking | Android/Dart 30 m policy, ten stationary heartbeats in five minutes, 500+ batching | Physical round trip, turns, locked stop, long offline and Super Admin map |
+| 19-22, Delivered | Matching-order stop; total/other duty preservation; closed-status handling | Customer OTP success/failure and deployed list buttons |
+| 23-29, Cash | Synthetic OCR success/409/422/500 UI, cash refresh, expense debit/reversal simulation, negative balance display | Real bank OCR, sender/date rules, DUTY_DEBIT, zero rate and low-balance payout |
+
+Policy tests do not simulate physical screen lock or road travel. No production
+expense, payment or duty transaction was created. iOS build/device verification
+requires macOS/Xcode and an iPhone and has not been run from this Windows workspace.
+
+Reproduce with the pinned SDK:
+
+```text
+postman simulation run postman/simulations/expenses.sim.yaml --port 4901 --no-history
+.fvm/flutter_sdk/bin/flutter.bat test --no-pub --dart-define=EXPENSE_TEST_BASE_URL=http://localhost:4901/expenses
+cd android
+gradlew.bat :app:testDebugUnitTest
+```
+
+Logs: `tmp/duty-expense-full-tests.log`, `tmp/duty-native-tests.log`,
+`tmp/duty-expense-update-analysis.log`, `tmp/duty-expense-update-build.log`.
 
 ## Expense review fixes (November 2026)
 

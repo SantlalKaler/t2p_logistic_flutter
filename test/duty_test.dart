@@ -12,6 +12,7 @@ import 'package:get/get.dart' hide Response;
 import 'package:get_storage/get_storage.dart';
 import 'package:t2p_logistic/data/api_services.dart';
 import 'package:t2p_logistic/data/duty_store.dart';
+import 'package:t2p_logistic/data/duty_background.dart';
 import 'package:t2p_logistic/domain/Model/duty.dart';
 import 'package:t2p_logistic/domain/Model/expense/expense_v1.dart';
 import 'package:t2p_logistic/presentation/controllers/user_controller.dart';
@@ -71,6 +72,7 @@ class MemoryStore extends DutyStore {
 
 class FakeApi extends ApiService {
   bool fail = false;
+  int pointStatus = 200;
   final responses = <String, dynamic>{};
   final failures = <String, ExpenseApiException>{};
   Completer<void>? holdMe;
@@ -92,7 +94,7 @@ class FakeApi extends ApiService {
     if (failures.containsKey(path)) throw failures[path]!;
     return Response(
       requestOptions: RequestOptions(path: path),
-      statusCode: 200,
+      statusCode: path.endsWith('/points') ? pointStatus : 200,
       data: {
         'status': 'success',
         'data': responses.containsKey(path)
@@ -125,8 +127,16 @@ class FakeCash extends ExpenseController {
   }
 }
 
+class NoopDutyBackground extends DutyBackground {
+  @override
+  Future<void> stop() async {}
+  @override
+  Future<void> pause() async {}
+}
+
 class TestDuty extends DutyController {
-  TestDuty(FakeApi api, MemoryStore store) : super(api: api, store: store);
+  TestDuty(FakeApi api, MemoryStore store)
+    : super(api: api, store: store, background: NoopDutyBackground());
   @override
   bool get supported => true;
 }
@@ -179,7 +189,7 @@ void main() {
     expect(dutyOrderClosed('DELIVERED_TO_CARGO_PARTNER'), isFalse);
   });
   test(
-    'offline Stop retains original time and points; retry sends Stop first',
+    'offline Stop retains tap time and drains a large backlog before OFF',
     () async {
       final api = FakeApi()..fail = true;
       final store = MemoryStore()
@@ -197,12 +207,12 @@ void main() {
       api.calls.clear();
       api.bodies.clear();
       await c.reconcile();
-      expect(api.calls, ['v1/duty/off', 'v1/duty/points', 'v1/duty/me']);
-      expect(api.bodies.first['at'], '2026-11-01T02:00:00Z');
+      expect(api.calls, ['v1/duty/points', 'v1/duty/off', 'v1/duty/me']);
+      expect(api.bodies[1]['at'], '2026-11-01T02:00:00Z');
       expect((api.bodies.first['points'] as List).length, 500);
       expect(store.rows, isEmpty);
       expect(c.pendingStop, isNull);
-      expect((Get.find<ExpenseController>() as FakeCash).refreshes, 2);
+      expect((Get.find<ExpenseController>() as FakeCash).refreshes, 1);
     },
   );
   test(
@@ -225,6 +235,16 @@ void main() {
       expect(store.rows, isEmpty);
     },
   );
+  test('a non-200 point response never deletes queued GPS fixes', () async {
+    final api = FakeApi()..pointStatus = 202;
+    final store = MemoryStore()..seed(1);
+    final c = TestDuty(api, store);
+    await c.reconcile();
+    expect(store.rows.length, 1);
+    api.pointStatus = 200;
+    await c.reconcile();
+    expect(store.rows, isEmpty);
+  });
   test(
     'delivery of another order or during total duty never stops duty',
     () async {

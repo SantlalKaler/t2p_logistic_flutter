@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart' as dio;
 import 'package:get/get.dart';
 import 'package:uuid/uuid.dart';
 
@@ -12,6 +13,7 @@ import 'components/expense_order_info.dart';
 import 'components/expense_design.dart';
 import 'components/expense_dialog.dart';
 import 'components/food_usage_dialog.dart';
+import 'components/expense_upload.dart';
 
 class AddEditExpenseScreen extends StatefulWidget {
   final ExpenseDetail? expense;
@@ -34,6 +36,9 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
   List<Map<String, dynamic>> cities = [], orders = [], lines = [];
   Set<String> selectedOrders = {};
   final orderCatalog = <String, Map<String, dynamic>>{};
+  final gstByProduct = <String, bool>{};
+  final pendingFiles = <ExpenseUploadFile>[];
+  bool pickingFiles = false;
   bool loading = true, saving = false, ordersChanged = false;
   String error = '', lookupQuery = '';
   Map<String, String> serverErrors = {};
@@ -109,6 +114,8 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
           lines = expenseMaps(jsonDecode(jsonEncode(original['items'])));
           for (final line in lines) {
             line['gst_applicable'] = expenseNumber(line['gst_rate_bp']) > 0;
+            gstByProduct[expenseId(line['product'])] =
+                line['gst_applicable'] == true;
             line['rate'] = line['rate'] == null
                 ? ''
                 : expenseRupees(line['rate']);
@@ -137,6 +144,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
       order = '';
       side = '';
       lines = [];
+      gstByProduct.clear();
       orders = [];
       selectedOrders = {};
       distance = null;
@@ -305,9 +313,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
 
   int foodLineTaxPaise(Map<String, dynamic> line) {
     final taxable = foodLineSubtotalPaise(line) - foodLineDiscountPaise(line);
-    return line['gst_applicable'] != false
-        ? (taxable * gstRatePercent / 100).round()
-        : 0;
+    return rowGst(line) ? (taxable * gstRatePercent / 100).round() : 0;
   }
 
   num get gstRatePercent {
@@ -353,7 +359,10 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
           if (previous?[key] != null) line[key] = previous![key];
         }
         line['rate'] = previous?['rate'] ?? '';
-        line.putIfAbsent('gst_applicable', () => true);
+        line['gst_applicable'] = gstByProduct.putIfAbsent(
+          expenseId(line['product']),
+          () => previous?['gst_applicable'] != false,
+        );
         line.putIfAbsent(
           'weight_kg',
           () =>
@@ -367,6 +376,26 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
       error = '$e';
     } finally {
       if (mounted) setState(() => loading = false);
+    }
+  }
+
+  bool rowGst(Map<String, dynamic> line) =>
+      gstByProduct[expenseId(line['product'])] ??
+      line['gst_applicable'] != false;
+
+  Future<void> chooseDocuments(bool camera) async {
+    if (saving || pickingFiles) return;
+    setState(() => pickingFiles = true);
+    try {
+      final files = await ExpenseUploadFile.choose(
+        camera: camera,
+        settings: expenseMap(c.meta['upload']),
+      );
+      if (mounted) setState(() => pendingFiles.addAll(files));
+    } catch (e) {
+      if (mounted) setState(() => error = '$e');
+    } finally {
+      if (mounted) setState(() => pickingFiles = false);
     }
   }
 
@@ -808,28 +837,42 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
                         required: false,
                         lines: 3,
                       ),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      const Text(
+                        'Attach any number of bills or receipts. Files upload in batches of 10.',
+                      ),
+                      Wrap(
+                        spacing: 8,
                         children: [
-                          const Icon(
-                            Icons.attach_file_rounded,
-                            size: 18,
-                            color: muted,
+                          OutlinedButton.icon(
+                            onPressed: saving || pickingFiles
+                                ? null
+                                : () => chooseDocuments(true),
+                            icon: const Icon(Icons.camera_alt_outlined),
+                            label: const Text('Camera'),
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Save a draft to attach bills, photos or PDFs.',
-                              style: const TextStyle(
-                                fontFamily: 'Roboto',
-                                fontSize: 12,
-                                color: muted,
-                                height: 1.5,
-                              ),
-                            ),
+                          OutlinedButton.icon(
+                            key: const ValueKey('expense-choose-files'),
+                            onPressed: saving || pickingFiles
+                                ? null
+                                : () => chooseDocuments(false),
+                            icon: const Icon(Icons.attach_file),
+                            label: const Text('Choose files'),
                           ),
                         ],
                       ),
+                      if (pickingFiles) const LinearProgressIndicator(),
+                      for (final file in pendingFiles)
+                        ListTile(
+                          dense: true,
+                          title: Text(file.name),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: saving
+                                ? null
+                                : () =>
+                                      setState(() => pendingFiles.remove(file)),
+                          ),
+                        ),
                     ],
                   ),
                 ] else
@@ -1022,7 +1065,20 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
         return [
           text('rate_per_litre', 'Rate per litre (₹)', decimals: 2),
           text('litres', 'Litres', decimals: 2),
-          text('start_km', 'Start odometer (km)', decimals: 1, zero: true),
+          text(
+            'start_km',
+            'Start odometer (km)',
+            decimals: 1,
+            zero: true,
+            required: false,
+          ),
+          text(
+            'end_km',
+            'End odometer (km)',
+            decimals: 1,
+            zero: true,
+            required: false,
+          ),
           dateInput(
             'Filling date (optional)',
             field('filled_at').text,
@@ -1518,8 +1574,10 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
                 Expanded(
                   child: DropdownButtonFormField<bool>(
                     isExpanded: true,
-                    key: ValueKey('$path.gst:${line['gst_applicable']}'),
-                    initialValue: line['gst_applicable'] != false,
+                    key: ValueKey(
+                      'gst:${expenseId(line['product'])}:${rowGst(line)}',
+                    ),
+                    initialValue: rowGst(line),
                     decoration: InputDecoration(
                       labelText: 'GST',
                       errorText: serverErrors['$path.gst_applicable'],
@@ -1534,6 +1592,8 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
                             if (value != null) {
                               setState(() {
                                 line['gst_applicable'] = value;
+                                gstByProduct[expenseId(line['product'])] =
+                                    value;
                                 serverErrors.remove('$path.gst_applicable');
                               });
                             }
@@ -1964,6 +2024,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
           'rate_per_litre',
           'litres',
           'start_km',
+          'end_km',
           'filled_at',
           'vehicle_no',
           'pump_name',
@@ -1992,7 +2053,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
         for (final line in lines) {
           final item = <String, dynamic>{
             'product': expenseId(line['product']),
-            'gst_applicable': line['gst_applicable'] != false,
+            'gst_applicable': rowGst(line),
           };
           for (final key in [
             'rate',
@@ -2049,9 +2110,20 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
   }
 
   Future<void> save(bool submit) async {
-    if (saving) return;
+    if (saving || pickingFiles) return;
     validatingSubmit = submit;
     if (!form.currentState!.validate()) return;
+    if (category == 'PETROL') {
+      final start = num.tryParse(field('start_km').text.trim());
+      final end = num.tryParse(field('end_km').text.trim());
+      if (start != null && end != null && end < start) {
+        setState(
+          () => serverErrors['details.end_km'] =
+              "End km can't be lower than start km",
+        );
+        return;
+      }
+    }
     if (category == 'FOOD_PURCHASE' &&
         (selectedOrders.isEmpty || lines.isEmpty)) {
       setState(() => error = 'Select orders and load product lines first.');
@@ -2084,6 +2156,15 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
     });
     var persisted = false;
     try {
+      final creating = !editing;
+      final firstFiles = creating
+          ? pendingFiles.take(10).toList()
+          : <ExpenseUploadFile>[];
+      final multipart = <dio.MultipartFile>[];
+      for (final file in firstFiles) {
+        multipart.add(await file.multipart());
+      }
+      final hasFiles = pendingFiles.isNotEmpty;
       final response = await c.save({
         if (!editing) 'category': category,
         if (!editing || date != currentExpense!.expense.date)
@@ -2091,29 +2172,46 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
         'notes': field('notes').text.trim(),
         'details': payloadDetails(),
         if (!editing) 'client_request_id': requestId,
-        if (!editing && category != 'CANCELLED_ORDER') 'submit': submit,
+        if (!editing && category != 'CANCELLED_ORDER')
+          'submit': submit && !hasFiles,
+        if (multipart.isNotEmpty) 'files': multipart,
         if (editing && currentExpense!.expense.version != null)
           'version': currentExpense!.expense.version,
       }, id: currentExpense?.expense.id);
       if (!mounted) return;
       if (response != null) {
         persisted = true;
-        if (editing) {
+        if (editing || hasFiles) {
           // PATCH never submits. Use its returned version for the separate action,
           // and retain it if submission fails so the saved draft can be retried.
           currentExpense = response;
           ordersChanged = false;
+          pendingFiles.removeRange(0, firstFiles.length);
+          while (pendingFiles.isNotEmpty) {
+            final batch = pendingFiles.take(10).toList();
+            final files = <dio.MultipartFile>[];
+            for (final file in batch) {
+              files.add(await file.multipart());
+            }
+            await c.upload(currentExpense!.expense.id, files);
+            pendingFiles.removeRange(0, batch.length);
+          }
+          if (hasFiles) currentExpense = await c.getDetail(response.expense.id);
           if (submit) {
-            if (!response.can('submit')) {
+            if (!currentExpense!.can('submit')) {
               throw ExpenseApiException(
                 409,
                 'Changes saved. This expense can no longer be submitted.',
               );
             }
-            currentExpense = await c.action(response, 'submit');
+            currentExpense = await c.action(currentExpense!, 'submit');
             if (!mounted) return;
           }
-          Get.back(result: true);
+          if (creating) {
+            Get.off(() => ExpenseDetailScreen(id: currentExpense!.expense.id));
+          } else {
+            Get.back(result: true);
+          }
         } else {
           Get.off(() => ExpenseDetailScreen(id: response.expense.id));
         }
@@ -2125,11 +2223,25 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
         await recoverSaveFailure(c.lastStatusCode);
       }
     } catch (e) {
+      if (persisted && currentExpense != null && pendingFiles.isNotEmpty) {
+        try {
+          // Successful batches may have advanced the expense version before a
+          // later batch failed. Retrying must use that saved version.
+          currentExpense = await c.getDetail(currentExpense!.expense.id);
+        } catch (_) {
+          // Preserve the draft ID and pending handles even if refresh is offline.
+        }
+      }
       if (mounted) {
         setState(() {
-          error = persisted ? 'Changes saved. Submission failed: $e' : '$e';
+          error = !persisted
+              ? '$e'
+              : pendingFiles.isNotEmpty
+              ? 'Draft saved. ${pendingFiles.length} files pending. Please retry: $e'
+              : 'Changes saved. Submission failed: $e';
           if (e is ExpenseApiException) serverErrors = Map.of(e.fields);
         });
+        if (scroll.hasClients) scroll.jumpTo(0);
         if (e is ExpenseApiException) await recoverSaveFailure(e.statusCode);
       }
     } finally {

@@ -242,6 +242,7 @@ void main() {
         await tester.tap(find.text(confirm ? 'Confirm' : 'Cancel'));
         await tester.pumpAndSettle();
         expect(api.calls.contains('v1/duty/on'), confirm);
+        if (confirm) expect(api.bodies.last['accuracy'], 8.0);
         expect(c.on, confirm);
         await c.suspend();
         debugDefaultTargetPlatformOverride = previousPlatform;
@@ -274,7 +275,7 @@ void main() {
     await tester.binding.setSurfaceSize(const Size(320, 844));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     final api = fixtures.FakeApi();
-    api.responses['v1/duty/off'] = pending.json;
+    api.responses['v1/duty/off'] = {...pending.json, 'distance_km': 11};
     api.responses['v1/duty/points'] = {...pending.json, 'distance_km': 11};
     final store = fixtures.MemoryStore();
     final c = fixtures.TestDuty(api, store);
@@ -289,7 +290,7 @@ void main() {
     await tester.pumpWidget(GetMaterialApp(home: const Scaffold()));
     await c.delivered('order-a');
     await tester.pumpAndSettle();
-    expect(api.calls, ['v1/duty/off', 'v1/duty/points']);
+    expect(api.calls, ['v1/duty/points', 'v1/duty/off']);
     expect(store.rows, isEmpty);
     expect(find.text('Travelled km (system): 11.00 km'), findsOneWidget);
     expect(find.text('Enter actual km'), findsOneWidget);

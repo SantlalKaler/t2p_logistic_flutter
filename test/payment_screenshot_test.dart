@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart' as dio;
@@ -85,6 +86,7 @@ class CashController extends ExpenseController {
           'amount': 5000,
           'ref_no': 'REF-123',
           'paid_from': {'name': 'Maa Traders'},
+          'message': 'Bank transfer credited by server',
         });
   }
 }
@@ -154,6 +156,21 @@ void main() {
     },
   );
 
+  testWidgets(
+    'success uses server text and a generic 500 server message is never hidden',
+    (tester) async {
+      final c = CashController()
+        ..failure = ExpenseApiException(500, 'Something went wrong');
+      await openUpload(tester, c);
+      await tester.tap(find.text('Upload'));
+      await tester.pumpAndSettle();
+      expect(find.text('Something went wrong'), findsOneWidget);
+      c.failure = null;
+      await tester.tap(find.text('Try again'));
+      await tester.pumpAndSettle();
+      expect(find.text('Bank transfer credited by server'), findsOneWidget);
+    },
+  );
   testWidgets(
     'duplicate shows server message and refreshes cash without another upload',
     (tester) async {
@@ -289,4 +306,53 @@ void main() {
       expect(result['balance_after'], 500000);
     },
   );
+  for (final encoded in [false, true]) {
+    test(
+      'payment API preserves a server 500 message with ${encoded ? 'text JSON' : 'JSON'} response',
+      () async {
+        FlutterSecureStorage.setMockInitialValues({
+          'logistics_access_token': 'payment-test-token',
+        });
+        final client = dio.Dio();
+        client.interceptors.add(
+          dio.InterceptorsWrapper(
+            onRequest: (options, handler) {
+              final body = {
+                'status': 'error',
+                'message': 'Something went wrong',
+              };
+              handler.reject(
+                dio.DioException(
+                  requestOptions: options,
+                  type: dio.DioExceptionType.badResponse,
+                  response: dio.Response(
+                    requestOptions: options,
+                    statusCode: 500,
+                    data: encoded ? jsonEncode(body) : body,
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+        final c = ExpenseController(apiService: ApiService(expenseDio: client));
+        await expectLater(
+          c.uploadPaymentScreenshot(
+            dio.MultipartFile.fromBytes(
+              [1],
+              filename: 'bank.png',
+              contentType: dio.DioMediaType('image', 'png'),
+            ),
+          ),
+          throwsA(
+            isA<ExpenseApiException>().having(
+              (e) => e.message,
+              'message',
+              'Something went wrong',
+            ),
+          ),
+        );
+      },
+    );
+  }
 }

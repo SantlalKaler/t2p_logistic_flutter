@@ -59,6 +59,7 @@ class _PaymentScreenshotDialogState extends State<PaymentScreenshotDialog> {
       busy = true;
       error = '';
       retryable = false;
+      duplicate = false;
     });
     try {
       final file = await FilePicker.pickFile(
@@ -161,9 +162,12 @@ class _PaymentScreenshotDialogState extends State<PaymentScreenshotDialog> {
                     size: 30,
                   ),
                   const SizedBox(height: 12),
-                  const Text(
-                    'Money added to your cash balance',
-                    style: TextStyle(fontSize: 12, color: Color(0xFF067647)),
+                  Text(
+                    '${result['message'] ?? 'Money added to your cash balance'}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF067647),
+                    ),
                   ),
                   const SizedBox(height: 6),
                   Text(

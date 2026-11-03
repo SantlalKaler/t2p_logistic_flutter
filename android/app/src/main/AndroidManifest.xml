@@ -19,6 +19,11 @@
         android:label="t2p_logistic"
         android:name="${applicationName}"
         android:icon="@drawable/app_icon_large">
+        <service
+            android:name="taste2plates.app.logistic.DutyTrackingService"
+            android:exported="false"
+            android:stopWithTask="false"
+            android:foregroundServiceType="location" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

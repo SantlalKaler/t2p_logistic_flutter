@@ -5,10 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart' hide ServiceStatus;
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 import '../../../data/api_services.dart';
 import '../../../data/duty_store.dart';
 import '../../../data/duty_requests.dart';
+import '../../../data/duty_background.dart';
+import '../../../data/duty_recording.dart';
+import '../../theme/resource/uri_constants.dart';
 import '../../../domain/Model/duty.dart';
 import '../../../domain/Model/expense/expense_v1.dart';
 import '../../controllers/user_controller.dart';
@@ -19,9 +23,13 @@ import 'duty_actual_km.dart';
 class DutyController extends GetxController with WidgetsBindingObserver {
   final ApiService api;
   final DutyStore store;
-  DutyController({ApiService? api, DutyStore? store})
-    : api = api ?? ApiService(),
-      store = store ?? DutyStore();
+  DutyController({
+    ApiService? api,
+    DutyStore? store,
+    DutyBackground? background,
+  }) : api = api ?? ApiService(),
+       store = store ?? DutyStore(),
+       _background = background ?? DutyBackground();
   DutySession? session;
   Map<String, dynamic>? pendingStop;
   bool busy = false, ready = false, refreshing = false;
@@ -29,10 +37,14 @@ class DutyController extends GetxController with WidgetsBindingObserver {
   String error = '', warning = '';
   DateTime? _retryAt;
   String _owner = '';
-  Timer? _uploadTimer;
+  Timer? _uploadTimer, _readTimer;
+  bool _reading = false;
   StreamSubscription<Position>? _positions;
   StreamSubscription<ServiceStatus>? _services;
-  Position? _last;
+  StreamSubscription<List<ConnectivityResult>>? _connectivity;
+  final DutyBackground _background;
+  DateTime? _lastUpload;
+  Position? _last, _lastSaved;
   Future<void> _writes = Future.value();
   Future<void>? _sync;
   bool _actualKmOpen = false;
@@ -55,6 +67,12 @@ class DutyController extends GetxController with WidgetsBindingObserver {
     _uploadTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (_owner.isNotEmpty && !busy) unawaited(reconcile(silent: true));
     });
+    _connectivity = Connectivity().onConnectivityChanged.listen((results) {
+      if (results.any((r) => r != ConnectivityResult.none) &&
+          _owner.isNotEmpty) {
+        unawaited(reconcile(silent: true));
+      }
+    });
   }
 
   @override
@@ -71,14 +89,19 @@ class DutyController extends GetxController with WidgetsBindingObserver {
       throw ExpenseApiException(429, 'Please wait before retrying duty sync.');
     }
     try {
-      final response = expenseMap(
-        (await api.expenseRequest(
-          'v1/duty/$suffix',
-          method: data == null ? 'GET' : 'POST',
-          data: data,
-          query: query,
-        )).data,
+      final raw = await api.expenseRequest(
+        'v1/duty/$suffix',
+        method: data == null ? 'GET' : 'POST',
+        data: data,
+        query: query,
       );
+      if ((suffix == 'points' || suffix == 'off') && raw.statusCode != 200) {
+        throw ExpenseApiException(
+          raw.statusCode,
+          'Duty sync was not acknowledged. Saved data will retry.',
+        );
+      }
+      final response = expenseMap(raw.data);
       if (kDebugMode) {
         final duties = response['data'] is List
             ? expenseMaps(response['data']).take(5)
@@ -157,7 +180,7 @@ class DutyController extends GetxController with WidgetsBindingObserver {
         await _track();
       } else {
         await _stopTracking();
-        if (previous?.isOn == true) {
+        if (previous?.isOn == true || previous?.needsActualKm == true) {
           final history = await request('history', query: {'limit': 100});
           final closed = expenseMaps(history['data'])
               .where((row) => '${row['session_id']}' == previous!.id);
@@ -263,6 +286,7 @@ class DutyController extends GetxController with WidgetsBindingObserver {
         data: {
           'lat': position.latitude,
           'lng': position.longitude,
+          'accuracy': position.accuracy,
           'order': ?order,
         },
       );
@@ -308,7 +332,7 @@ class DutyController extends GetxController with WidgetsBindingObserver {
       );
       await _persist();
       update();
-      await _stopTracking();
+      await _stopTracking(preserveStop: true);
       await sync();
       if (pendingStop != null) await sync();
     } catch (e) {
@@ -342,63 +366,27 @@ class DutyController extends GetxController with WidgetsBindingObserver {
       warning = 'GPS or location permission is off. Enable it to record your full route.';
       return;
     }
-    final LocationSettings settings =
-        defaultTargetPlatform == TargetPlatform.android
-        ? AndroidSettings(
-            accuracy: LocationAccuracy.high,
-            distanceFilter: 0,
-            intervalDuration: const Duration(seconds: 10),
-            foregroundNotificationConfig: const ForegroundNotificationConfig(
-              notificationTitle: 'T2P duty',
-              notificationIcon: AndroidResource(name: 'ic_duty_notification'),
-              color: Color(0xFFB42332),
-              setOngoing: true,
-              notificationText: 'You are on duty. Location tracking is active.',
-              enableWakeLock: true,
-            ),
-          )
-        : AppleSettings(
-            accuracy: LocationAccuracy.best,
-            distanceFilter: 0,
-            pauseLocationUpdatesAutomatically: false,
-            showBackgroundLocationIndicator: true,
-            allowBackgroundLocationUpdates: true,
-          );
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      // Native service persists and uploads even if the Flutter engine is gone.
+      await _background.start(
+        owner: _owner,
+        session: session!.id,
+        token: await api.authController.readAccessToken(),
+        baseUrl: URIConstants.baseURI,
+        databasePath: (await store.database).path,
+      );
+      warning = await _background.warning();
+      return;
+    }
+    final settings = AppleSettings(
+      accuracy: LocationAccuracy.best,
+      distanceFilter: 0,
+      pauseLocationUpdatesAutomatically: false,
+      showBackgroundLocationIndicator: true,
+      allowBackgroundLocationUpdates: true,
+    );
     _positions = Geolocator.getPositionStream(locationSettings: settings).listen(
-      (position) {
-        if (!on) return;
-        final previous = _last;
-        if (previous != null &&
-            position.timestamp.difference(previous.timestamp).inSeconds < 30 &&
-            Geolocator.distanceBetween(
-                  previous.latitude,
-                  previous.longitude,
-                  position.latitude,
-                  position.longitude,
-                ) <
-                50) {
-          return;
-        }
-        _last = position;
-        final owner = _owner, id = session!.id;
-        _writes = _writes
-            .then(
-              (_) => store.add(owner, id, {
-                'lat': position.latitude,
-                'lng': position.longitude,
-                'at': position.timestamp.toUtc().toIso8601String(),
-                'accuracy': position.accuracy,
-              }),
-            )
-            .catchError((Object e) {
-              warning = 'Unable to save GPS point: $e';
-              update();
-            });
-        if (warning.isNotEmpty) {
-          warning = '';
-          update();
-        }
-      },
+      _recordPosition,
       onError: (Object e) {
         warning =
             'Location tracking interrupted. Check GPS and location permissions. $e';
@@ -407,6 +395,28 @@ class DutyController extends GetxController with WidgetsBindingObserver {
         update();
       },
     );
+    _readTimer?.cancel();
+    _readTimer = Timer.periodic(const Duration(seconds: 10), (_) async {
+      if (_reading || !on) return;
+      _reading = true;
+      final id = session!.id;
+      try {
+        final position = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            timeLimit: Duration(seconds: 10),
+          ),
+        );
+        if (on && session?.id == id) _recordPosition(position);
+      } catch (_) {
+        if (on) {
+          warning = 'GPS unavailable. Check location permissions and GPS.';
+          update();
+        }
+      } finally {
+        _reading = false;
+      }
+    });
     _services ??= Geolocator.getServiceStatusStream().listen((status) {
       warning = status == ServiceStatus.disabled
           ? 'GPS is off. Enable it to record your full route.'
@@ -415,13 +425,69 @@ class DutyController extends GetxController with WidgetsBindingObserver {
     });
   }
 
-  Future<void> _stopTracking() async {
+  void _recordPosition(Position position) {
+    if (!on) return;
+    _last = position;
+    final owner = _owner, id = session!.id;
+    // Decide inside the serialized write queue so a failed disk write never
+    // advances the last-saved fix or silently loses the next eligible point.
+    _writes = _writes
+        .then((_) async {
+          if (!shouldSaveDutyPoint(position, _lastSaved)) return;
+          await store.add(owner, id, {
+            'lat': position.latitude,
+            'lng': position.longitude,
+            'at': position.timestamp.toUtc().toIso8601String(),
+            'accuracy': position.accuracy,
+          });
+          _lastSaved = position;
+          if (warning.isNotEmpty) {
+            warning = '';
+            update();
+          }
+        })
+        .catchError((Object e) {
+          warning = 'Unable to save GPS point: $e';
+          update();
+        });
+    _syncFromLocation();
+  }
+
+  // iOS location callbacks wake the app in the background; do not depend only
+  // on a UI Timer for uploading while locked.
+  void _syncFromLocation() {
+    final now = DateTime.now();
+    if (_lastUpload != null &&
+        now.difference(_lastUpload!) < const Duration(minutes: 1)) {
+      return;
+    }
+    _lastUpload = now;
+    unawaited(
+      sync().catchError((Object e) {
+        warning = 'GPS points saved. Upload will retry. $e';
+        update();
+      }),
+    );
+  }
+
+  Future<void> _stopTracking({bool preserveStop = false}) async {
+    if (supported && defaultTargetPlatform == TargetPlatform.android) {
+      if (preserveStop) {
+        await _background.pause();
+      } else {
+        await _background.stop();
+      }
+    }
+    _readTimer?.cancel();
+    _readTimer = null;
     await _positions?.cancel();
     _positions = null;
     await _services?.cancel();
     _services = null;
     await _writes;
     _last = null;
+    _lastSaved = null;
+    _lastUpload = null;
     warning = '';
   }
 
@@ -433,7 +499,21 @@ class DutyController extends GetxController with WidgetsBindingObserver {
     DutySession? stopped;
     if (pendingStop != null) {
       final stop = Map<String, dynamic>.from(pendingStop!);
-      final rows = await store.batch(owner, session: '${stop['session_id']}');
+      var rows = await store.batch(owner, session: '${stop['session_id']}');
+      // OFF only accepts up to 500 points. Drain a larger offline backlog first,
+      // preserving the user's original Stop timestamp throughout retries.
+      while (rows.length == 500) {
+        await request(
+          'points',
+          data: {
+            'session_id': stop['session_id'],
+            'points': rows.map(DutyStore.point).toList(),
+          },
+        );
+        if (_owner != owner) return;
+        await store.acknowledge(rows);
+        rows = await store.batch(owner, session: '${stop['session_id']}');
+      }
       final response = await request(
         'off',
         data: {...stop, 'points': rows.map(DutyStore.point).toList()},
@@ -443,6 +523,7 @@ class DutyController extends GetxController with WidgetsBindingObserver {
       session = DutySession(expenseMap(response['data']));
       pendingStop = null;
       await _persist();
+      await _stopTracking();
       await _refreshCash();
       stopped = session!;
     }
@@ -480,6 +561,7 @@ class DutyController extends GetxController with WidgetsBindingObserver {
         if (session!.isOn && returned.needsActualKm) stopped = returned;
         session = returned;
         await _persist();
+        if (!returned.isOn) await _stopTracking();
         update();
       }
       if (!returned.isOn) await _refreshCash();
@@ -590,6 +672,7 @@ class DutyController extends GetxController with WidgetsBindingObserver {
   void onClose() {
     WidgetsBinding.instance.removeObserver(this);
     _uploadTimer?.cancel();
+    unawaited(_connectivity?.cancel());
     unawaited(_stopTracking());
     super.onClose();
   }

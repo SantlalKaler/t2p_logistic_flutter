@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart' as getx;
@@ -13,6 +14,17 @@ import '../presentation/theme/resource/uri_constants.dart';
 import '../presentation/widgets/custom_snackbar.dart';
 
 class ApiService {
+  Map<String, dynamic> _expenseBody(dynamic value) {
+    if (value is String) {
+      try {
+        value = jsonDecode(value);
+      } on FormatException {
+        return {};
+      }
+    }
+    return expenseMap(value);
+  }
+
   AuthController authController = getx.Get.isRegistered<AuthController>()
       ? getx.Get.find<AuthController>()
       : getx.Get.put(AuthController());
@@ -155,6 +167,12 @@ class ApiService {
           receiveTimeout: timeout ?? const Duration(seconds: 45),
         ),
       );
+      // Some gateways return a JSON envelope with text/plain content type.
+      // Normalize it so the server's message survives success and error paths.
+      if (response.data is String) {
+        final body = _expenseBody(response.data);
+        if (body.isNotEmpty) response.data = body;
+      }
       _logExpenseResponse(method, path, response);
       if (response.data is Map && response.data['status'] != 'success') {
         throw ExpenseApiException(
@@ -171,7 +189,7 @@ class ApiService {
         failure: error.type.name,
       );
       final code = error.response?.statusCode;
-      final body = expenseMap(error.response?.data);
+      final body = _expenseBody(error.response?.data);
       if (code == 401) {
         await getx.Get.find<UserController>().clearUser();
       }

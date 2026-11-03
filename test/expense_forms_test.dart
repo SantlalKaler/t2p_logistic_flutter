@@ -352,6 +352,63 @@ void main() {
     await tester.binding.setSurfaceSize(null);
   });
 
+  for (final readings in <Map<String, dynamic>>[
+    {},
+    {'start_km': 0},
+    {'end_km': 15310.5},
+    {'start_km': 15230, 'end_km': 15310.5},
+  ]) {
+    testWidgets('petrol Submit accepts optional readings $readings', (
+      tester,
+    ) async {
+      final c = await recordSaves();
+      await open(tester, 'PETROL', {
+        'rate_per_litre': 10000,
+        'litres': 1,
+        ...readings,
+      }, canSubmit: true);
+      await tester.tap(find.byKey(const ValueKey('expense-save-submit')));
+      await tester.pumpAndSettle();
+      final details = expenseMap(c.saved?['details']);
+      expect(details['rate_per_litre'], '100.00');
+      for (final key in ['start_km', 'end_km']) {
+        if (readings.containsKey(key)) {
+          expect(details[key], '${readings[key]}');
+        } else {
+          expect(details.containsKey(key), false);
+        }
+      }
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.binding.setSurfaceSize(null);
+    });
+  }
+  testWidgets('petrol refuses end below start and allows correcting it', (
+    tester,
+  ) async {
+    final c = await recordSaves();
+    await open(tester, 'PETROL', {
+      'rate_per_litre': 10000,
+      'litres': 1,
+      'start_km': 100,
+      'end_km': 90,
+    }, canSubmit: true);
+    await tester.tap(find.byKey(const ValueKey('expense-save-submit')));
+    await tester.pumpAndSettle();
+    expect(c.saved, isNull);
+    expect(find.text("End km can't be lower than start km"), findsWidgets);
+    final field = find.widgetWithText(TextFormField, 'End odometer (km)');
+    await tester.ensureVisible(field);
+    await tester.enterText(field, '100.1');
+    tester.testTextInput.hide();
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('expense-save-submit')));
+    await tester.pumpAndSettle();
+    expect(expenseMap(c.saved?['details'])['end_km'], '100.1');
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.binding.setSurfaceSize(null);
+  });
+
   testWidgets(
     'incomplete Food Purchase keeps blank rate and defaults to 5 percent GST',
     (tester) async {

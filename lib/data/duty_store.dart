@@ -58,7 +58,7 @@ class DutyStore {
         'owner = ?${session == null ? '' : ' AND session = ?'}'
         '${excludeSessions.isEmpty ? '' : ' AND session NOT IN (${List.filled(excludeSessions.length, '?').join(',')})'}',
     whereArgs: [owner, ?session, ...excludeSessions],
-    orderBy: 'id ASC',
+    orderBy: 'at ASC, id ASC',
     limit: 500,
   );
   Future<void> acknowledge(List<Map<String, Object?>> rows) async {
