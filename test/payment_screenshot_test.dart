@@ -29,11 +29,24 @@ final class ScreenshotFile extends PlatformFile {
   @override
   int lengthSync() => size;
   @override
-  Future<int> length() async => size;
+  Future<int?> length() async => size;
   @override
   Future<Uint8List> readAsBytes() async => Uint8List(size);
   @override
   Stream<Uint8List> readAsByteStream() => Stream.value(Uint8List(size));
+}
+
+final class UnknownSizeScreenshot extends ScreenshotFile {
+  UnknownSizeScreenshot() : super('provider-image.png');
+  int reads = 0;
+  @override
+  Future<int?> length() async => null;
+  @override
+  Future<Uint8List> readAsBytes() async {
+    reads++;
+    if (reads > 1) throw StateError('Provider grant expired');
+    return Uint8List(8);
+  }
 }
 
 class ScreenshotPicker extends FilePickerPlatform {
@@ -124,6 +137,47 @@ void main() {
     await tester.tap(find.text('Choose image'));
     await tester.pumpAndSettle();
   }
+
+  testWidgets('provider image with unknown size stays readable for retries', (
+    tester,
+  ) async {
+    final file = UnknownSizeScreenshot();
+    picker.file = file;
+    final c = CashController()
+      ..failure = ExpenseApiException(503, 'Reading service busy');
+    await openUpload(tester, c);
+    await tester.tap(find.text('Upload'));
+    await tester.pumpAndSettle();
+    expect(find.text('Reading service busy'), findsOneWidget);
+    c.failure = null;
+    await tester.tap(find.text('Try again'));
+    await tester.pumpAndSettle();
+    expect(find.text('Amount: \u20b95000.00'), findsOneWidget);
+    expect(c.uploads, 2);
+    expect(file.reads, 1);
+  });
+
+  testWidgets(
+    'cancelled picker keeps the refusal for the selected screenshot',
+    (tester) async {
+      final c = CashController()
+        ..failure = ExpenseApiException(422, 'Sender is not the company');
+      await openUpload(tester, c);
+      await tester.tap(find.text('Upload'));
+      await tester.pumpAndSettle();
+      picker.file = null;
+      await tester.tap(find.text('Choose image'));
+      await tester.pumpAndSettle();
+      expect(find.text('Sender is not the company'), findsOneWidget);
+      expect(
+        tester
+            .widget<FilledButton>(find.widgetWithText(FilledButton, 'Upload'))
+            .onPressed,
+        isNull,
+      );
+      expect(c.uploads, 1);
+    },
+  );
 
   testWidgets(
     'slow upload stays busy, shows rupee amount and refreshes server balance',

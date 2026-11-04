@@ -35,6 +35,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
       side = '';
   List<Map<String, dynamic>> cities = [], orders = [], lines = [];
   Set<String> selectedOrders = {};
+  Set<String> loadedFoodOrders = {};
   final orderCatalog = <String, Map<String, dynamic>>{};
   final gstByProduct = <String, bool>{};
   final pendingFiles = <ExpenseUploadFile>[];
@@ -111,6 +112,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
           selectedOrders = (original['orders'] as List? ?? [])
               .map(expenseId)
               .toSet();
+          loadedFoodOrders = Set.of(selectedOrders);
           lines = expenseMaps(jsonDecode(jsonEncode(original['items'])));
           for (final line in lines) {
             line['gst_applicable'] = expenseNumber(line['gst_rate_bp']) > 0;
@@ -147,6 +149,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
       gstByProduct.clear();
       orders = [];
       selectedOrders = {};
+      loadedFoodOrders = {};
       distance = null;
       error = '';
       serverErrors = {};
@@ -338,9 +341,10 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
       error = '';
     });
     try {
+      final requestedOrders = Set<String>.of(selectedOrders);
       final response = await c.lookupData(
         'food-purchase-lines',
-        query: {'orders': selectedOrders.join(',')},
+        query: {'orders': requestedOrders.join(',')},
       );
       final fresh = expenseMaps(response['lines']);
       // Keep user inputs when the selected orders still contain the same product.
@@ -366,11 +370,13 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
         line.putIfAbsent(
           'weight_kg',
           () =>
-              expenseNumber(line['unit_weight_kg']) *
-              expenseNumber(line['order_quantity']),
+              (expenseNumber(line['unit_weight_kg']) *
+                      expenseNumber(line['order_quantity']))
+                  .toStringAsFixed(3),
         );
       }
       lines = fresh;
+      loadedFoodOrders = requestedOrders;
       ordersChanged = true;
     } catch (e) {
       error = '$e';
@@ -405,6 +411,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
     bool required = true,
     bool zero = false,
   }) {
+    value = value?.trim();
     if ((value ?? '').trim().isEmpty) {
       return required && validatingSubmit ? 'Required' : null;
     }
@@ -605,6 +612,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
     required List<Widget> children,
     String? subtitle,
   }) => Container(
+    key: ValueKey('expense-section:$title'),
     margin: const EdgeInsets.only(bottom: 16),
     padding: const EdgeInsets.all(18),
     decoration: BoxDecoration(
@@ -2061,7 +2069,8 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
             'discount_type',
             'discount_value',
           ]) {
-            if ('${line[key] ?? ''}'.isNotEmpty) item[key] = line[key];
+            final value = '${line[key] ?? ''}'.trim();
+            if (value.isNotEmpty) item[key] = value;
           }
           item['adjustments'] = expenseMaps(line['adjustments'])
               .map(
@@ -2111,8 +2120,26 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
 
   Future<void> save(bool submit) async {
     if (saving || pickingFiles) return;
+    FocusScope.of(context).unfocus();
     validatingSubmit = submit;
-    if (!form.currentState!.validate()) return;
+    final invalid = form.currentState!.validateGranularly();
+    if (invalid.isNotEmpty) {
+      setState(() {
+        error = 'Please check the highlighted fields before saving.';
+        for (final field in invalid) {
+          final key = field.widget.key;
+          if (key is ValueKey<String>) {
+            final parts = key.value.split(':');
+            if (parts.length == 3 && parts.first.startsWith('details.items[')) {
+              // Open More when an optional field is blocking submission.
+              serverErrors['${parts[0]}.${parts[1]}'] = field.errorText!;
+            }
+          }
+        }
+      });
+      revealSaveErrors(target: invalid.first.context);
+      return;
+    }
     if (category == 'PETROL') {
       final start = num.tryParse(field('start_km').text.trim());
       final end = num.tryParse(field('end_km').text.trim());
@@ -2127,25 +2154,24 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
     if (category == 'FOOD_PURCHASE' &&
         (selectedOrders.isEmpty || lines.isEmpty)) {
       setState(() => error = 'Select orders and load product lines first.');
+      revealSaveErrors();
       return;
     }
     if (category == 'CANCELLED_ORDER' && (order.isEmpty || lines.isEmpty)) {
       setState(() => error = 'Select a cancelled order first.');
+      revealSaveErrors();
       return;
     }
     // Changing the order checkboxes requires refreshing the server's combined lines.
     if (category == 'FOOD_PURCHASE' && lines.isNotEmpty) {
-      final lineOrders = lines
-          .expand(
-            (e) => expenseMaps(e['orders']).map((o) => expenseId(o['order'])),
-          )
-          .toSet();
-      if (lineOrders.isNotEmpty &&
-          (lineOrders.length != selectedOrders.length ||
-              !lineOrders.containsAll(selectedOrders))) {
+      // Compare the actual lookup selection, not product provenance. An order
+      // without products need not appear in any individual line's orders list.
+      if (loadedFoodOrders.length != selectedOrders.length ||
+          !loadedFoodOrders.containsAll(selectedOrders)) {
         setState(
           () => error = 'Load / update product lines after changing orders.',
         );
+        revealSaveErrors();
         return;
       }
     }
@@ -2220,6 +2246,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
           error = c.error;
           serverErrors = Map.of(c.fieldErrors);
         });
+        revealSaveErrors();
         await recoverSaveFailure(c.lastStatusCode);
       }
     } catch (e) {
@@ -2241,7 +2268,7 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
               : 'Changes saved. Submission failed: $e';
           if (e is ExpenseApiException) serverErrors = Map.of(e.fields);
         });
-        if (scroll.hasClients) scroll.jumpTo(0);
+        revealSaveErrors();
         if (e is ExpenseApiException) await recoverSaveFailure(e.statusCode);
       }
     } finally {
@@ -2251,6 +2278,17 @@ class _AddEditExpenseScreenState extends State<AddEditExpenseScreen> {
       }
       if (mounted) setState(() => saving = false);
     }
+  }
+
+  void revealSaveErrors({BuildContext? target}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !scroll.hasClients) return;
+      if (target != null && target.mounted) {
+        Scrollable.ensureVisible(target, alignment: 0.2);
+      } else {
+        scroll.jumpTo(0);
+      }
+    });
   }
 
   Future<void> recoverSaveFailure(int? statusCode) async {

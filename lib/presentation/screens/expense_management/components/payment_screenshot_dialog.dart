@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:dio/dio.dart' as dio;
 import 'package:file_picker/file_picker.dart';
@@ -21,6 +22,7 @@ class PaymentScreenshotDialog extends StatefulWidget {
 class _PaymentScreenshotDialogState extends State<PaymentScreenshotDialog> {
   final ExpenseController c = Get.find();
   PlatformFile? selected;
+  Uint8List? selectedBytes;
   bool busy = false, retryable = false, duplicate = false;
   String error = '';
   Map<String, dynamic>? payment;
@@ -57,9 +59,6 @@ class _PaymentScreenshotDialogState extends State<PaymentScreenshotDialog> {
   Future<void> choose() async {
     setState(() {
       busy = true;
-      error = '';
-      retryable = false;
-      duplicate = false;
     });
     try {
       final file = await FilePicker.pickFile(
@@ -75,19 +74,40 @@ class _PaymentScreenshotDialogState extends State<PaymentScreenshotDialog> {
         );
       }
       final size = await file.length();
-      if (size == null || size == 0 || size > 10 * 1024 * 1024) {
+      if (size != null && (size == 0 || size > 10 * 1024 * 1024)) {
         throw ExpenseApiException(null, 'Choose an image up to 10 MB.');
       }
-      if (mounted) setState(() => selected = file);
+      // Some document providers cannot report a size. Read while the picker
+      // grant is fresh and retain the bytes for upload and manual retries.
+      final bytes = await file.readAsBytes();
+      if (bytes.isEmpty || bytes.length > 10 * 1024 * 1024) {
+        throw ExpenseApiException(null, 'Choose an image up to 10 MB.');
+      }
+      if (mounted) {
+        setState(() {
+          selected = file;
+          selectedBytes = bytes;
+          error = '';
+          retryable = false;
+          duplicate = false;
+        });
+      }
     } catch (e) {
-      if (mounted) setState(() => error = '$e');
+      if (mounted) {
+        setState(() {
+          selected = null;
+          selectedBytes = null;
+          error = '$e';
+          retryable = false;
+        });
+      }
     } finally {
       if (mounted) setState(() => busy = false);
     }
   }
 
   Future<void> upload() async {
-    if (busy || selected == null) return;
+    if (busy || selected == null || selectedBytes == null) return;
     setState(() {
       busy = true;
       retryable = false;
@@ -96,10 +116,9 @@ class _PaymentScreenshotDialogState extends State<PaymentScreenshotDialog> {
     try {
       final file = selected!;
       final extension = file.name.split('.').last.toLowerCase();
-      final bytes = await file.readAsBytes();
       final result = await c.uploadPaymentScreenshot(
         dio.MultipartFile.fromBytes(
-          bytes,
+          selectedBytes!,
           filename: file.name,
           contentType: dio.DioMediaType(
             'image',

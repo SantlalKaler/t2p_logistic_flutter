@@ -1,5 +1,43 @@
 ﻿# Duty and expenses (App Update v1.4; Expenses API v1.5)
 
+## Expense bug review - November 4, 2026
+
+Reviewed `Downloads/T2P Expense Bug.mp4` and Expenses API guide v1.5.
+
+- Combined purchase validation compares the selection used by the successful
+  product lookup with the current selection, instead of deriving selection
+  completeness from individual products' provenance. Failed refreshes cannot
+  submit old product lines for a changed selection.
+- Automatic total weights use three decimal places, avoiding floating-point
+  strings such as `0.30000000000000004` that fail validation. Numeric inputs
+  accept surrounding whitespace and purchase payloads trim it.
+- Validation reveals the affected field; invalid optional product inputs expand
+  More. API save failures return to the visible error banner. Stable section keys
+  preserve form-field state when loading/error banners are inserted or removed.
+- Reopening the purchase order dropdown clears the previous search and reloads
+  current eligible orders, preserving applied selections.
+- Screenshot selection accepts readable images whose provider reports no size,
+  validates the actual bytes, and retains those bytes for upload/manual retries.
+  Cancelling a replacement selection preserves the previous refusal state.
+
+Live acceptance remains necessary: the reference clip does not expose the final
+save API response or a payment-upload failure. No authenticated production
+response/backend source is available in this workspace. The app sends no date
+filter to order lookups: guide section 6.1 requires tomorrow/day-after orders for
+Food Purchase; section 6.3 requires today/tomorrow for Delivery. If a fresh lookup
+omits an eligible order, investigate deployed backend eligibility and assignment
+rules. Expense-date calendars intentionally stop at today under the API
+contract; they are separate from order delivery dates.
+
+Verification: all 132 Flutter tests passed, including HTTP tests against the
+local Postman simulation. Targeted expense/form/upload analysis reported no
+issues. New regressions cover five products and three selected orders, decimal
+weight rounding, visible API errors, fresh upcoming dates after a prior search,
+unknown-size screenshot providers, retries, and cancelling a refused replacement.
+Android debug APK built successfully at
+`build/app/outputs/flutter-apk/app-debug.apk`. Gradle emitted existing
+`firebase_core`/`firebase_database` Kotlin-plugin compatibility warnings.
+
 ## Duty/expense update - November 3, 2026
 
 Primary contract: App Update guide v1.4. Reference: Expenses API guide v1.5.

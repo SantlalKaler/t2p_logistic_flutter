@@ -220,10 +220,16 @@ class _ExpenseOrderDropdownState extends State<ExpenseOrderDropdown> {
       return MenuAnchor(
         controller: menu,
         consumeOutsideTap: true,
-        onOpen: () => setState(() {
-          selection = Set.of(widget.selected);
-          searchError = null;
-        }),
+        onOpen: () {
+          setState(() {
+            selection = Set.of(widget.selected);
+            searchError = null;
+            search.clear();
+          });
+          // Eligibility changes with the delivery day and expense approvals.
+          // Reopen the complete current list instead of a previous search.
+          findOrders();
+        },
         style: MenuStyle(
           padding: const WidgetStatePropertyAll(EdgeInsets.zero),
           backgroundColor: const WidgetStatePropertyAll(Colors.white),

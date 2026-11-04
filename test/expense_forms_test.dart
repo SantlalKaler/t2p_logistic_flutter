@@ -22,6 +22,7 @@ class RecordingExpenseController extends ExpenseController {
   bool returnSavedRecord = false;
   final List<int?> submittedVersions = [];
   ExpenseApiException? submitFailure;
+  String saveError = '';
   @override
   Future<List<Map<String, dynamic>>> lookup(
     String name, {
@@ -51,6 +52,7 @@ class RecordingExpenseController extends ExpenseController {
   @override
   Future<ExpenseDetail?> save(Map<String, dynamic> body, {String? id}) async {
     saved = body;
+    error = saveError;
     if (returnSavedRecord) {
       return ExpenseDetail.fromJson({
         'expense': {
@@ -439,6 +441,149 @@ void main() {
       await tester.binding.setSurfaceSize(null);
     },
   );
+
+  testWidgets('five combined products submit with rounded automatic weights', (
+    tester,
+  ) async {
+    final c = await recordSaves();
+    c.meta['categories'] = [
+      {'code': 'FOOD_PURCHASE', 'label': 'Food Purchase'},
+    ];
+    c.lookupOrders = [
+      for (var i = 1; i <= 3; i++) {'_id': 'order-$i', 'orderid': 'T2P-$i'},
+    ];
+    c.purchaseLines = [
+      for (var i = 0; i < 5; i++)
+        {
+          'product': 'product-$i',
+          'product_name': 'Product $i',
+          'unit_weight_kg': 0.1,
+          'order_quantity': 3,
+          'orders': [
+            // The third selected order has no product provenance entries.
+            for (var j = 1; j <= 2; j++)
+              {'order': 'order-$j', 'orderid': 'T2P-$j', 'quantity': j},
+          ],
+        },
+    ];
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    await tester.pumpWidget(const GetMaterialApp(home: AddEditExpenseScreen()));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(DropdownButtonFormField<String>).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Food Purchase').last);
+    await tester.pumpAndSettle();
+    tester
+        .widget<ExpenseOrderDropdown>(find.byType(ExpenseOrderDropdown))
+        .onApply({'order-1', 'order-2', 'order-3'});
+    await tester.pumpAndSettle();
+    for (var i = 0; i < 5; i++) {
+      final rate = find.byKey(ValueKey('details.items[$i]:rate:product-$i'));
+      await tester.ensureVisible(rate);
+      await tester.enterText(rate, '${150 + i}');
+      tester.testTextInput.hide();
+      await tester.pumpAndSettle();
+    }
+    await tester.tap(find.byKey(const ValueKey('expense-save-submit')));
+    await tester.pumpAndSettle();
+    expect(c.saved, isNotNull);
+    expect(c.saved!['submit'], true);
+    expect(expenseMap(c.saved!['details'])['orders'], [
+      'order-1',
+      'order-2',
+      'order-3',
+    ]);
+    final items = expenseMaps(expenseMap(c.saved!['details'])['items']);
+    expect(items.length, 5);
+    expect(items.map((e) => e['rate']), ['150', '151', '152', '153', '154']);
+    expect(items.map((e) => e['weight_kg']), everyElement('0.300'));
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.binding.setSurfaceSize(null);
+  });
+
+  testWidgets('save errors return to the top of a long purchase form', (
+    tester,
+  ) async {
+    final c = await recordSaves();
+    c.saveError = 'Order is already linked to another purchase';
+    await open(tester, 'FOOD_PURCHASE', {
+      'orders': ['order-1'],
+      'items': [
+        for (var i = 0; i < 5; i++)
+          {
+            'product': 'p$i',
+            'product_name': 'Product $i',
+            'rate': 10000,
+            'order_quantity': 1,
+          },
+      ],
+    });
+    await tester.ensureVisible(find.text('Grand total: \u20b9500.00'));
+    await tester.tap(find.byKey(const ValueKey('expense-save-draft')));
+    await tester.pumpAndSettle();
+    expect(find.text(c.saveError).hitTestable(), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.binding.setSurfaceSize(null);
+  });
+
+  testWidgets('reopening orders reloads upcoming dates and clears old search', (
+    tester,
+  ) async {
+    final tomorrow = expenseDay(
+      DateTime.parse(expenseToday()).add(const Duration(days: 1)),
+    );
+    final queries = <String>[];
+    var orders = <Map<String, dynamic>>[];
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: StatefulBuilder(
+            builder: (context, set) {
+              return Padding(
+                padding: const EdgeInsets.all(24),
+                child: ExpenseOrderDropdown(
+                  orders: orders,
+                  selected: const {'one'},
+                  onApply: (_) {},
+                  onSearch: (q) async {
+                    queries.add(q);
+                    set(
+                      () => orders = q.isEmpty
+                          ? [
+                              {
+                                '_id': 'one',
+                                'orderid': 'T2P-1001',
+                                'delivery_date': tomorrow,
+                              },
+                            ]
+                          : [],
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(const ValueKey('expense-order-dropdown')));
+    await tester.pumpAndSettle();
+    expect(find.text('Delivery date: $tomorrow'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), 'missing');
+    await tester.testTextInput.receiveAction(TextInputAction.search);
+    await tester.pumpAndSettle();
+    expect(find.text('No orders found'), findsOneWidget);
+    await tester.tap(find.text('Apply'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('expense-order-dropdown')));
+    await tester.pumpAndSettle();
+    expect(queries, ['', 'missing', '']);
+    expect(find.text('Delivery date: $tomorrow'), findsOneWidget);
+    expect(find.text('1/50 selected'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('food GST preview updates and GST No sends zero tax choice', (
     tester,
